@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -80,144 +81,23 @@ fun SettingsScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-        ) {
-            SectionTitle(stringResource(R.string.settings_section_account))
-            state.instance?.let { instance ->
-                InfoRow(stringResource(R.string.settings_blog), instance.displayName)
-                InfoRow(stringResource(R.string.settings_url), instance.siteUrl)
-                InfoRow(stringResource(R.string.settings_user), instance.username)
-                InfoRow(
-                    stringResource(R.string.settings_plugin),
-                    stringResource(
-                        if (instance.hasBridgePlugin) {
-                            R.string.settings_plugin_detected
-                        } else {
-                            R.string.settings_plugin_missing
-                        },
-                    ),
+        SettingsContent(
+            state = state,
+            intervalOptions = viewModel.intervalOptions,
+            onNotificationsEnabled = viewModel::setNotificationsEnabled,
+            onSyncInterval = viewModel::setSyncInterval,
+            onAppIcon = viewModel::setAppIcon,
+            onShowAvatars = viewModel::setShowAvatars,
+            onShowAuthorEmail = viewModel::setShowAuthorEmail,
+            onOpenSystemNotifications = {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
                 )
-                if (!instance.canModerate) {
-                    Text(
-                        text = stringResource(R.string.settings_no_moderation_rights),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
-                }
-            }
-
-            HorizontalDivider()
-            SectionTitle(stringResource(R.string.settings_section_notifications))
-
-            SwitchRow(
-                title = stringResource(R.string.settings_notifications),
-                description = stringResource(R.string.settings_notifications_description),
-                checked = state.settings.notificationsEnabled,
-                onCheckedChange = viewModel::setNotificationsEnabled,
-            )
-
-            Text(
-                text = stringResource(R.string.settings_interval),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                viewModel.intervalOptions.forEach { minutes ->
-                    FilterChip(
-                        selected = state.settings.syncIntervalMinutes == minutes,
-                        onClick = { viewModel.setSyncInterval(minutes) },
-                        enabled = state.settings.notificationsEnabled,
-                        label = { Text(stringResource(R.string.settings_minutes, minutes)) },
-                    )
-                }
-            }
-
-            TextButton(
-                onClick = {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
-                    )
-                },
-                modifier = Modifier.padding(horizontal = 8.dp),
-            ) {
-                Text(stringResource(R.string.settings_open_system_notifications))
-            }
-
-            HorizontalDivider()
-            SectionTitle(stringResource(R.string.settings_section_appearance))
-
-            Text(
-                text = stringResource(R.string.settings_app_icon),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                AppIcon.entries.forEach { icon ->
-                    FilterChip(
-                        selected = state.appIcon == icon,
-                        onClick = { viewModel.setAppIcon(icon) },
-                        label = { Text(stringResource(icon.labelRes())) },
-                        leadingIcon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(icon.swatch()),
-                            )
-                        },
-                    )
-                }
-            }
-            Text(
-                text = stringResource(R.string.settings_app_icon_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-            )
-
-            HorizontalDivider()
-            SectionTitle(stringResource(R.string.settings_section_privacy))
-
-            SwitchRow(
-                title = stringResource(R.string.settings_avatars),
-                description = stringResource(R.string.settings_avatars_description),
-                checked = state.settings.showAvatars,
-                onCheckedChange = viewModel::setShowAvatars,
-            )
-            SwitchRow(
-                title = stringResource(R.string.settings_author_email),
-                description = stringResource(R.string.settings_author_email_description),
-                checked = state.settings.showAuthorEmail,
-                onCheckedChange = viewModel::setShowAuthorEmail,
-            )
-
-            HorizontalDivider()
-            TextButton(
-                onClick = { showSignOutDialog = true },
-                modifier = Modifier.padding(16.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.action_sign_out),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
+            },
+            onSignOutRequest = { showSignOutDialog = true },
+            modifier = Modifier.padding(innerPadding),
+        )
     }
 
     if (showSignOutDialog) {
@@ -239,6 +119,163 @@ fun SettingsScreen(
                 }
             },
         )
+    }
+}
+
+/**
+ * Der Inhalt ohne ViewModel und ohne Zugriff auf das System, damit er sich
+ * ohne Hilt prüfen lässt - wie bei den übrigen Bildschirmen.
+ */
+@Composable
+internal fun SettingsContent(
+    state: SettingsUiState,
+    intervalOptions: List<Int>,
+    onNotificationsEnabled: (Boolean) -> Unit,
+    onSyncInterval: (Int) -> Unit,
+    onAppIcon: (AppIcon) -> Unit,
+    onShowAvatars: (Boolean) -> Unit,
+    onShowAuthorEmail: (Boolean) -> Unit,
+    onOpenSystemNotifications: () -> Unit,
+    onSignOutRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        SectionTitle(stringResource(R.string.settings_section_account))
+        state.instance?.let { instance ->
+            InfoRow(stringResource(R.string.settings_blog), instance.displayName)
+            InfoRow(stringResource(R.string.settings_url), instance.siteUrl)
+            InfoRow(stringResource(R.string.settings_user), instance.username)
+            InfoRow(
+                stringResource(R.string.settings_plugin),
+                stringResource(
+                    if (instance.hasBridgePlugin) {
+                        R.string.settings_plugin_detected
+                    } else {
+                        R.string.settings_plugin_missing
+                    },
+                ),
+            )
+            if (!instance.canModerate) {
+                Text(
+                    text = stringResource(R.string.settings_no_moderation_rights),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
+
+        HorizontalDivider()
+        SectionTitle(stringResource(R.string.settings_section_notifications))
+
+        SwitchRow(
+            title = stringResource(R.string.settings_notifications),
+            description = stringResource(R.string.settings_notifications_description),
+            checked = state.settings.notificationsEnabled,
+            onCheckedChange = onNotificationsEnabled,
+        )
+
+        Text(
+            text = stringResource(R.string.settings_interval),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+        )
+        // FlowRow statt Row: Die Auswahl hat mehr Einträge, als nebeneinander
+        // passen. In einer Row bliebe für den letzten Chip fast keine
+        // Breite übrig, sein Text bräche senkrecht um und zöge die ganze
+        // Zeile in die Länge.
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            intervalOptions.forEach { minutes ->
+                FilterChip(
+                    selected = state.settings.syncIntervalMinutes == minutes,
+                    onClick = { onSyncInterval(minutes) },
+                    enabled = state.settings.notificationsEnabled,
+                    label = { Text(stringResource(R.string.settings_minutes, minutes)) },
+                )
+            }
+        }
+
+        TextButton(
+            onClick = onOpenSystemNotifications,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            Text(stringResource(R.string.settings_open_system_notifications))
+        }
+
+        HorizontalDivider()
+        SectionTitle(stringResource(R.string.settings_section_appearance))
+
+        Text(
+            text = stringResource(R.string.settings_app_icon),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            AppIcon.entries.forEach { icon ->
+                FilterChip(
+                    selected = state.appIcon == icon,
+                    onClick = { onAppIcon(icon) },
+                    label = { Text(stringResource(icon.labelRes())) },
+                    leadingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(icon.swatch()),
+                        )
+                    },
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.settings_app_icon_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+        )
+
+        HorizontalDivider()
+        SectionTitle(stringResource(R.string.settings_section_privacy))
+
+        SwitchRow(
+            title = stringResource(R.string.settings_avatars),
+            description = stringResource(R.string.settings_avatars_description),
+            checked = state.settings.showAvatars,
+            onCheckedChange = onShowAvatars,
+        )
+        SwitchRow(
+            title = stringResource(R.string.settings_author_email),
+            description = stringResource(R.string.settings_author_email_description),
+            checked = state.settings.showAuthorEmail,
+            onCheckedChange = onShowAuthorEmail,
+        )
+
+        HorizontalDivider()
+        TextButton(
+            onClick = onSignOutRequest,
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.action_sign_out),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 

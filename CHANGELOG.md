@@ -106,6 +106,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Die Auswahl des Prüfintervalls stand in einer einzeiligen Reihe. Für die
+  fünfte Option blieben nur 39 dp Breite, ihr Text brach senkrecht um und riss
+  eine hohe leere Fläche in die Einstellungen; bedienbar war sie damit auch
+  nicht mehr. Die Chips brechen jetzt um.
 - Ein nachträglich installiertes Plugin `commentator-bridge` wurde nie
   bemerkt. Bridge-Erkennung, Moderationsrecht und Blogname stammten
   ausschließlich aus dem Moment der Anmeldung und wurden danach nie wieder
