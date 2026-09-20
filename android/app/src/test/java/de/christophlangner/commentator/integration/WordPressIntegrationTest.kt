@@ -21,6 +21,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.security.cert.X509Certificate
@@ -46,6 +48,10 @@ import javax.net.ssl.X509TrustManager
  *   ./gradlew :app:testDebugUnitTest --tests '*WordPressIntegrationTest'
  * ```
  */
+// Robolectric, weil das Mapping der Antwort die Android-Plattform für die
+// Umwandlung von HTML in reinen Text verwendet - genau der Weg, den die App
+// später auch geht.
+@RunWith(RobolectricTestRunner::class)
 class WordPressIntegrationTest {
 
     private val siteUrl: String? = System.getenv("COMMENTATOR_IT_URL")
@@ -158,24 +164,36 @@ class WordPressIntegrationTest {
         val parent = (pending as Outcome.Success).value.body.firstOrNull()
         assumeTrue("Kein offener Kommentar vorhanden", parent != null)
 
+        // Der Inhalt muss je Lauf eindeutig sein: WordPress weist wortgleiche
+        // Kommentare mit `comment_duplicate` ab. Ein fester Text liesse den
+        // Test also genau einmal durchgehen.
+        val marker = "Antwort aus dem Integrationstest ${System.currentTimeMillis()}"
+
         val created = executor.call {
             api.createComment(
                 CreateCommentRequest(
                     post = parent!!.post,
                     parent = parent.id,
-                    content = "Antwort aus dem Integrationstest",
+                    content = marker,
                     status = CommentStatus.APPROVED.writeValue,
                 ),
             )
         }
 
+        assertTrue(
+            "Antwort konnte nicht veröffentlicht werden: ${created.errorOrNull}",
+            created is Outcome.Success,
+        )
         val reply = CommentMapper.toDomain((created as Outcome.Success).value.body, "it")
-        assertEquals(parent!!.id, reply.parentId)
-        assertTrue(reply.isReply)
 
-        // Aufräumen: Die Antwort wird endgültig entfernt.
-        val deleted = executor.callIgnoringBody { api.deleteComment(reply.id, force = true) }
-        assertTrue(deleted is Outcome.Success)
+        try {
+            assertEquals(parent!!.id, reply.parentId)
+            assertTrue(reply.isReply)
+        } finally {
+            // Auch bei fehlgeschlagener Zusicherung aufräumen - sonst bleibt
+            // der Kommentar liegen und der nächste Lauf scheitert am Duplikat.
+            executor.callIgnoringBody { api.deleteComment(reply.id, force = true) }
+        }
     }
 
     @Test

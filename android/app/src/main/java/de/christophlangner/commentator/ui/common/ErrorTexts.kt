@@ -48,6 +48,12 @@ object ErrorTexts {
 
         is AppError.WordPress -> when (error.code) {
             "empty_reply" -> resources.getString(R.string.error_empty_reply)
+            // WordPress weist wortgleiche Kommentare ab. Das trifft einen
+            // Moderator, der mehrfach dieselbe kurze Antwort schreibt.
+            "comment_duplicate" -> resources.getString(R.string.error_comment_duplicate)
+            // Und es bremst schnell aufeinanderfolgende Kommentare desselben
+            // Autors aus - beim Abarbeiten einer Warteschlange leicht erreicht.
+            "comment_flood" -> resources.getString(R.string.error_comment_flood)
             "rest_comment_invalid_id" -> resources.getString(R.string.error_comment_gone)
             "rest_comment_trash_disabled" -> resources.getString(R.string.error_trash_disabled)
             else -> resources.getString(R.string.error_wordpress, error.code)

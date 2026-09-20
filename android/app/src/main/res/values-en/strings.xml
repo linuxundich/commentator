@@ -148,6 +148,8 @@
     <string name="error_malformed_response">The server response could not be read.</string>
     <string name="error_offline_write_blocked">Offline – moderation is unavailable.</string>
     <string name="error_empty_reply">The reply cannot be empty.</string>
+    <string name="error_comment_duplicate">This exact reply has already been published. WordPress does not accept it twice.</string>
+    <string name="error_comment_flood">Too quick. WordPress briefly throttles consecutive comments – please wait a moment.</string>
     <string name="error_trash_disabled">Trash is disabled in this installation.</string>
     <string name="error_wordpress">WordPress reports an error (%1$s).</string>
     <string name="error_unknown">Unexpected error (%1$s).</string>

@@ -167,6 +167,8 @@
     <string name="error_malformed_response">Die Antwort des Servers war nicht lesbar.</string>
     <string name="error_offline_write_blocked">Offline – Moderation ist derzeit nicht möglich.</string>
     <string name="error_empty_reply">Die Antwort darf nicht leer sein.</string>
+    <string name="error_comment_duplicate">Diese Antwort wurde wortgleich schon veröffentlicht. WordPress lässt sie kein zweites Mal zu.</string>
+    <string name="error_comment_flood">Zu schnell hintereinander. WordPress bremst aufeinanderfolgende Kommentare kurz aus – bitte einen Moment warten.</string>
     <string name="error_trash_disabled">Der Papierkorb ist in dieser Installation deaktiviert.</string>
     <string name="error_wordpress">WordPress meldet einen Fehler (%1$s).</string>
     <string name="error_unknown">Unerwarteter Fehler (%1$s).</string>
