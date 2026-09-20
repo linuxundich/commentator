@@ -129,6 +129,51 @@ Was fehlt, ist die Oberfläche.
 
 ---
 
+## Moderationshilfen
+
+Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
+Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
+geprüft, die Abrufe sind belegt.
+
+Vorgeschlagene Reihenfolge: Autorenkontext und Spam-Signale zusammen - beide
+sind rein additiv in der Detailansicht und brauchen kein Plugin -, danach die
+Zählungen an den Filtern, dann die Textbausteine. „Spam leeren" und das
+Sperren von Absendern erst, wenn das Plugin ohnehin angefasst wird.
+
+- [ ] **P1** Autorenkontext in der Detailansicht
+      *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
+      die Frage, die bei fast jedem offenen Kommentar zuerst kommt. Die
+      Kern-API reicht dafür, ein Plugin ist nicht nötig:*
+      `GET /wp/v2/comments?author_email=<adresse>&status=approve&per_page=1`
+      *Die Zahl steht in `X-WP-Total`, der Rumpf wird nicht gebraucht. Ein
+      Tipp auf den Hinweis könnte die bisherigen Kommentare zeigen.*
+      *Datenschutz: Die Adresse holt die App ohnehin mit `context=edit`. Die
+      reine Anzahl ist weniger heikel als die Adresse selbst und sollte
+      deshalb unabhängig von der Einstellung „E-Mail anzeigen" sichtbar sein.*
+- [ ] **P1** Spam-Signale kennzeichnen, ohne zu urteilen
+      *Rein lokal aus dem bereits zwischengespeicherten HTML, ohne zusätzliche
+      Abrufe: Anzahl der Links im Kommentar (die beste Einzelheuristik),
+      Erstkommentator, Text identisch zu einem anderen offenen Kommentar.
+      Ein Hinweis wie „3 Links" genügt - die App soll kennzeichnen, nicht
+      entscheiden.*
+- [ ] **P2** Absender dauerhaft sperren
+      *Adresse oder Domain in WordPress' `disallowed_keys` eintragen, statt
+      denselben Absender täglich erneut als Spam zu markieren.*
+      *Braucht das Plugin: `wp/v2/settings` gibt die Moderationsoptionen
+      nicht heraus - geprüft, die Antwort enthält kein einziges Feld zu
+      Kommentarmoderation oder Sperrlisten.*
+- [ ] **P2** „Spam leeren" und „Papierkorb leeren"
+      *Der häufige Sammelfall braucht keine Mehrfachauswahl, sondern einen
+      Knopf. Die Kern-API kennt keinen Sammelendpunkt, es würden N
+      Einzellöschungen; ein Endpunkt im Plugin macht daraus eine Anfrage.
+      Sinnvoller Anlass, das Plugin für etwas zu nutzen, das es wirklich
+      besser kann als die Kern-API.*
+- [ ] **P2** Textbausteine für wiederkehrende Antworten
+      *Kein API-Thema, reine lokale Ablage. „Danke für den Hinweis, ist
+      korrigiert." tippt man sonst zum zwanzigsten Mal.*
+
+---
+
 ## Suche und Filter
 
 - [ ] **P1** Kommentarsuche über den `search`-Parameter der API
@@ -144,8 +189,11 @@ Was fehlt, ist die Oberfläche.
 ## Weiteres
 
 - [ ] **P2** Sammelmoderation mit Mehrfachauswahl
-- [ ] **P2** Kommentarzahlen je Filter anzeigen (Endpunkt `summary` existiert
-      bereits im Plugin, die Oberfläche nutzt ihn noch nicht)
+- [ ] **P1** Kommentarzahlen je Filter anzeigen - „Offen (3)" statt „Offen"
+      *Anders als hier ursprünglich vermerkt hängt das nicht am Plugin: Vier
+      Abrufe mit `per_page=1` liefern alle Zahlen aus `X-WP-Total`, ohne
+      nennenswertes Datenvolumen. Der Endpunkt `summary` des Plugins macht
+      daraus einen Abruf statt vier - eine Verbesserung, keine Voraussetzung.*
 - [ ] **P3** Statistik über Kommentaraufkommen und Spam-Anteil
 - [ ] **P3** Kommentar im Browser öffnen
 - [ ] **P3** Widget mit der Anzahl offener Kommentare
