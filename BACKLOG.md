@@ -212,5 +212,12 @@ erst, wenn das Plugin ohnehin angefasst wird.
       *Das Paket ist auf 1.7.8 eingefroren.*
 - [ ] **P2** Prüfen, ob `android.newDsl` und die Variant-API-Umstellung für
       AGP 10 Anpassungen erfordern
+- [ ] **P3** Neue Schnittstellen aus API 37 im Blick behalten
+      *Durchgesehen am 21.09.2026: Der Zuwachs betrifft fast ausschließlich
+      Bereiche ohne Bezug zu dieser App (App Functions, Health Connect, HPKE,
+      Ranging, Photo Picker, serielle Schnittstellen). Naheliegend wären
+      allenfalls `Notification.createSemanticStyleAnnotation` und die
+      Handoff-Schnittstellen in `Activity`; beides bringt hier derzeit keinen
+      erkennbaren Gewinn.*
 - [ ] **P3** Signaturkonfiguration und reproduzierbarer Release-Build
 - [ ] **P3** Continuous Integration für Build, Lint und Tests

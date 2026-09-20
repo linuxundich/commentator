@@ -32,6 +32,11 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
+- Sprachwahl je App: Die App erscheint in den Systemeinstellungen unter
+  „Sprachen der App" und lässt sich dort unabhängig vom Systemgebietsschema
+  auf Deutsch oder Englisch stellen (ab Android 13). Die Liste der Sprachen
+  wird beim Bauen aus den vorhandenen Ressourcen erzeugt, damit eine neue
+  Übersetzung nicht vergessen werden kann.
 - Anzahl der Kommentare an jedem Filter, etwa „Offen · 3". Mit dem Plugin
   zwei Abrufe, ohne Plugin fünf, von denen jeweils nur die Kopfzeile
   `X-WP-Total` ausgewertet wird. Die Zahlen ziehen nach jeder Moderation nach.

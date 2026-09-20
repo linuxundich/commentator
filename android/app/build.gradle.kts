@@ -83,6 +83,14 @@ android {
         buildConfig = true
     }
 
+    androidResources {
+        // Erzeugt locales_config.xml aus den vorhandenen values-Ordnern.
+        // Damit taucht die App in den Systemeinstellungen unter „Sprachen der
+        // App" auf. Bewusst generiert statt von Hand gepflegt: Eine neue
+        // Uebersetzung wird sonst irgendwann vergessen.
+        generateLocaleConfig = true
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
