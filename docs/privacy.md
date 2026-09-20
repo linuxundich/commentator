@@ -58,9 +58,12 @@ Maßnahmen gegen unbeabsichtigtes Preisgeben:
 * Das HTTP-Logging existiert nur im Debug-Build – die Bibliothek ist in
   Release-Builds gar nicht Teil der Anwendung – und redigiert dort
   `Authorization`.
-* Der Einrichtungsbildschirm setzt `FLAG_SECURE`, solange er sichtbar ist.
-  Damit erscheint ein eingegebenes Application Password weder in Screenshots
-  noch in der App-Übersicht.
+* Der Schritt zur manuellen Eingabe des Application Passwords setzt
+  `FLAG_SECURE`. Damit erscheint ein eingegebenes Passwort weder in
+  Screenshots noch in der App-Übersicht. Bewusst nur dieser eine Schritt:
+  Adresseingabe und Browser-Weg zeigen nichts Schützenswertes, und eine
+  App, die sich generell nicht fotografieren lässt, wäre ohne Gewinn
+  lästig.
 * `android:allowBackup="false"` und leere Extraktionsregeln: Es wird nichts in
   ein Cloud-Backup übernommen und nichts auf ein neues Gerät übertragen.
 * Das Application Password wird aus dem Deep-Link-Intent gelesen und sofort

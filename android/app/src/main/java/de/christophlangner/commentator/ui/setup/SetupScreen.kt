@@ -1,7 +1,5 @@
 package de.christophlangner.commentator.ui.setup
 
-import android.app.Activity
-import android.view.WindowManager
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +17,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -33,6 +30,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
+import de.christophlangner.commentator.ui.common.ScreenshotProtection
 import de.christophlangner.commentator.ui.common.asMessage
 
 /**
@@ -51,14 +49,10 @@ fun SetupScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Auf diesem Bildschirm kann ein Application Password sichtbar sein.
-    // FLAG_SECURE verhindert Screenshots und Vorschaubilder in der
-    // App-Übersicht, solange er angezeigt wird.
-    DisposableEffect(Unit) {
-        val window = (context as? Activity)?.window
-        window?.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-        onDispose { window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
+    // Nur der Schritt mit manueller Eingabe zeigt ein Application Password im
+    // Klartext. Adresseingabe und Browser-Weg enthalten nichts Schützenswertes
+    // und bleiben deshalb ganz normal fotografierbar.
+    ScreenshotProtection(enabled = state.step == SetupStep.ManualCredentials)
 
     LaunchedEffect(state.isDone) {
         if (state.isDone) onSetupComplete()

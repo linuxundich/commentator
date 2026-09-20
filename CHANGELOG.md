@@ -81,7 +81,9 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   der Anwendung.
 - Typen für Zugangsdaten geben ihren Wert über `toString()` nicht preis, was
   durch Unit-Tests abgesichert ist.
-- Der Einrichtungsbildschirm setzt `FLAG_SECURE`, solange er sichtbar ist.
+- `FLAG_SECURE` im Schritt zur manuellen Eingabe des Application Passwords,
+  gekapselt in `ScreenshotProtection` und durch Tests abgesichert - auch
+  dahingehend, dass das Flag beim Verlassen wieder entfernt wird.
 - `allowBackup="false"` und leere Extraktionsregeln verhindern, dass
   Zugangsdaten in Cloud-Backups oder auf ein neues Gerät gelangen.
 - Das Application Password wird nicht als Navigationsargument weitergereicht,

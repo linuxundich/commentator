@@ -286,8 +286,11 @@ Da `EncryptedSharedPreferences` deprecated ist, verschlüsselt die App selbst:
   Exception-Meldungen landet.
 * `android:allowBackup="false"` – der verschlüsselte Zugangsdatensatz wird
   nicht über Cloud-Backups exportiert.
-* `FLAG_SECURE` ist auf dem Einrichtungsbildschirm gesetzt, damit das
-  Application Password nicht in Screenshots oder der App-Übersicht landet.
+* `FLAG_SECURE` ist im Schritt zur manuellen Eingabe des Application
+  Passwords gesetzt, damit dieses nicht in Screenshots oder der
+  App-Übersicht landet. Gekapselt in `ScreenshotProtection`, damit die
+  Zusage prüfbar ist - einschließlich der Gegenrichtung, dass das Flag beim
+  Verlassen wieder verschwindet.
 
 ### Abgelaufene oder widerrufene Zugangsdaten
 

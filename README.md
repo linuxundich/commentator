@@ -377,8 +377,10 @@ docs/                   Architektur, API-Nutzung, Datenschutz
   und redigiert dort die `Authorization`-Kopfzeile. Die Typen für
   Zugangsdaten geben ihren Wert über `toString()` nicht preis; zwei Unit-Tests
   sichern das ab.
-* **Keine Zugangsdaten in Screenshots.** Der Einrichtungsbildschirm setzt
-  `FLAG_SECURE`.
+* **Keine Zugangsdaten in Screenshots.** Der Schritt zur manuellen Eingabe
+  des Application Passwords setzt `FLAG_SECURE`; dort verweigert Android
+  Screenshots und zeigt in der App-Übersicht keine Vorschau. Der übrige
+  Einrichtungsablauf und die gesamte App bleiben fotografierbar.
 * **Keine Zugangsdaten in Backups.** `allowBackup="false"` und leere
   Extraktionsregeln.
 * **Keine Zugangsdaten im Repository.** Weder Keystores noch
