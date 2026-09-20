@@ -7,6 +7,7 @@ import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 /**
  * Zugriff auf Kommentare einer Instanz.
@@ -33,6 +34,15 @@ interface CommentRepository {
 
     /** Ob für diesen Filter noch weitere Seiten geladen werden können. */
     fun hasMorePages(instanceId: String, filter: CommentFilter): Boolean
+
+    /**
+     * Wann dieser Filter zuletzt erfolgreich vom Server geholt wurde, oder
+     * `null`, wenn noch nie.
+     *
+     * Damit kann die Oberfläche beim Umschalten entscheiden, ob sich ein
+     * erneuter Abruf überhaupt lohnt.
+     */
+    fun lastRefreshAt(instanceId: String, filter: CommentFilter): Instant?
 
     /** Holt einen einzelnen Kommentar frisch vom Server, etwa nach einem Deep Link. */
     suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment>

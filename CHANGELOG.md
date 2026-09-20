@@ -166,6 +166,15 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Umschalten zwischen den Filtern kostet keine Netzanfragen mehr, solange der
+  Stand jünger als zwei Minuten ist. Zuvor löste jeder Tipp auf einen Filter
+  bis zu neun Anfragen aus – Liste, Beitragstitel, Rechteabfrage und
+  Zählungen –, obwohl sich beim reinen Umschalten nichts davon ändern kann.
+  Gemessen: vorher 7 bis 9 Anfragen je Wechsel, jetzt 2 beim ersten Besuch
+  eines Filters und 0 bei jedem weiteren. Ausdrückliches Aktualisieren holt
+  weiterhin alles.
+- Bilder werden auf der Platte zwischengespeichert. Blog-Symbol und Avatare
+  wurden zuvor nach jedem Neustart neu geladen.
 - Version und Buildnummer kommen aus Git statt aus fest eingetragenen Werten:
   die Buildnummer aus der Anzahl der Commits, der Versionsname aus dem
   jüngsten Tag beziehungsweise aus Basisversion und Commit. Ohne Git greifen

@@ -49,6 +49,15 @@ class DefaultCommentRepository @Inject constructor(
     private data class PageState(val nextPage: Int, val totalPages: Int)
 
     private val paging = ConcurrentHashMap<String, PageState>()
+
+    /**
+     * Wann ein Filter zuletzt vom Server kam.
+     *
+     * Bewusst nur im Arbeitsspeicher: Nach einem Neustart soll ohnehin
+     * einmal frisch geladen werden. Persistieren wuerde nur eine Entscheidung
+     * verewigen, die dann falsch waere.
+     */
+    private val lastRefresh = ConcurrentHashMap<String, Instant>()
     private val syncing = ConcurrentHashMap<String, Boolean>()
 
     override fun observeComments(instanceId: String, filter: CommentFilter): Flow<List<Comment>> =
@@ -91,6 +100,7 @@ class DefaultCommentRepository @Inject constructor(
                     paging[pageKey(instanceId, filter)] =
                         PageState(nextPage = 2, totalPages = result.value.totalPages)
                     resolvePostTitles(instanceId, api, entities)
+                    lastRefresh[pageKey(instanceId, filter)] = Instant.now()
                     recordSuccessfulSync(instanceId)
                     Outcome.Success(Unit)
                 }
@@ -201,6 +211,9 @@ class DefaultCommentRepository @Inject constructor(
         }
         return Outcome.Success(counts)
     }
+
+    override fun lastRefreshAt(instanceId: String, filter: CommentFilter): Instant? =
+        lastRefresh[pageKey(instanceId, filter)]
 
     override suspend fun emptyStatus(
         instanceId: String,

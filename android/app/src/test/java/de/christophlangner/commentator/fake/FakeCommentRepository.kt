@@ -66,6 +66,11 @@ class FakeCommentRepository : CommentRepository {
 
     override fun hasMorePages(instanceId: String, filter: CommentFilter): Boolean = morePages
 
+    /** Was `lastRefreshAt` meldet; `null` heisst "noch nie geholt". */
+    var lastRefreshAt: Instant? = null
+
+    override fun lastRefreshAt(instanceId: String, filter: CommentFilter): Instant? = lastRefreshAt
+
     /** Was eine Sammelloeschung meldet. */
     var emptyResult: EmptyResult = EmptyResult(deleted = 0, remaining = 0)
     val emptied = mutableListOf<CommentFilter>()

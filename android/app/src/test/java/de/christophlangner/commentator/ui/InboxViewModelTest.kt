@@ -21,6 +21,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import java.time.Duration
+import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 
@@ -179,6 +181,76 @@ class InboxViewModelTest {
             advanceUntilIdle()
 
             assertTrue(comments.countCalls > before)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `frisch geholter Filter wird beim Umschalten nicht erneut geladen`() = runTest {
+        // Der eigentliche Zweck: Umschalten soll sofort wirken, statt jedes
+        // Mal bis zu neun Anfragen auszuloesen.
+        comments.lastRefreshAt = Instant.now()
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            // Der erste Lauf holt immer; gemessen wird, was das Umschalten
+            // zusaetzlich kostet.
+            val afterFirstRun = comments.refreshCount
+
+            model.setFilter(CommentFilter.SPAM)
+            advanceUntilIdle()
+
+            assertEquals(afterFirstRun, comments.refreshCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `ein veralteter Filter wird geholt`() = runTest {
+        comments.lastRefreshAt = Instant.now().minus(Duration.ofMinutes(10))
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            assertTrue(comments.refreshCount >= 1)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `beim Umschalten werden Rechte nicht neu bewertet`() = runTest {
+        // Rechte und Bridge-Erkennung gehoeren nicht zum Filter; sie beim
+        // Umschalten mitzuholen war die Haelfte der ueberfluessigen Anfragen.
+        comments.lastRefreshAt = null
+        val model = viewModel()
+        model.state.test {
+            advanceUntilIdle()
+            val before = auth.capabilitiesRefreshes
+
+            model.setFilter(CommentFilter.SPAM)
+            advanceUntilIdle()
+
+            assertEquals(before, auth.capabilitiesRefreshes)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `ausdrueckliches Aktualisieren holt trotzdem alles`() = runTest {
+        comments.lastRefreshAt = Instant.now()
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            val before = auth.capabilitiesRefreshes
+
+            val afterFirstRun = comments.refreshCount
+            model.refresh()
+            advanceUntilIdle()
+
+            assertEquals(afterFirstRun + 1, comments.refreshCount)
+            assertTrue(auth.capabilitiesRefreshes > before)
             cancelAndIgnoreRemainingEvents()
         }
     }

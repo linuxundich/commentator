@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 
@@ -98,6 +99,9 @@ class InboxViewModel @Inject constructor(
 
     private val filter = MutableStateFlow(CommentFilter.PENDING)
     private val transient = MutableStateFlow(Transient())
+
+    /** Ob Rechte und Zaehlungen in diesem Lauf schon einmal geholt wurden. */
+    private var siteDataLoaded = false
 
     private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 4)
     val events: SharedFlow<Event> = _events.asSharedFlow()
@@ -177,30 +181,67 @@ class InboxViewModel @Inject constructor(
     )
 
     init {
-        // Beim Start und bei jedem Filterwechsel einmal aktualisieren. Die
-        // zwischengespeicherte Liste ist währenddessen bereits sichtbar.
         viewModelScope.launch {
             combine(instance, filter, ::Pair)
                 .distinctUntilChanged()
-                .collect { (instance, _) ->
-                    if (instance != null) refresh()
+                .collect { (instance, filter) ->
+                    if (instance != null) refreshIfStale(instance.id, filter)
                 }
         }
+    }
+
+    /**
+     * Holt einen Filter nur, wenn es sich lohnt.
+     *
+     * Beim Umschalten kann sich nichts geändert haben, was die App nicht
+     * ohnehin schon weiß: Die Liste steht im Zwischenspeicher, Rechte und
+     * Zählungen gehören nicht zum Filter. Vorher löste jeder Tipp auf einen
+     * Filter bis zu neun Anfragen aus - Liste, Beitragstitel, Rechteabfrage
+     * und Zählungen -, und die Liste flackerte durch den Ladezustand.
+     *
+     * Was gerade erst geholt wurde, bleibt deshalb stehen. Ein ausdrückliches
+     * Aktualisieren umgeht das immer.
+     */
+    private suspend fun refreshIfStale(instanceId: String, filter: CommentFilter) {
+        val lastRefresh = commentRepository.lastRefreshAt(instanceId, filter)
+        val fresh = lastRefresh != null &&
+            Duration.between(lastRefresh, Instant.now()) < FILTER_CACHE_LIFETIME
+        // Der erste Lauf holt auch Rechte und Bridge-Erkennung: Beides kann
+        // sich geaendert haben, seit die App zuletzt lief. Erst die spaeteren
+        // Filterwechsel lassen es aus - da kann es sich nicht geaendert haben.
+        val firstRun = !siteDataLoaded
+        siteDataLoaded = true
+
+        if (fresh && !firstRun) {
+            // Ohne diesen Vermerk bliebe ein Bildschirm, der nie geladen
+            // wurde, im Anfangszustand haengen.
+            transient.update { it.copy(initialLoadDone = true) }
+            return
+        }
+        refresh(withSiteData = firstRun)
     }
 
     fun setFilter(newFilter: CommentFilter) {
         filter.value = newFilter
     }
 
-    fun refresh() {
+    /** Vom Benutzer ausgeloest: holt alles, auch Rechte und Zaehlungen. */
+    fun refresh() = refresh(withSiteData = true)
+
+    private fun refresh(withSiteData: Boolean) {
         val instanceId = instance.value?.id ?: return
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, error = null) }
             val outcome = commentRepository.refresh(instanceId, filter.value)
-            // Zieht nebenbei nach, was sich am Blog geändert hat - etwa ein
-            // nachträglich installiertes Bridge-Plugin. Ein Fehler hier darf
-            // die Liste nicht beeinflussen.
-            authRepository.refreshSiteCapabilities()
+
+            if (withSiteData) {
+                // Zieht nebenbei nach, was sich am Blog geändert hat - etwa ein
+                // nachträglich installiertes Bridge-Plugin. Ein Fehler hier darf
+                // die Liste nicht beeinflussen. Beim blossen Umschalten hat sich
+                // daran nichts geaendert, deshalb entfaellt es dort.
+                authRepository.refreshSiteCapabilities()
+            }
+
             transient.update {
                 it.copy(
                     isRefreshing = false,
@@ -208,7 +249,8 @@ class InboxViewModel @Inject constructor(
                     error = outcome.errorOrNull,
                 )
             }
-            loadCounts()
+
+            if (withSiteData || transient.value.counts.isEmpty()) loadCounts()
         }
     }
 
@@ -232,6 +274,17 @@ class InboxViewModel @Inject constructor(
         if (outcome is Outcome.Success && outcome.value.isNotEmpty()) {
             transient.update { it.copy(counts = outcome.value) }
         }
+    }
+
+    private companion object {
+        /**
+         * Wie lange ein geholter Filter als frisch gilt.
+         *
+         * Zwei Minuten sind lang genug, um Hin- und Herwechseln sofort
+         * wirken zu lassen, und kurz genug, dass niemand laenger auf einem
+         * veralteten Stand sitzt, ohne es zu merken.
+         */
+        val FILTER_CACHE_LIFETIME: Duration = Duration.ofMinutes(2)
     }
 
     private fun signalsFor(comments: List<Comment>): Map<Long, CommentSignals> {
