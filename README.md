@@ -458,6 +458,14 @@ ist – einen direkten Weg, das Startsymbol zur Laufzeit zu ändern, kennt Andro
 nicht. Beim Umschalten legt der Startbildschirm den Eintrag neu an; ein selbst
 platziertes Symbol muss danach unter Umständen neu abgelegt werden.
 
+Für einen Play-Store-Eintrag liegt das Symbol zusätzlich als 512 × 512 px
+großes PNG unter [`store/play/`](store/play/) – Google Play verlangt dort ein
+anderes Format als Android für das Startsymbol. Die Prüfung gegen beide
+Spezifikationen ist in [`store/play/README.md`](store/play/README.md)
+festgehalten.
+
+![Prüfung gegen die Spezifikationen](docs/assets/icon-play-compliance.png)
+
 Die Quelldateien liegen unter
 [`android/app/src/main/res/drawable/`](android/app/src/main/res/drawable/),
 samt monochromer Variante für themenbezogene Symbole ab Android 13.

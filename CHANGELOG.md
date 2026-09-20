@@ -53,6 +53,9 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Benachrichtigungssymbol greift dieselbe Silhouette auf. Es wird keine fremde
   Wort- oder Bildmarke verwendet.
 
+- Play-Store-Symbol als 512 × 512 px großes 32-Bit-PNG unter `store/play/`,
+  geprüft gegen die Spezifikationen für das App-Symbol im Play Store.
+
 **WordPress-Plugin**
 
 - `commentator-bridge` mit den Leseendpunkten `commentator/v1/status` und
