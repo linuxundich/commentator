@@ -71,6 +71,18 @@
     <string name="detail_replies">Antworten</string>
     <string name="detail_not_available">Dieser Kommentar ist nicht verfügbar.</string>
 
+    <!-- Hinweise zum Autor und Auffälligkeiten -->
+    <string name="signal_first_time_author">Kommentiert zum ersten Mal</string>
+    <plurals name="signal_known_author">
+        <item quantity="one">%d freigeschalteter Kommentar bisher</item>
+        <item quantity="other">%d freigeschaltete Kommentare bisher</item>
+    </plurals>
+    <plurals name="signal_links">
+        <item quantity="one">%d Link</item>
+        <item quantity="other">%d Links</item>
+    </plurals>
+    <string name="signal_duplicate">Text kommt mehrfach vor</string>
+
     <!-- Antwort -->
     <string name="reply_label">Antwort</string>
     <string name="reply_placeholder">Antwort schreiben…</string>

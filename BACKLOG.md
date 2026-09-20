@@ -135,12 +135,11 @@ Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
 Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
 geprüft, die Abrufe sind belegt.
 
-Vorgeschlagene Reihenfolge: Autorenkontext und Spam-Signale zusammen - beide
-sind rein additiv in der Detailansicht und brauchen kein Plugin -, danach die
-Zählungen an den Filtern, dann die Textbausteine. „Spam leeren" und das
-Sperren von Absendern erst, wenn das Plugin ohnehin angefasst wird.
+Die ersten beiden Punkte sind umgesetzt. Als Nächstes sind die Zählungen an
+den Filtern und die Textbausteine an der Reihe; „Spam leeren" und das Sperren
+von Absendern erst, wenn das Plugin ohnehin angefasst wird.
 
-- [ ] **P1** Autorenkontext in der Detailansicht
+- [x] **P1** Autorenkontext in der Detailansicht
       *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
       die Frage, die bei fast jedem offenen Kommentar zuerst kommt. Die
       Kern-API reicht dafür, ein Plugin ist nicht nötig:*
@@ -150,7 +149,7 @@ Sperren von Absendern erst, wenn das Plugin ohnehin angefasst wird.
       *Datenschutz: Die Adresse holt die App ohnehin mit `context=edit`. Die
       reine Anzahl ist weniger heikel als die Adresse selbst und sollte
       deshalb unabhängig von der Einstellung „E-Mail anzeigen" sichtbar sein.*
-- [ ] **P1** Spam-Signale kennzeichnen, ohne zu urteilen
+- [x] **P1** Spam-Signale kennzeichnen, ohne zu urteilen
       *Rein lokal aus dem bereits zwischengespeicherten HTML, ohne zusätzliche
       Abrufe: Anzahl der Links im Kommentar (die beste Einzelheuristik),
       Erstkommentator, Text identisch zu einem anderen offenen Kommentar.

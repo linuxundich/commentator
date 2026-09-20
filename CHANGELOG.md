@@ -32,6 +32,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
+- Autorenkontext in der Detailansicht: „Kommentiert zum ersten Mal" oder die
+  Zahl der bisher freigeschalteten Kommentare dieser Adresse. Kostet eine
+  Anfrage, von der nur die Kopfzeile `X-WP-Total` ausgewertet wird. Scheitert
+  sie, bleibt der Hinweis aus.
+- Hinweise auf Auffälligkeiten an Kommentaren: Anzahl der Links und Texte, die
+  mehrfach vorkommen. Rein lokal aus dem Zwischenspeicher, ohne zusätzlichen
+  Abruf. Die App kennzeichnet nur und stuft nichts selbsttätig als Spam ein.
 - Hintergrundprüfung auf neue Kommentare über WorkManager, mit einstellbarem
   Intervall.
 - Benachrichtigungen mit drei getrennten Kanälen, die jeweils tatsächlich

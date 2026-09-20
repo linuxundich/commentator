@@ -160,6 +160,21 @@ class DefaultCommentRepository @Inject constructor(
         resolvePostTitles(instanceId, api, entities)
     }
 
+    override suspend fun countApprovedByAuthor(
+        instanceId: String,
+        authorEmail: String,
+        excludeCommentId: Long,
+    ): Outcome<Int> {
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+        return executor.call {
+            api.countCommentsOfAuthor(
+                authorEmail = authorEmail,
+                status = CommentStatus.APPROVED.queryValue,
+                exclude = excludeCommentId,
+            )
+        }.map { it.totalItems }
+    }
+
     override suspend fun moderate(
         instanceId: String,
         commentId: Long,

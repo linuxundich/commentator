@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import de.christophlangner.commentator.domain.model.Comment
+import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.fake.testComment
@@ -61,14 +62,63 @@ class CommentDetailScreenTest {
         isOffline: Boolean = false,
         canModerate: Boolean = true,
         isLoading: Boolean = false,
+        signals: CommentSignals = CommentSignals(),
+        approvedByAuthor: Int? = null,
     ) = CommentDetailUiState(
         comment = comment,
         replies = replies,
+        signals = signals,
+        approvedByAuthor = approvedByAuthor,
         isLoading = isLoading,
         showAuthorEmail = showEmail,
         isOffline = isOffline,
         canModerate = canModerate,
     )
+
+    @Test
+    fun `Erstkommentator wird benannt`() {
+        render(stateWith(testComment(1), approvedByAuthor = 0))
+
+        composeRule.onNodeWithText("Kommentiert zum ersten Mal").assertIsDisplayed()
+    }
+
+    @Test
+    fun `bekannter Autor wird mit Anzahl gezeigt`() {
+        render(stateWith(testComment(1), approvedByAuthor = 7))
+
+        composeRule.onNodeWithText("7 freigeschaltete Kommentare bisher").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Einzahl wird richtig gebeugt`() {
+        render(stateWith(testComment(1), approvedByAuthor = 1))
+
+        composeRule.onNodeWithText("1 freigeschalteter Kommentar bisher").assertIsDisplayed()
+    }
+
+    @Test
+    fun `ohne ermittelte Historie steht dort nichts`() {
+        // Scheitert der Abruf, bleibt der Hinweis aus - er darf nicht zu
+        // "Kommentiert zum ersten Mal" verfallen.
+        render(stateWith(testComment(1), approvedByAuthor = null))
+
+        composeRule.onAllNodesWithText("Kommentiert zum ersten Mal")
+            .fetchSemanticsNodes()
+            .let { assertTrue("Hinweis darf nicht erscheinen", it.isEmpty()) }
+    }
+
+    @Test
+    fun `Links und Dubletten werden gemeldet`() {
+        render(
+            stateWith(
+                testComment(1),
+                signals = CommentSignals(linkCount = 3, duplicated = true),
+            ),
+        )
+
+        composeRule.onNodeWithText("3 Links").assertIsDisplayed()
+        composeRule.onNodeWithText("Text kommt mehrfach vor").assertIsDisplayed()
+    }
 
     @Test
     fun `zeigt Autor Datum Beitrag und vollstaendigen Text`() {

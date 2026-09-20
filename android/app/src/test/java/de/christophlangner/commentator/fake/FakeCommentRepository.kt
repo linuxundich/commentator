@@ -65,6 +65,15 @@ class FakeCommentRepository : CommentRepository {
 
     override fun hasMorePages(instanceId: String, filter: CommentFilter): Boolean = morePages
 
+    /** Bisher freigeschaltete Kommentare je Adresse. */
+    val approvedByAuthor = mutableMapOf<String, Int>()
+
+    override suspend fun countApprovedByAuthor(
+        instanceId: String,
+        authorEmail: String,
+        excludeCommentId: Long,
+    ): Outcome<Int> = Outcome.Success(approvedByAuthor[authorEmail] ?: 0)
+
     override suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment> =
         comments.value.firstOrNull { it.id == commentId }
             ?.let { Outcome.Success(it) }

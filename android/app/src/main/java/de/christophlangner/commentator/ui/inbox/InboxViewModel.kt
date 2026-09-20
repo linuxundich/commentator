@@ -8,6 +8,7 @@ import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.WordPressInstance
@@ -53,6 +54,8 @@ data class InboxUiState(
     val lastSync: Instant? = null,
     val error: AppError? = null,
     val showAvatars: Boolean = false,
+    /** Auffaelligkeiten je Kommentar-ID; fehlt ein Eintrag, gibt es nichts zu zeigen. */
+    val signals: Map<Long, CommentSignals> = emptyMap(),
 ) {
     /** Ohne Verbindung, ohne Berechtigung oder mit ungültiger Sitzung wird nicht moderiert. */
     val moderationEnabled: Boolean
@@ -159,6 +162,7 @@ class InboxViewModel @Inject constructor(
             lastSync = environment.lastSync,
             error = transient.error,
             showAvatars = environment.showAvatars,
+            signals = signalsFor(comments),
         )
     }.stateIn(
         scope = viewModelScope,
@@ -199,6 +203,24 @@ class InboxViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * Auffaelligkeiten der geladenen Kommentare.
+     *
+     * Rein lokal aus dem Cache, ohne zusaetzlichen Abruf. Dubletten lassen
+     * sich nur innerhalb des Geladenen erkennen - das genuegt fuer den Fall,
+     * um den es geht: derselbe Text mehrfach in derselben Welle.
+     */
+    private fun signalsFor(comments: List<Comment>): Map<Long, CommentSignals> {
+        if (comments.isEmpty()) return emptyMap()
+        val duplicated = CommentSignals.duplicatedIds(comments)
+        return comments.associate { comment ->
+            comment.id to CommentSignals(
+                linkCount = CommentSignals.linkCountOf(comment.contentHtml),
+                duplicated = comment.id in duplicated,
+            )
+        }.filterValues { it.hasAny }
     }
 
     fun loadMore() {

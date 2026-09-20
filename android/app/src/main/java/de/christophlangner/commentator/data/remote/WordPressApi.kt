@@ -55,6 +55,20 @@ interface WordPressApi {
         @Query("context") context: String = "edit",
     ): Response<CommentDto>
 
+    /**
+     * Zaehlt die Kommentare einer Adresse. Ausgewertet wird allein die
+     * Kopfzeile `X-WP-Total`; der Rumpf wird bewusst klein gehalten.
+     */
+    @GET("wp/v2/comments")
+    suspend fun countCommentsOfAuthor(
+        @Query("author_email") authorEmail: String,
+        @Query("status") status: String,
+        @Query("exclude") exclude: Long,
+        @Query("per_page") perPage: Int = 1,
+        @Query("context") context: String = "edit",
+        @Query("_fields") fields: String = "id",
+    ): Response<List<CommentDto>>
+
     @GET("wp/v2/comments")
     suspend fun listReplies(
         @Query("parent") parentId: Long,

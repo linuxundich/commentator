@@ -36,6 +36,19 @@ interface CommentRepository {
     /** Holt einen einzelnen Kommentar frisch vom Server, etwa nach einem Deep Link. */
     suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment>
 
+    /**
+     * Wie viele Kommentare dieser Adresse bereits freigeschaltet sind, ohne
+     * den angegebenen Kommentar selbst mitzuzaehlen.
+     *
+     * Beantwortet die Frage, die bei fast jedem offenen Kommentar zuerst
+     * kommt: Ist das jemand Bekanntes oder der erste Beitrag ueberhaupt?
+     */
+    suspend fun countApprovedByAuthor(
+        instanceId: String,
+        authorEmail: String,
+        excludeCommentId: Long,
+    ): Outcome<Int>
+
     suspend fun moderate(
         instanceId: String,
         commentId: Long,

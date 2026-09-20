@@ -60,6 +60,18 @@
     <string name="detail_replies">Replies</string>
     <string name="detail_not_available">This comment is not available.</string>
 
+    <!-- Author context and signals -->
+    <string name="signal_first_time_author">Commenting for the first time</string>
+    <plurals name="signal_known_author">
+        <item quantity="one">%d approved comment so far</item>
+        <item quantity="other">%d approved comments so far</item>
+    </plurals>
+    <plurals name="signal_links">
+        <item quantity="one">%d link</item>
+        <item quantity="other">%d links</item>
+    </plurals>
+    <string name="signal_duplicate">Text appears more than once</string>
+
     <string name="reply_label">Reply</string>
     <string name="reply_placeholder">Write a reply…</string>
     <string name="reply_disabled_hint">Replying needs a connection and moderation rights.</string>

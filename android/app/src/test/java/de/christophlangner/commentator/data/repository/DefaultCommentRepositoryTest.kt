@@ -263,6 +263,39 @@ class DefaultCommentRepositoryTest {
     }
 
     @Test
+    fun `Autorenhistorie kommt aus der Kopfzeile`() = runTest {
+        server.enqueue(
+            MockResponse.Builder()
+                .code(200)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("X-WP-Total", "7")
+                .body("[{\"id\":1}]")
+                .build(),
+        )
+
+        val outcome = repository.countApprovedByAuthor(instance.id, "max@example.test", 2)
+
+        assertEquals(7, (outcome as Outcome.Success).value)
+
+        // Der Kommentar selbst darf sich nicht mitzaehlen, sonst gaelte ein
+        // gerade freigeschalteter Erstkommentar als bekannter Autor.
+        val query = server.takeRequest().url
+        assertEquals("max@example.test", query.queryParameter("author_email"))
+        assertEquals("approve", query.queryParameter("status"))
+        assertEquals("2", query.queryParameter("exclude"))
+        assertEquals("1", query.queryParameter("per_page"))
+    }
+
+    @Test
+    fun `fehlende Kopfzeile bedeutet keine Treffer`() = runTest {
+        server.enqueue(jsonResponse("[]"))
+
+        val outcome = repository.countApprovedByAuthor(instance.id, "neu@example.test", 9)
+
+        assertEquals(0, (outcome as Outcome.Success).value)
+    }
+
+    @Test
     fun `unbekannte Instanz fuehrt nicht zum Absturz`() = runTest {
         val outcome = repository.refresh("gibt-es-nicht", CommentFilter.PENDING)
 

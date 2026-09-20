@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.EmptyState
@@ -248,6 +249,7 @@ private fun InboxContent(
             items(state.comments, key = { it.id }) { comment ->
                 CommentCard(
                     comment = comment,
+                    signals = state.signals[comment.id] ?: CommentSignals(),
                     showAvatar = state.showAvatars,
                     actionsEnabled = state.moderationEnabled,
                     onOpen = { onOpenComment(comment) },

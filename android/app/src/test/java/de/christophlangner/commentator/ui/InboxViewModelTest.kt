@@ -108,6 +108,48 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun `Auffaelligkeiten werden ohne zusaetzlichen Abruf bestimmt`() = runTest {
+        comments.comments.value = listOf(
+            testComment(1, status = CommentStatus.PENDING)
+                .copy(contentHtml = """<p>Hier <a href="https://a.test">klicken</a></p>"""),
+            testComment(2, status = CommentStatus.PENDING)
+                .copy(contentHtml = "<p>Danke!</p>", contentPlain = "Danke!"),
+            testComment(3, status = CommentStatus.PENDING)
+                .copy(contentHtml = "<p>Danke!</p>", contentPlain = "Danke!"),
+        )
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            val signals = expectMostRecentItem().signals
+
+            assertEquals(1, signals[1]?.linkCount)
+            assertEquals(false, signals[1]?.duplicated)
+            // Zwei gleichlautende Kommentare: beide markiert, keiner bewertet.
+            assertEquals(true, signals[2]?.duplicated)
+            assertEquals(true, signals[3]?.duplicated)
+            cancelAndIgnoreRemainingEvents()
+        }
+        // Kein zusaetzlicher Netzabruf - alles kommt aus dem Cache.
+        assertEquals(1, comments.refreshCount)
+    }
+
+    @Test
+    fun `unauffaellige Kommentare stehen gar nicht erst in der Karte`() = runTest {
+        comments.comments.value = listOf(
+            testComment(1, status = CommentStatus.PENDING)
+                .copy(contentHtml = "<p>Guter Beitrag.</p>", contentPlain = "Guter Beitrag."),
+        )
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            assertTrue(expectMostRecentItem().signals.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `Fehler beim Aktualisieren landet im Zustand statt in einer Ausnahme`() = runTest {
         comments.refreshResult = Outcome.Failure(AppError.NoConnection)
         val model = viewModel()

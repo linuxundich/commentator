@@ -9,6 +9,7 @@ import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.Comment
+import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.repository.AuthRepository
@@ -33,6 +34,9 @@ import javax.inject.Inject
 data class CommentDetailUiState(
     val comment: Comment? = null,
     val replies: List<Comment> = emptyList(),
+    val signals: CommentSignals = CommentSignals(),
+    /** Bisher freigeschaltete Kommentare dieser Adresse, `null` solange unbekannt. */
+    val approvedByAuthor: Int? = null,
     val isLoading: Boolean = true,
     val isSendingReply: Boolean = false,
     val isSavingEdit: Boolean = false,
@@ -80,6 +84,16 @@ class CommentDetailViewModel @Inject constructor(
     private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 4)
     val events: SharedFlow<Event> = _events.asSharedFlow()
 
+    private val authorHistory = MutableStateFlow<Int?>(null)
+
+    /** Vier Umgebungswerte, weil `combine` nur eine begrenzte Stelligkeit hat. */
+    private data class Environment(
+        val isOnline: Boolean,
+        val sessionInvalid: Boolean,
+        val canModerate: Boolean,
+        val approvedByAuthor: Int?,
+    )
+
     private data class BusyState(
         val isLoading: Boolean = true,
         val isSendingReply: Boolean = false,
@@ -96,13 +110,21 @@ class CommentDetailViewModel @Inject constructor(
             connectivity.isOnline,
             authRepository.observeSessionInvalid(),
             authRepository.observeActiveInstance().map { it?.canModerate == true },
-            ::Triple,
+            authorHistory,
+            ::Environment,
         ),
     ) { comment, replies, busy, settings, environment ->
-        val (isOnline, sessionInvalid, canModerate) = environment
+        val (isOnline, sessionInvalid, canModerate, approvedByAuthor) = environment
         CommentDetailUiState(
             comment = comment,
             replies = replies,
+            signals = comment?.let {
+                CommentSignals(
+                    linkCount = CommentSignals.linkCountOf(it.contentHtml),
+                    firstTimeAuthor = approvedByAuthor?.let { count -> count == 0 },
+                )
+            } ?: CommentSignals(),
+            approvedByAuthor = approvedByAuthor,
             isLoading = busy.isLoading && comment == null,
             isSendingReply = busy.isSendingReply,
             isSavingEdit = busy.isSavingEdit,
@@ -140,8 +162,31 @@ class CommentDetailViewModel @Inject constructor(
                     (outcome.error as? AppError.WordPress)?.code == "rest_comment_invalid_id")
             ) {
                 _events.tryEmit(Event.CommentGone)
+                return@launch
             }
+
+            (outcome as? Outcome.Success)?.let { loadAuthorHistory(it.value) }
         }
+    }
+
+    /**
+     * Zaehlt die bisher freigeschalteten Kommentare dieser Adresse.
+     *
+     * Ein eigener, sehr kleiner Abruf: Ausgewertet wird nur eine Kopfzeile.
+     * Scheitert er, bleibt der Hinweis einfach aus - er ist eine Hilfe, keine
+     * Voraussetzung fuer die Moderation.
+     *
+     * Der Kommentar kommt aus dem Abruf und nicht aus `state`: Solange die
+     * Oberflaeche den Zustand noch nicht beobachtet, steht dort nichts.
+     */
+    private suspend fun loadAuthorHistory(comment: Comment) {
+        val email = comment.authorEmail?.takeIf { it.isNotBlank() } ?: return
+        val outcome = commentRepository.countApprovedByAuthor(
+            instanceId = instanceId,
+            authorEmail = email,
+            excludeCommentId = commentId,
+        )
+        authorHistory.value = outcome.valueOrNull
     }
 
     fun moderate(action: ModerationAction) {

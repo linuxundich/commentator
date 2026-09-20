@@ -48,6 +48,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -72,11 +73,13 @@ import coil3.compose.AsyncImage
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.core.time.RelativeTime
 import de.christophlangner.commentator.domain.model.Comment
+import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.LoadingState
 import de.christophlangner.commentator.ui.common.OfflineBanner
+import de.christophlangner.commentator.ui.common.SignalChips
 import de.christophlangner.commentator.ui.common.StatusChip
 
 /**
@@ -239,6 +242,12 @@ internal fun CommentDetailBody(
                         comment = comment,
                         showEmail = state.showAuthorEmail,
                         showAvatar = state.showAvatars,
+                    )
+
+                    SignalChips(
+                        signals = state.signals,
+                        approvedByAuthor = state.approvedByAuthor,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
 
                     Text(
