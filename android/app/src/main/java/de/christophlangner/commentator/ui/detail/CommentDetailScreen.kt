@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
@@ -105,6 +106,7 @@ fun CommentDetailScreen(
 
     var replyText by rememberSaveable { mutableStateOf("") }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showBlockDialog by rememberSaveable { mutableStateOf(false) }
     var editingText by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(viewModel, resources) {
@@ -130,6 +132,14 @@ fun CommentDetailScreen(
                     replyText = ""
                     snackbarHostState.showSnackbar(
                         resources.getString(R.string.snackbar_reply_published),
+                    )
+                }
+
+                CommentDetailViewModel.Event.AuthorBlocked -> {
+                    snackbarHostState.showSnackbar(
+                        message = resources.getString(R.string.block_done),
+                        duration = SnackbarDuration.Short,
+                        withDismissAction = true,
                     )
                 }
 
@@ -166,7 +176,9 @@ fun CommentDetailScreen(
                 actions = {
                     OverflowMenu(
                         enabled = state.actionsEnabled,
+                        canBlockAuthor = state.canBlockAuthor,
                         onEdit = { editingText = state.comment?.contentHtml.orEmpty() },
+                        onBlockAuthor = { showBlockDialog = true },
                         onDeletePermanently = { showDeleteDialog = true },
                     )
                 },
@@ -180,6 +192,28 @@ fun CommentDetailScreen(
             onModerate = viewModel::moderate,
             onSendReply = { viewModel.sendReply(replyText) },
             modifier = Modifier.padding(innerPadding),
+        )
+    }
+
+    if (showBlockDialog) {
+        val email = state.comment?.authorEmail.orEmpty()
+        AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            title = { Text(stringResource(R.string.dialog_block_title)) },
+            text = { Text(stringResource(R.string.dialog_block_message, email)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBlockDialog = false
+                    viewModel.blockAuthor()
+                }) {
+                    Text(stringResource(R.string.action_block_author))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBlockDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
         )
     }
 
@@ -574,7 +608,9 @@ private fun ReplyComposer(
 @Composable
 private fun OverflowMenu(
     enabled: Boolean,
+    canBlockAuthor: Boolean,
     onEdit: () -> Unit,
+    onBlockAuthor: () -> Unit,
     onDeletePermanently: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -596,6 +632,17 @@ private fun OverflowMenu(
                 onEdit()
             },
         )
+        if (canBlockAuthor) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.action_block_author)) },
+                enabled = enabled,
+                leadingIcon = { Icon(Icons.Default.Clear, contentDescription = null) },
+                onClick = {
+                    expanded = false
+                    onBlockAuthor()
+                },
+            )
+        }
         DropdownMenuItem(
             text = { Text(stringResource(R.string.action_delete_permanently)) },
             enabled = enabled,

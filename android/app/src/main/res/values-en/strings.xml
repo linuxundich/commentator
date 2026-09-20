@@ -97,6 +97,25 @@
     <string name="about_license_body">MIT license. The source code is publicly available.</string>
     <string name="about_open_repository">Open source code</string>
 
+    <!-- Bulk actions and blocklist -->
+    <string name="action_empty_spam">Empty spam</string>
+    <string name="action_empty_trash">Empty trash</string>
+    <string name="dialog_empty_title">Delete permanently?</string>
+    <string name="dialog_empty_spam_message">All comments marked as spam will be deleted permanently. This cannot be undone.</string>
+    <string name="dialog_empty_trash_message">All comments in the trash will be deleted permanently. This cannot be undone.</string>
+    <plurals name="empty_done">
+        <item quantity="one">%d comment deleted</item>
+        <item quantity="other">%d comments deleted</item>
+    </plurals>
+    <plurals name="empty_remaining">
+        <item quantity="one">%d left – tap again</item>
+        <item quantity="other">%d left – tap again</item>
+    </plurals>
+    <string name="action_block_author">Block sender</string>
+    <string name="dialog_block_title">Block sender?</string>
+    <string name="dialog_block_message">%s will be added to the WordPress blocklist. Future comments from this address go straight to the trash. Existing comments are untouched.</string>
+    <string name="block_done">Sender blocked</string>
+
     <string name="reply_label">Reply</string>
     <string name="reply_placeholder">Write a reply…</string>
     <string name="reply_disabled_hint">Replying needs a connection and moderation rights.</string>

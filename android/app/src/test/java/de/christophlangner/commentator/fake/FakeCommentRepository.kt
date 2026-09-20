@@ -4,6 +4,7 @@ import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
@@ -64,6 +65,24 @@ class FakeCommentRepository : CommentRepository {
     ): Outcome<Boolean> = nextPageResult
 
     override fun hasMorePages(instanceId: String, filter: CommentFilter): Boolean = morePages
+
+    /** Was eine Sammelloeschung meldet. */
+    var emptyResult: EmptyResult = EmptyResult(deleted = 0, remaining = 0)
+    val emptied = mutableListOf<CommentFilter>()
+    val blocked = mutableListOf<String>()
+
+    override suspend fun emptyStatus(
+        instanceId: String,
+        filter: CommentFilter,
+    ): Outcome<EmptyResult> {
+        emptied += filter
+        return Outcome.Success(emptyResult)
+    }
+
+    override suspend fun blockAuthor(instanceId: String, value: String): Outcome<Unit> {
+        blocked += value
+        return Outcome.Success(Unit)
+    }
 
     /** Anzahl je Filter, die die Zaehlung liefert. */
     var countsByFilter: Map<CommentFilter, Int> = emptyMap()

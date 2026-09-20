@@ -49,6 +49,11 @@ data class CommentDetailUiState(
     val isOffline: Boolean = false,
     val sessionInvalid: Boolean = false,
     val canModerate: Boolean = false,
+    /**
+     * Ob das Sperren des Absenders angeboten werden kann: Es braucht das
+     * Plugin und ein Konto, das seitenweite Optionen aendern darf.
+     */
+    val canBlockAuthor: Boolean = false,
     val error: AppError? = null,
 ) {
     val actionsEnabled: Boolean get() = !isOffline && !sessionInvalid && canModerate
@@ -77,6 +82,7 @@ class CommentDetailViewModel @Inject constructor(
 
         data object ReplyPublished : Event
         data object EditSaved : Event
+        data object AuthorBlocked : Event
         data object CommentGone : Event
         data class Failed(val error: AppError) : Event
     }
@@ -95,9 +101,14 @@ class CommentDetailViewModel @Inject constructor(
     private data class Environment(
         val isOnline: Boolean,
         val sessionInvalid: Boolean,
-        val canModerate: Boolean,
+        val permissions: Permissions,
         val approvedByAuthor: Int?,
         val templates: List<ReplyTemplate>,
+    )
+
+    private data class Permissions(
+        val canModerate: Boolean,
+        val canBlockAuthor: Boolean,
     )
 
     private data class BusyState(
@@ -115,13 +126,23 @@ class CommentDetailViewModel @Inject constructor(
         combine(
             connectivity.isOnline,
             authRepository.observeSessionInvalid(),
-            authRepository.observeActiveInstance().map { it?.canModerate == true },
+            authRepository.observeActiveInstance().map { instance ->
+                Permissions(
+                    canModerate = instance?.canModerate == true,
+                    // Sperren braucht beides: den Endpunkt aus dem Plugin und
+                    // ein Konto, das seitenweite Optionen aendern darf.
+                    canBlockAuthor = instance?.hasBridgePlugin == true &&
+                        instance.canManageOptions,
+                )
+            },
             authorHistory,
             replyTemplateRepository.templates,
             ::Environment,
         ),
     ) { comment, replies, busy, settings, environment ->
-        val (isOnline, sessionInvalid, canModerate, approvedByAuthor) = environment
+        val isOnline = environment.isOnline
+        val sessionInvalid = environment.sessionInvalid
+        val approvedByAuthor = environment.approvedByAuthor
         CommentDetailUiState(
             comment = comment,
             replies = replies,
@@ -140,7 +161,9 @@ class CommentDetailViewModel @Inject constructor(
             showAvatars = settings.showAvatars,
             isOffline = !isOnline,
             sessionInvalid = sessionInvalid,
-            canModerate = canModerate,
+            canModerate = environment.permissions.canModerate,
+            canBlockAuthor = environment.permissions.canBlockAuthor &&
+                !comment?.authorEmail.isNullOrBlank(),
             error = busy.error,
         )
     }.stateIn(
@@ -209,6 +232,22 @@ class CommentDetailViewModel @Inject constructor(
                     ),
                 )
 
+                is Outcome.Failure -> _events.tryEmit(Event.Failed(outcome.error))
+            }
+        }
+    }
+
+    /**
+     * Setzt die Adresse des Absenders auf WordPress' Sperrliste.
+     *
+     * Wirkt auf kuenftige Kommentare. Der vorliegende bleibt unberuehrt - was
+     * mit ihm geschieht, entscheidet die Moderation getrennt davon.
+     */
+    fun blockAuthor() {
+        val email = state.value.comment?.authorEmail?.takeIf { it.isNotBlank() } ?: return
+        viewModelScope.launch {
+            when (val outcome = commentRepository.blockAuthor(instanceId, email)) {
+                is Outcome.Success -> _events.tryEmit(Event.AuthorBlocked)
                 is Outcome.Failure -> _events.tryEmit(Event.Failed(outcome.error))
             }
         }

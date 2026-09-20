@@ -32,6 +32,15 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
+- „Spam leeren" und „Papierkorb leeren" in der Kopfleiste, mit Rückfrage vor
+  dem endgültigen Löschen. Mit Plugin eine Anfrage, ohne Plugin eine je
+  Kommentar. Bei vielen Einträgen wird stapelweise gearbeitet; die Meldung
+  nennt dann, wie viele noch übrig sind.
+- „Absender sperren" in der Detailansicht: trägt die Adresse in WordPress'
+  Sperrliste `disallowed_keys` ein, künftige Kommentare landen direkt im
+  Papierkorb. Erscheint nur, wenn das Plugin vorhanden ist und das Konto
+  seitenweite Optionen ändern darf – ein Redakteur darf moderieren, aber
+  keine Optionen ändern.
 - Bildschirm „Über diese App" mit Version, Buildnummer und dem Commit, aus
   dem der Build entstanden ist, dazu eine Kurzfassung zu Datenverarbeitung
   und Lizenz.
@@ -144,6 +153,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **WordPress-Plugin**
 
+- Zwei neue Endpunkte in Version 1.2.0: `/empty` leert Spam oder Papierkorb
+  in Stapeln, `/blocklist` pflegt `disallowed_keys`. Beide tun nur das, was im
+  Backend ohnehin möglich ist, und prüfen dieselben Rechte – `/empty`
+  `moderate_comments`, `/blocklist` `manage_options`.
 - `commentator/v1/summary` meldete unter `all` die Zahl `total_comments`, die
   Spam mitzählt. Die REST-API listet bei `status=all` aber nur Genehmigtes und
   Offenes auf – die Zahl passte damit nicht zu der Liste, die sie beschreibt.

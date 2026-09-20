@@ -1,10 +1,14 @@
 package de.christophlangner.commentator.data.remote
 
 import de.christophlangner.commentator.data.remote.dto.ApiRootDto
+import de.christophlangner.commentator.data.remote.dto.BlocklistDto
+import de.christophlangner.commentator.data.remote.dto.BlocklistRequest
 import de.christophlangner.commentator.data.remote.dto.BridgeStatusDto
 import de.christophlangner.commentator.data.remote.dto.BridgeSummaryDto
 import de.christophlangner.commentator.data.remote.dto.CommentDto
 import de.christophlangner.commentator.data.remote.dto.CreateCommentRequest
+import de.christophlangner.commentator.data.remote.dto.EmptyRequest
+import de.christophlangner.commentator.data.remote.dto.EmptyResultDto
 import de.christophlangner.commentator.data.remote.dto.PostDto
 import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
 import de.christophlangner.commentator.data.remote.dto.UserDto
@@ -117,4 +121,11 @@ interface WordPressApi {
 
     @GET("commentator/v1/summary")
     suspend fun bridgeSummary(): Response<BridgeSummaryDto>
+
+    /** Leert Spam oder Papierkorb in Stapeln; die Antwort nennt den Rest. */
+    @POST("commentator/v1/empty")
+    suspend fun bridgeEmpty(@Body body: EmptyRequest): Response<EmptyResultDto>
+
+    @POST("commentator/v1/blocklist")
+    suspend fun bridgeBlock(@Body body: BlocklistRequest): Response<BlocklistDto>
 }

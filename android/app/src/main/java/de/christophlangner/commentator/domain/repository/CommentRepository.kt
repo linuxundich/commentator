@@ -3,6 +3,7 @@ package de.christophlangner.commentator.domain.repository
 import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
 import kotlinx.coroutines.flow.Flow
@@ -56,6 +57,23 @@ interface CommentRepository {
      * Filterleiste schlicht keine Zahl, statt eine falsche Null zu behaupten.
      */
     suspend fun countsByFilter(instanceId: String): Outcome<Map<CommentFilter, Int>>
+
+    /**
+     * Leert Spam oder Papierkorb endgueltig.
+     *
+     * Ergebnis: wie viele geloescht wurden und wie viele noch uebrig sind.
+     * Es wird in Stapeln gearbeitet, damit auch einige tausend Eintraege
+     * nicht in den Zeitablauf des Servers laufen.
+     */
+    suspend fun emptyStatus(instanceId: String, filter: CommentFilter): Outcome<EmptyResult>
+
+    /**
+     * Traegt einen Wert in WordPress' Sperrliste `disallowed_keys` ein.
+     *
+     * Braucht das Plugin und ein Konto, das seitenweite Optionen aendern
+     * darf. Wirkt auf kuenftige Kommentare, nicht ruekwirkend.
+     */
+    suspend fun blockAuthor(instanceId: String, value: String): Outcome<Unit>
 
     suspend fun moderate(
         instanceId: String,

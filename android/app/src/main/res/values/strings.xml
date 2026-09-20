@@ -108,6 +108,25 @@
     <string name="about_license_body">MIT-Lizenz. Der Quelltext ist offen einsehbar.</string>
     <string name="about_open_repository">Quelltext öffnen</string>
 
+    <!-- Sammelaktionen und Sperrliste -->
+    <string name="action_empty_spam">Spam leeren</string>
+    <string name="action_empty_trash">Papierkorb leeren</string>
+    <string name="dialog_empty_title">Endgültig löschen?</string>
+    <string name="dialog_empty_spam_message">Alle als Spam markierten Kommentare werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.</string>
+    <string name="dialog_empty_trash_message">Alle Kommentare im Papierkorb werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.</string>
+    <plurals name="empty_done">
+        <item quantity="one">%d Kommentar gelöscht</item>
+        <item quantity="other">%d Kommentare gelöscht</item>
+    </plurals>
+    <plurals name="empty_remaining">
+        <item quantity="one">Noch %d übrig – nochmal tippen</item>
+        <item quantity="other">Noch %d übrig – nochmal tippen</item>
+    </plurals>
+    <string name="action_block_author">Absender sperren</string>
+    <string name="dialog_block_title">Absender sperren?</string>
+    <string name="dialog_block_message">%s wird in WordPress auf die Sperrliste gesetzt. Künftige Kommentare dieser Adresse landen direkt im Papierkorb. Bereits vorhandene Kommentare bleiben unberührt.</string>
+    <string name="block_done">Absender gesperrt</string>
+
     <!-- Antwort -->
     <string name="reply_label">Antwort</string>
     <string name="reply_placeholder">Antwort schreiben…</string>

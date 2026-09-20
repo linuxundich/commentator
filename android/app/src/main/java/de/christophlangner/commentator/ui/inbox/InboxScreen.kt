@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -24,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -84,6 +87,8 @@ fun InboxScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
 
+    var showEmptyDialog by rememberSaveable { mutableStateOf(false) }
+
     RequestNotificationPermission()
 
     LaunchedEffect(viewModel, resources) {
@@ -105,6 +110,28 @@ fun InboxScreen(
                     }
                 }
 
+                is InboxViewModel.Event.Emptied -> {
+                    val done = resources.getQuantityString(
+                        R.plurals.empty_done,
+                        event.deleted,
+                        event.deleted,
+                    )
+                    val message = if (event.remaining > 0) {
+                        done + " · " + resources.getQuantityString(
+                            R.plurals.empty_remaining,
+                            event.remaining,
+                            event.remaining,
+                        )
+                    } else {
+                        done
+                    }
+                    snackbarHostState.showSnackbar(
+                        message = message,
+                        duration = SnackbarDuration.Short,
+                        withDismissAction = true,
+                    )
+                }
+
                 is InboxViewModel.Event.Failed -> {
                     snackbarHostState.showSnackbar(
                         message = ErrorTexts.message(resources, event.error),
@@ -116,10 +143,43 @@ fun InboxScreen(
         }
     }
 
+    if (showEmptyDialog) {
+        val filter = state.filter
+        AlertDialog(
+            onDismissRequest = { showEmptyDialog = false },
+            title = { Text(stringResource(R.string.dialog_empty_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        if (filter == CommentFilter.SPAM) {
+                            R.string.dialog_empty_spam_message
+                        } else {
+                            R.string.dialog_empty_trash_message
+                        },
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEmptyDialog = false
+                    viewModel.emptyCurrentFilter()
+                }) {
+                    Text(stringResource(R.string.action_delete_permanently))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEmptyDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+
     InboxScreenContent(
         state = state,
         snackbarHostState = snackbarHostState,
         onRefresh = viewModel::refresh,
+        onEmptyRequest = { showEmptyDialog = true },
         onFilterSelected = viewModel::setFilter,
         onOpenComment = onOpenComment,
         onModerate = viewModel::moderate,
@@ -142,6 +202,7 @@ internal fun InboxScreenContent(
     state: InboxUiState,
     snackbarHostState: SnackbarHostState,
     onRefresh: () -> Unit,
+    onEmptyRequest: () -> Unit,
     onFilterSelected: (CommentFilter) -> Unit,
     onOpenComment: (Comment) -> Unit,
     onModerate: (Comment, ModerationAction) -> Unit,
@@ -163,6 +224,25 @@ internal fun InboxScreenContent(
                     )
                 },
                 actions = {
+                    // Nur bei Spam und Papierkorb, und nur wenn dort ueberhaupt
+                    // etwas liegt: Ein Knopf, der nichts tut, waere irritierend.
+                    val emptyLabel = when (state.filter) {
+                        CommentFilter.SPAM -> stringResource(R.string.action_empty_spam)
+                        CommentFilter.TRASH -> stringResource(R.string.action_empty_trash)
+                        else -> null
+                    }
+                    if (emptyLabel != null && (state.counts[state.filter] ?: 0) > 0) {
+                        IconButton(
+                            onClick = onEmptyRequest,
+                            enabled = state.moderationEnabled && !state.isRefreshing,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = emptyLabel,
+                            )
+                        }
+                    }
+
                     IconButton(
                         onClick = onRefresh,
                         enabled = !state.isRefreshing,

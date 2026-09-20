@@ -61,3 +61,15 @@ data class UpdateCommentRequest(
     val status: String? = null,
     val content: String? = null,
 )
+
+/** Anfrage an `commentator/v1/empty`: `spam` oder `trash`. */
+@Serializable
+data class EmptyRequest(
+    val status: String,
+)
+
+/** Anfrage an `commentator/v1/blocklist`. */
+@Serializable
+data class BlocklistRequest(
+    val value: String,
+)

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -47,6 +48,7 @@ class InboxScreenTest {
     private var openedComment: Comment? = null
     private val moderations = mutableListOf<Pair<Comment, ModerationAction>>()
     private var refreshed = 0
+    private var emptyRequested = 0
 
     private fun render(state: InboxUiState) {
         composeRule.setContent {
@@ -55,6 +57,7 @@ class InboxScreenTest {
                     state = state,
                     snackbarHostState = SnackbarHostState(),
                     onRefresh = { refreshed++ },
+                    onEmptyRequest = { emptyRequested++ },
                     onFilterSelected = { selectedFilter = it },
                     onOpenComment = { openedComment = it },
                     onModerate = { comment, action -> moderations += comment to action },
@@ -80,6 +83,52 @@ class InboxScreenTest {
         sessionInvalid = sessionInvalid,
         error = error,
     )
+
+    @Test
+    fun `Leeren erscheint nur bei Spam und Papierkorb`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                filter = CommentFilter.PENDING,
+                counts = mapOf(CommentFilter.PENDING to 3),
+            ),
+        )
+
+        composeRule.onAllNodesWithContentDescription("Spam leeren")
+            .fetchSemanticsNodes()
+            .let { assertTrue("Bei Offen darf es das nicht geben", it.isEmpty()) }
+    }
+
+    @Test
+    fun `leerer Spam-Ordner bekommt keinen Knopf`() {
+        // Ein Knopf, der nichts tut, waere irritierend.
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                filter = CommentFilter.SPAM,
+                counts = mapOf(CommentFilter.SPAM to 0),
+            ),
+        )
+
+        composeRule.onAllNodesWithContentDescription("Spam leeren")
+            .fetchSemanticsNodes()
+            .let { assertTrue("Ohne Spam kein Knopf", it.isEmpty()) }
+    }
+
+    @Test
+    fun `Leeren wird gemeldet statt sofort ausgefuehrt`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                filter = CommentFilter.SPAM,
+                counts = mapOf(CommentFilter.SPAM to 7),
+            ),
+        )
+
+        composeRule.onNodeWithContentDescription("Spam leeren").performClick()
+
+        assertEquals(1, emptyRequested)
+    }
 
     @Test
     fun `Filterleiste zeigt die Anzahl je Filter`() {

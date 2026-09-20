@@ -99,3 +99,16 @@ data class BridgeStatusDto(
 data class BridgeSummaryDto(
     val counts: Map<String, Int> = emptyMap(),
 )
+
+/** Antwort des Plugins auf `commentator/v1/empty`. */
+@Serializable
+data class EmptyResultDto(
+    val deleted: Int = 0,
+    val remaining: Int = 0,
+)
+
+/** Antwort des Plugins auf `commentator/v1/blocklist`. */
+@Serializable
+data class BlocklistDto(
+    val entries: List<String> = emptyList(),
+)

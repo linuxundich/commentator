@@ -375,6 +375,82 @@ class DefaultCommentRepositoryTest {
     }
 
     @Test
+    fun `mit Plugin leert eine Anfrage den Spam`() = runTest {
+        instanceStore.upsert(instance.copy(hasBridgePlugin = true))
+        server.enqueue(jsonResponse("""{"deleted":42,"remaining":0}"""))
+
+        val result = (repository.emptyStatus(instance.id, CommentFilter.SPAM) as Outcome.Success)
+            .value
+
+        assertEquals(42, result.deleted)
+        assertTrue(result.isComplete)
+        val request = server.takeRequest()
+        assertTrue(request.url.encodedPath.endsWith("/commentator/v1/empty"))
+        assertEquals("""{"status":"spam"}""", request.body?.utf8())
+    }
+
+    @Test
+    fun `ein Rest wird gemeldet, statt fertig zu behaupten`() = runTest {
+        instanceStore.upsert(instance.copy(hasBridgePlugin = true))
+        server.enqueue(jsonResponse("""{"deleted":200,"remaining":153}"""))
+
+        val result = (repository.emptyStatus(instance.id, CommentFilter.SPAM) as Outcome.Success)
+            .value
+
+        assertEquals(153, result.remaining)
+        assertFalse(result.isComplete)
+    }
+
+    @Test
+    fun `ohne Plugin wird einzeln geloescht`() = runTest {
+        server.enqueue(listResponse(comments(listOf(1L, 2L)), totalPages = 1))
+        server.enqueue(jsonResponse("{}")) // Loeschen 1
+        server.enqueue(jsonResponse("{}")) // Loeschen 2
+        server.enqueue(countResponse(0))
+
+        val result = (repository.emptyStatus(instance.id, CommentFilter.TRASH) as Outcome.Success)
+            .value
+
+        assertEquals(2, result.deleted)
+        assertTrue(result.isComplete)
+        assertTrue(dao.stored.value.none { it.id == 1L || it.id == 2L })
+    }
+
+    @Test
+    fun `nur Spam und Papierkorb lassen sich leeren`() = runTest {
+        // Ein Sammelloeschen echter Kommentare waere ein Unfall mit Ansage.
+        listOf(CommentFilter.ALL, CommentFilter.PENDING, CommentFilter.APPROVED).forEach { filter ->
+            assertTrue(
+                "$filter darf nicht leerbar sein",
+                repository.emptyStatus(instance.id, filter) is Outcome.Failure,
+            )
+        }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `Sperren sendet den Wert an das Plugin`() = runTest {
+        server.enqueue(jsonResponse("""{"entries":["spam@example.test"]}"""))
+
+        val outcome = repository.blockAuthor(instance.id, "  spam@example.test  ")
+
+        assertTrue(outcome is Outcome.Success)
+        val request = server.takeRequest()
+        assertTrue(request.url.encodedPath.endsWith("/commentator/v1/blocklist"))
+        // Umgebende Leerzeichen wuerden die Sperre ins Leere laufen lassen.
+        assertEquals("""{"value":"spam@example.test"}""", request.body?.utf8())
+    }
+
+    @Test
+    fun `leerer Sperrwert geht gar nicht erst raus`() = runTest {
+        // Ein leerer Eintrag traefe jeden Kommentar.
+        val outcome = repository.blockAuthor(instance.id, "   ")
+
+        assertTrue(outcome is Outcome.Failure)
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     fun `unbekannte Instanz fuehrt nicht zum Absturz`() = runTest {
         val outcome = repository.refresh("gibt-es-nicht", CommentFilter.PENDING)
 

@@ -83,6 +83,7 @@ class InboxViewModel @Inject constructor(
             val undoable: Boolean,
         ) : Event
 
+        data class Emptied(val deleted: Int, val remaining: Int) : Event
         data class Failed(val error: AppError) : Event
     }
 
@@ -277,6 +278,30 @@ class InboxViewModel @Inject constructor(
                     // Jede Moderation verschiebt einen Kommentar zwischen zwei
                     // Filtern; ohne das blieben die Zahlen bis zum naechsten
                     // Aktualisieren falsch.
+                    loadCounts()
+                }
+
+                is Outcome.Failure -> _events.tryEmit(Event.Failed(outcome.error))
+            }
+        }
+    }
+
+    /**
+     * Leert Spam oder Papierkorb.
+     *
+     * Bei vielen Eintraegen arbeitet ein Aufruf nur einen Stapel ab; das
+     * Ereignis nennt deshalb auch den Rest, damit die Oberflaeche nicht
+     * faelschlich "fertig" meldet.
+     */
+    fun emptyCurrentFilter() {
+        val instanceId = instance.value?.id ?: return
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true) }
+            val outcome = commentRepository.emptyStatus(instanceId, filter.value)
+            transient.update { it.copy(isRefreshing = false) }
+            when (outcome) {
+                is Outcome.Success -> {
+                    _events.tryEmit(Event.Emptied(outcome.value.deleted, outcome.value.remaining))
                     loadCounts()
                 }
 

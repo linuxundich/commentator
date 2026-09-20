@@ -135,9 +135,9 @@ Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
 Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
 geprüft, die Abrufe sind belegt.
 
-Umgesetzt sind Autorenkontext, Spam-Signale, die Zählungen an den Filtern und
-die Textbausteine. Offen bleiben „Spam leeren" und das Sperren von Absendern;
-beides erst, wenn das Plugin ohnehin angefasst wird.
+Alle Punkte dieses Abschnitts sind umgesetzt. „Spam leeren" und das Sperren
+von Absendern nutzen zwei Endpunkte, die das Plugin ab 1.2.0 mitbringt; das
+Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
 
 - [x] **P1** Autorenkontext in der Detailansicht
       *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
@@ -155,13 +155,13 @@ beides erst, wenn das Plugin ohnehin angefasst wird.
       Erstkommentator, Text identisch zu einem anderen offenen Kommentar.
       Ein Hinweis wie „3 Links" genügt - die App soll kennzeichnen, nicht
       entscheiden.*
-- [ ] **P2** Absender dauerhaft sperren
+- [x] **P2** Absender dauerhaft sperren
       *Adresse oder Domain in WordPress' `disallowed_keys` eintragen, statt
       denselben Absender täglich erneut als Spam zu markieren.*
       *Braucht das Plugin: `wp/v2/settings` gibt die Moderationsoptionen
       nicht heraus - geprüft, die Antwort enthält kein einziges Feld zu
       Kommentarmoderation oder Sperrlisten.*
-- [ ] **P2** „Spam leeren" und „Papierkorb leeren"
+- [x] **P2** „Spam leeren" und „Papierkorb leeren"
       *Der häufige Sammelfall braucht keine Mehrfachauswahl, sondern einen
       Knopf. Die Kern-API kennt keinen Sammelendpunkt, es würden N
       Einzellöschungen; ein Endpunkt im Plugin macht daraus eine Anfrage.

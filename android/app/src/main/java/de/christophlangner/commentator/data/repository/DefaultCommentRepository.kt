@@ -12,11 +12,14 @@ import de.christophlangner.commentator.data.remote.ApiExecutor
 import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.data.remote.dto.CreateCommentRequest
+import de.christophlangner.commentator.data.remote.dto.BlocklistRequest
+import de.christophlangner.commentator.data.remote.dto.EmptyRequest
 import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
 import de.christophlangner.commentator.data.remote.mapper.CommentMapper
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentStatus
+import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
 import de.christophlangner.commentator.domain.repository.CommentRepository
@@ -199,6 +202,77 @@ class DefaultCommentRepository @Inject constructor(
         return Outcome.Success(counts)
     }
 
+    override suspend fun emptyStatus(
+        instanceId: String,
+        filter: CommentFilter,
+    ): Outcome<EmptyResult> {
+        val status = filter.status
+        // Nur Spam und Papierkorb: Alles andere endgueltig zu leeren waere
+        // eine Sammelloeschung echter Kommentare - dafuer gibt es die
+        // Einzelaktionen.
+        if (status != CommentStatus.SPAM && status != CommentStatus.TRASH) {
+            return Outcome.Failure(AppError.Unknown("empty_unsupported_filter"))
+        }
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+        val instance = instanceStore.currentActive()?.takeIf { it.id == instanceId }
+
+        if (instance?.hasBridgePlugin == true) {
+            val result = executor.call { api.bridgeEmpty(EmptyRequest(filter.queryValue)) }
+            if (result is Outcome.Success) {
+                dao.deleteByStatus(instanceId, status.name)
+                return Outcome.Success(
+                    EmptyResult(result.value.body.deleted, result.value.body.remaining),
+                )
+            }
+            // Faellt das Plugin aus, wird geloescht wie ohne.
+        }
+
+        return emptyOneByOne(instanceId, api, filter, status)
+    }
+
+    /**
+     * Rueckfall ohne Plugin: eine Anfrage je Kommentar.
+     *
+     * Die Kern-API kennt keine Sammelloeschung. Das ist spuerbar teurer,
+     * aber besser, als die Funktion nur mit Plugin anzubieten - die
+     * wenigsten Blogs werden eines installieren.
+     */
+    private suspend fun emptyOneByOne(
+        instanceId: String,
+        api: WordPressApi,
+        filter: CommentFilter,
+        status: CommentStatus,
+    ): Outcome<EmptyResult> {
+        val listed = executor.call {
+            api.listComments(status = filter.queryValue, page = 1, perPage = EMPTY_BATCH)
+        }
+        if (listed is Outcome.Failure) return listed
+
+        val ids = (listed as Outcome.Success).value.body.map { it.id }
+        var deleted = 0
+        for (id in ids) {
+            val outcome = executor.call { api.deleteComment(id, force = true) }
+            if (outcome is Outcome.Success) {
+                dao.deleteComment(instanceId, id)
+                deleted++
+            }
+        }
+
+        val remaining = executor.call {
+            api.listComments(status = filter.queryValue, page = 1, perPage = 1)
+        }.valueOrNull?.totalItems ?: 0
+
+        return Outcome.Success(EmptyResult(deleted, remaining))
+    }
+
+    override suspend fun blockAuthor(instanceId: String, value: String): Outcome<Unit> {
+        val trimmed = value.trim()
+        if (trimmed.isEmpty()) return Outcome.Failure(AppError.Unknown("blocklist_empty_value"))
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+
+        return executor.call { api.bridgeBlock(BlocklistRequest(trimmed)) }.map { }
+    }
+
     override suspend fun countApprovedByAuthor(
         instanceId: String,
         authorEmail: String,
@@ -360,6 +434,9 @@ class DefaultCommentRepository @Inject constructor(
     private fun pageKey(instanceId: String, filter: CommentFilter) = "$instanceId/${filter.name}"
 
     private companion object {
+        /** Hoechstzahl je Aufruf des Rueckfalls ohne Plugin. */
+        const val EMPTY_BATCH = 100
+
         const val PAGE_SIZE = 20
     }
 }
