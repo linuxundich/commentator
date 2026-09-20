@@ -47,6 +47,16 @@ interface AuthRepository {
         applicationPassword: String,
     ): Outcome<WordPressInstance>
 
+    /**
+     * Bewertet neu, was der Blog kann: Bridge-Plugin, Moderationsrecht und
+     * Name der Installation.
+     *
+     * Diese Angaben stammen sonst aus dem Moment der Anmeldung. Wird das
+     * Plugin später installiert oder die Rolle geändert, bliebe die App
+     * ansonsten dauerhaft beim alten Stand.
+     */
+    suspend fun refreshSiteCapabilities(): Outcome<WordPressInstance>
+
     /** Meldet ab und löscht Zugangsdaten, Schlüsselmaterial und Cache. */
     suspend fun signOut()
 }

@@ -102,6 +102,16 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 - Dokumentation: Architekturentscheidungen, verwendete API-Endpunkte,
   Datenverarbeitung.
 
+### Fixed
+
+**Android-App**
+
+- Ein nachträglich installiertes Plugin `commentator-bridge` wurde nie
+  bemerkt. Bridge-Erkennung, Moderationsrecht und Blogname stammten
+  ausschließlich aus dem Moment der Anmeldung und wurden danach nie wieder
+  gelesen. Sie werden jetzt beim Aktualisieren des Posteingangs und beim
+  Öffnen der Einstellungen neu bewertet.
+
 ### Security
 
 - Zugangsdaten werden mit AES-256-GCM verschlüsselt abgelegt; der Schlüssel

@@ -42,6 +42,19 @@ class FakeAuthRepository(
         applicationPassword: String,
     ): Outcome<WordPressInstance> = signInResult
 
+    var capabilitiesRefreshes = 0
+
+    /** Was eine Neubewertung liefert; standardmaessig bleibt alles, wie es ist. */
+    var refreshedInstance: WordPressInstance? = null
+
+    override suspend fun refreshSiteCapabilities(): Outcome<WordPressInstance> {
+        capabilitiesRefreshes++
+        val updated = refreshedInstance ?: activeInstance.value
+            ?: return Outcome.Failure(AppError.Unauthorized)
+        activeInstance.value = updated
+        return Outcome.Success(updated)
+    }
+
     override suspend fun signOut() {
         signedOut = true
         activeInstance.value = null

@@ -37,6 +37,24 @@ class SettingsViewModelTest {
     )
 
     @Test
+    fun `nachtraeglich installiertes Bridge-Plugin wird bemerkt`() = runTest {
+        val auth = FakeAuthRepository(testInstance(hasBridgePlugin = false))
+        auth.refreshedInstance = testInstance(hasBridgePlugin = true)
+
+        val model = SettingsViewModel(
+            auth,
+            settings,
+            AppIconManager(ApplicationProvider.getApplicationContext()),
+        )
+        model.state.test {
+            advanceUntilIdle()
+            assertTrue(expectMostRecentItem().instance?.hasBridgePlugin == true)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(1, auth.capabilitiesRefreshes)
+    }
+
+    @Test
     fun `Avatare sind standardmaessig aus`() {
         // Datenschutzentscheidung: Avatare erzeugen eine Verbindung zu einem
         // Dritten und werden deshalb nicht ungefragt geladen.

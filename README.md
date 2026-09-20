@@ -119,6 +119,10 @@ cp -r wordpress-plugin/commentator-bridge <wordpress>/wp-content/plugins/
 Anschließend im Backend unter „Plugins“ aktivieren. Die App erkennt es
 automatisch und weist in den Einstellungen darauf hin.
 
+Wird das Plugin erst nachträglich installiert, bemerkt die App das beim
+nächsten Aktualisieren des Posteingangs oder sobald die Einstellungen geöffnet
+werden. Eine erneute Anmeldung ist nicht nötig.
+
 ### 3. Zugangsdaten erzeugen
 
 Der bequeme Weg läuft über die App selbst – Schritt 4 übernimmt das.

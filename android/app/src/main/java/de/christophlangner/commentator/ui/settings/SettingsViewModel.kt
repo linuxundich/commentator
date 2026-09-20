@@ -49,6 +49,13 @@ class SettingsViewModel @Inject constructor(
         initialValue = SettingsUiState(),
     )
 
+    init {
+        // Der Bildschirm zeigt, ob das Bridge-Plugin erkannt wurde. Wird es
+        // nachträglich installiert, soll ein Blick in die Einstellungen
+        // genügen, damit die App es bemerkt.
+        viewModelScope.launch { authRepository.refreshSiteCapabilities() }
+    }
+
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setNotificationsEnabled(enabled) }
     }

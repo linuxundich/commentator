@@ -187,6 +187,10 @@ class InboxViewModel @Inject constructor(
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, error = null) }
             val outcome = commentRepository.refresh(instanceId, filter.value)
+            // Zieht nebenbei nach, was sich am Blog geändert hat - etwa ein
+            // nachträglich installiertes Bridge-Plugin. Ein Fehler hier darf
+            // die Liste nicht beeinflussen.
+            authRepository.refreshSiteCapabilities()
             transient.update {
                 it.copy(
                     isRefreshing = false,

@@ -95,6 +95,19 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun `Aktualisieren bewertet auch die Faehigkeiten des Blogs neu`() = runTest {
+        // Sonst bliebe ein nachtraeglich installiertes Bridge-Plugin bis zur
+        // naechsten Anmeldung unbemerkt.
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            assertTrue(auth.capabilitiesRefreshes >= 1)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `Fehler beim Aktualisieren landet im Zustand statt in einer Ausnahme`() = runTest {
         comments.refreshResult = Outcome.Failure(AppError.NoConnection)
         val model = viewModel()

@@ -136,6 +136,29 @@ class DefaultAuthRepository @Inject constructor(
         return Outcome.Success(instance)
     }
 
+    override suspend fun refreshSiteCapabilities(): Outcome<WordPressInstance> {
+        val instance = instanceStore.currentActive()
+            ?: return Outcome.Failure(AppError.Unauthorized)
+        val api = clientFactory.forInstance(instance.id, instance.siteUrl)
+
+        val index = executor.call { api.index(WordPressClientFactory.restBaseUrl(instance.siteUrl)) }
+        if (index is Outcome.Failure) return index
+
+        // Das Moderationsrecht kommt aus einem anderen Endpunkt. Scheitert der,
+        // bleibt der bisher bekannte Wert stehen, statt das Recht stillschweigend
+        // zu entziehen.
+        val user = executor.call { api.currentUser() }.valueOrNull?.body
+
+        val root = (index as Outcome.Success).value.body
+        val updated = instance.copy(
+            displayName = root.name.ifBlank { instance.displayName },
+            canModerate = user?.canModerateComments ?: instance.canModerate,
+            hasBridgePlugin = root.hasBridgePlugin,
+        )
+        if (updated != instance) instanceStore.upsert(updated)
+        return Outcome.Success(updated)
+    }
+
     override suspend fun signOut() {
         val instance = instanceStore.currentActive() ?: return
         credentialStore.clear(instance.id)
