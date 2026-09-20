@@ -22,6 +22,8 @@ private data class StoredInstance(
     val userId: Long,
     val canModerate: Boolean,
     val hasBridgePlugin: Boolean,
+    val canManageOptions: Boolean = false,
+    val iconUrl: String? = null,
 )
 
 @Serializable
@@ -109,6 +111,8 @@ class InstanceStore @Inject constructor(
         userId = stored.userId,
         canModerate = stored.canModerate,
         hasBridgePlugin = stored.hasBridgePlugin,
+        canManageOptions = stored.canManageOptions,
+        iconUrl = stored.iconUrl,
     )
 
     private fun toStored(instance: WordPressInstance) = StoredInstance(
@@ -119,5 +123,7 @@ class InstanceStore @Inject constructor(
         userId = instance.userId,
         canModerate = instance.canModerate,
         hasBridgePlugin = instance.hasBridgePlugin,
+        canManageOptions = instance.canManageOptions,
+        iconUrl = instance.iconUrl,
     )
 }

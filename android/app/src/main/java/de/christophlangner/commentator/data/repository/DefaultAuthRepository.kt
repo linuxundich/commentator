@@ -128,6 +128,8 @@ class DefaultAuthRepository @Inject constructor(
             userId = user.id,
             canModerate = user.canModerateComments,
             hasBridgePlugin = index?.hasBridgePlugin == true,
+            canManageOptions = user.canManageOptions,
+            iconUrl = index?.iconUrl,
         )
 
         credentialStore.save(instance.id, credentials)
@@ -153,6 +155,10 @@ class DefaultAuthRepository @Inject constructor(
         val updated = instance.copy(
             displayName = root.name.ifBlank { instance.displayName },
             canModerate = user?.canModerateComments ?: instance.canModerate,
+            canManageOptions = user?.canManageOptions ?: instance.canManageOptions,
+            // Das Symbol kann im Blog entfernt worden sein - dann soll es auch
+            // hier verschwinden, nicht der alte Wert stehen bleiben.
+            iconUrl = root.iconUrl,
             hasBridgePlugin = root.hasBridgePlugin,
         )
         if (updated != instance) instanceStore.upsert(updated)

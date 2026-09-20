@@ -57,6 +57,7 @@ import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.ui.common.BlogTitle
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.EmptyState
 import de.christophlangner.commentator.ui.common.ErrorState
@@ -154,7 +155,13 @@ internal fun InboxScreenContent(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(state.instance?.displayName ?: stringResource(R.string.app_name)) },
+                title = {
+                    BlogTitle(
+                        name = state.instance?.displayName
+                            ?: stringResource(R.string.app_name),
+                        iconUrl = state.instance?.iconUrl,
+                    )
+                },
                 actions = {
                     IconButton(
                         onClick = onRefresh,

@@ -19,6 +19,10 @@ data class WordPressInstance(
     val canModerate: Boolean,
     /** Ob das Plugin `commentator-bridge` erkannt wurde. */
     val hasBridgePlugin: Boolean,
+    /** Ob das Konto seitenweite Optionen aendern darf, etwa die Sperrliste. */
+    val canManageOptions: Boolean = false,
+    /** Symbol des Blogs, sofern dort eines hinterlegt ist. */
+    val iconUrl: String? = null,
 ) {
     val restBaseUrl: String get() = "$siteUrl/wp-json/"
 }

@@ -20,9 +20,18 @@ data class ApiRootDto(
     val url: String = "",
     val home: String = "",
     val namespaces: List<String> = emptyList(),
+    @SerialName("site_icon_url") val siteIconUrl: String = "",
     val authentication: JsonElement? = null,
 ) {
     val hasWpV2: Boolean get() = namespaces.contains("wp/v2")
+
+    /**
+     * Das Blog-Symbol, sofern eines gesetzt ist.
+     *
+     * Kommt von der eigenen WordPress-Installation, nicht von einem Dritten -
+     * anders als Avatare braucht es deshalb keine eigene Zustimmung.
+     */
+    val iconUrl: String? get() = siteIconUrl.takeIf { it.isNotBlank() }
 
     val hasBridgePlugin: Boolean get() = namespaces.contains("commentator/v1")
 
@@ -48,6 +57,12 @@ data class UserDto(
     val capabilities: Map<String, Boolean> = emptyMap(),
 ) {
     val canModerateComments: Boolean get() = capabilities["moderate_comments"] == true
+
+    /**
+     * Die Sperrliste ist eine seitenweite Option. Ein Redakteur darf
+     * moderieren, aber keine Optionen aendern - dieses Recht trennt beides.
+     */
+    val canManageOptions: Boolean get() = capabilities["manage_options"] == true
 }
 
 @Serializable
