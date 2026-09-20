@@ -53,6 +53,7 @@ class DefaultCommentRepositoryTest {
     private lateinit var server: MockWebServer
     private lateinit var repository: DefaultCommentRepository
     private lateinit var dataStore: DataStore<Preferences>
+    private lateinit var instanceStore: InstanceStore
     private val dao = FakeCommentDao()
     private val instance = testInstance()
 
@@ -74,7 +75,7 @@ class DefaultCommentRepositoryTest {
             scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
             produceFile = { File(temporaryFolder.root, "settings.preferences_pb") },
         )
-        val instanceStore = InstanceStore(dataStore)
+        instanceStore = InstanceStore(dataStore)
         instanceStore.upsert(instance)
 
         val api = Retrofit.Builder()
@@ -296,11 +297,96 @@ class DefaultCommentRepositoryTest {
     }
 
     @Test
+    fun `zaehlt ohne Plugin je Filter einzeln`() = runTest {
+        // Fuenf Filter, fuenf Anfragen - jede liefert nur die Kopfzeile.
+        listOf(9, 3, 4, 1, 1).forEach { total ->
+            server.enqueue(countResponse(total))
+        }
+
+        val counts = (repository.countsByFilter(instance.id) as Outcome.Success).value
+
+        assertEquals(9, counts[CommentFilter.ALL])
+        assertEquals(3, counts[CommentFilter.PENDING])
+        assertEquals(1, counts[CommentFilter.TRASH])
+        assertEquals("1", server.takeRequest().url.queryParameter("per_page"))
+    }
+
+    @Test
+    fun `ein Fehlschlag laesst die uebrigen Zahlen stehen`() = runTest {
+        server.enqueue(countResponse(9))
+        server.enqueue(MockResponse.Builder().code(500).build())
+        listOf(4, 1, 1).forEach { server.enqueue(countResponse(it)) }
+
+        val counts = (repository.countsByFilter(instance.id) as Outcome.Success).value
+
+        assertEquals(9, counts[CommentFilter.ALL])
+        // Ohne Eintrag zeigt die Leiste dort keine Zahl, statt eine Null zu
+        // behaupten, die es nicht gibt.
+        assertEquals(null, counts[CommentFilter.PENDING])
+        assertEquals(4, counts[CommentFilter.APPROVED])
+    }
+
+    @Test
+    fun `mit Plugin genuegen zwei Anfragen statt fuenf`() = runTest {
+        instanceStore.upsert(instance.copy(hasBridgePlugin = true))
+        server.enqueue(
+            jsonResponse("""{"counts":{"all":9,"hold":3,"approve":4,"spam":1,"trash":1}}"""),
+        )
+        server.enqueue(countResponse(7))
+
+        val counts = (repository.countsByFilter(instance.id) as Outcome.Success).value
+
+        assertEquals(3, counts[CommentFilter.PENDING])
+        assertEquals(4, counts[CommentFilter.APPROVED])
+        assertTrue(
+            server.takeRequest().url.encodedPath.endsWith("/commentator/v1/summary"),
+        )
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `die Zahl fuer Alle kommt nie aus dem Plugin`() = runTest {
+        // Fruehe Plugin-Fassungen melden dort total_comments und zaehlen Spam
+        // mit. Die Liste zeigt bei status=all aber nur Genehmigtes und
+        // Offenes - die Zahl passte dann nicht zu dem, was darunter steht.
+        instanceStore.upsert(instance.copy(hasBridgePlugin = true))
+        server.enqueue(
+            jsonResponse("""{"counts":{"all":9,"hold":3,"approve":4,"spam":1,"trash":1}}"""),
+        )
+        server.enqueue(countResponse(7))
+
+        val counts = (repository.countsByFilter(instance.id) as Outcome.Success).value
+
+        assertEquals(7, counts[CommentFilter.ALL])
+        server.takeRequest()
+        assertEquals("all", server.takeRequest().url.queryParameter("status"))
+    }
+
+    @Test
+    fun `faellt das Plugin aus, wird einzeln gezaehlt`() = runTest {
+        instanceStore.upsert(instance.copy(hasBridgePlugin = true))
+        server.enqueue(MockResponse.Builder().code(500).build())
+        listOf(9, 3, 4, 1, 1).forEach { server.enqueue(countResponse(it)) }
+
+        val counts = (repository.countsByFilter(instance.id) as Outcome.Success).value
+
+        assertEquals(9, counts[CommentFilter.ALL])
+        assertEquals(3, counts[CommentFilter.PENDING])
+    }
+
+    @Test
     fun `unbekannte Instanz fuehrt nicht zum Absturz`() = runTest {
         val outcome = repository.refresh("gibt-es-nicht", CommentFilter.PENDING)
 
         assertTrue(outcome is Outcome.Failure)
     }
+
+    private fun countResponse(total: Int) = MockResponse.Builder()
+        .code(200)
+        .addHeader("Content-Type", "application/json")
+        .addHeader("X-WP-Total", total.toString())
+        .body("[]")
+        .build()
 
     /** Der Titel wird erst bei den Beitraegen, dann bei den Seiten gesucht. */
     private fun enqueuePostTitleLookup() {

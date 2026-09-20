@@ -32,6 +32,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
+- Anzahl der Kommentare an jedem Filter, etwa „Offen · 3". Mit dem Plugin
+  zwei Abrufe, ohne Plugin fünf, von denen jeweils nur die Kopfzeile
+  `X-WP-Total` ausgewertet wird. Die Zahlen ziehen nach jeder Moderation nach.
+  Lässt sich eine Zahl nicht ermitteln, steht dort nur der Name.
 - Autorenkontext in der Detailansicht: „Kommentiert zum ersten Mal" oder die
   Zahl der bisher freigeschalteten Kommentare dieser Adresse. Kostet eine
   Anfrage, von der nur die Kopfzeile `X-WP-Total` ausgewertet wird. Scheitert
@@ -122,6 +126,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   ausschließlich aus dem Moment der Anmeldung und wurden danach nie wieder
   gelesen. Sie werden jetzt beim Aktualisieren des Posteingangs und beim
   Öffnen der Einstellungen neu bewertet.
+
+**WordPress-Plugin**
+
+- `commentator/v1/summary` meldete unter `all` die Zahl `total_comments`, die
+  Spam mitzählt. Die REST-API listet bei `status=all` aber nur Genehmigtes und
+  Offenes auf – die Zahl passte damit nicht zu der Liste, die sie beschreibt.
+  Jetzt genehmigt plus offen. Plugin-Version 1.1.0.
 
 ### Security
 

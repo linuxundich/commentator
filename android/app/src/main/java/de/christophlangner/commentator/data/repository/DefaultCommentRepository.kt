@@ -160,6 +160,45 @@ class DefaultCommentRepository @Inject constructor(
         resolvePostTitles(instanceId, api, entities)
     }
 
+    override suspend fun countsByFilter(instanceId: String): Outcome<Map<CommentFilter, Int>> {
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+        val instance = instanceStore.currentActive()?.takeIf { it.id == instanceId }
+
+        val counts = mutableMapOf<CommentFilter, Int>()
+
+        // Das Plugin liefert die Zahlen auf einmal aus wp_count_comments(),
+        // das WordPress ohnehin zwischenspeichert.
+        //
+        // Ausgenommen "Alle": Fruehe Plugin-Fassungen melden dort
+        // total_comments, was Spam mitzaehlt - die Zahl passte dann nicht zur
+        // Liste, die bei status=all nur Genehmigtes und Offenes zeigt. Welche
+        // Fassung installiert ist, kann die App nicht wissen, deshalb wird
+        // dieser eine Wert immer bei der Kern-API geholt.
+        if (instance?.hasBridgePlugin == true) {
+            val summary = executor.call { api.bridgeSummary() }
+            if (summary is Outcome.Success) {
+                CommentFilter.entries
+                    .filter { it != CommentFilter.ALL }
+                    .forEach { filter ->
+                        summary.value.body.counts[filter.queryValue]?.let { counts[filter] = it }
+                    }
+            }
+            // Faellt das Plugin aus, bleibt counts leer und es wird gezaehlt
+            // wie ohne Plugin.
+        }
+
+        for (filter in CommentFilter.entries) {
+            if (filter in counts) continue
+            val result = executor.call {
+                api.listComments(status = filter.queryValue, page = 1, perPage = 1)
+            }
+            // Nur die Kopfzeile zaehlt; ein einzelner Fehlschlag laesst die
+            // uebrigen Zahlen unberuehrt.
+            if (result is Outcome.Success) counts[filter] = result.value.totalItems
+        }
+        return Outcome.Success(counts)
+    }
+
     override suspend fun countApprovedByAuthor(
         instanceId: String,
         authorEmail: String,

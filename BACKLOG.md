@@ -135,9 +135,9 @@ Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
 Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
 geprüft, die Abrufe sind belegt.
 
-Die ersten beiden Punkte sind umgesetzt. Als Nächstes sind die Zählungen an
-den Filtern und die Textbausteine an der Reihe; „Spam leeren" und das Sperren
-von Absendern erst, wenn das Plugin ohnehin angefasst wird.
+Umgesetzt sind Autorenkontext, Spam-Signale und die Zählungen an den Filtern.
+Als Nächstes die Textbausteine; „Spam leeren" und das Sperren von Absendern
+erst, wenn das Plugin ohnehin angefasst wird.
 
 - [x] **P1** Autorenkontext in der Detailansicht
       *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
@@ -188,7 +188,7 @@ von Absendern erst, wenn das Plugin ohnehin angefasst wird.
 ## Weiteres
 
 - [ ] **P2** Sammelmoderation mit Mehrfachauswahl
-- [ ] **P1** Kommentarzahlen je Filter anzeigen - „Offen (3)" statt „Offen"
+- [x] **P1** Kommentarzahlen je Filter anzeigen - „Offen · 3" statt „Offen"
       *Anders als hier ursprünglich vermerkt hängt das nicht am Plugin: Vier
       Abrufe mit `per_page=1` liefern alle Zahlen aus `X-WP-Total`, ohne
       nennenswertes Datenvolumen. Der Endpunkt `summary` des Plugins macht

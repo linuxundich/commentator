@@ -82,6 +82,36 @@ class InboxScreenTest {
     )
 
     @Test
+    fun `Filterleiste zeigt die Anzahl je Filter`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                comments = listOf(testComment(1, status = CommentStatus.PENDING)),
+                counts = mapOf(CommentFilter.PENDING to 3, CommentFilter.SPAM to 12),
+            ),
+        )
+
+        composeRule.onNodeWithText("Offen · 3").assertIsDisplayed()
+        composeRule.onNodeWithText("Spam · 12").assertIsDisplayed()
+    }
+
+    @Test
+    fun `ohne ermittelte Anzahl steht nur der Name`() {
+        // Eine erfundene Null waere schlechter als gar keine Angabe.
+        // Ohne Kommentare in der Liste, damit "Spam" nur als Filter vorkommt
+        // und nicht zusaetzlich als Moderationsaktion auf einer Karte.
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                counts = mapOf(CommentFilter.PENDING to 3),
+            ),
+        )
+
+        composeRule.onNodeWithText("Offen · 3").assertIsDisplayed()
+        composeRule.onNodeWithText("Spam").assertIsDisplayed()
+    }
+
+    @Test
     fun `zeigt Autor Text und Beitrag eines Kommentars`() {
         render(stateWith(listOf(testComment(1, content = "Sehr interessanter Artikel"))))
 

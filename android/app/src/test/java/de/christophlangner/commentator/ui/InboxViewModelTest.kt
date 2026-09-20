@@ -150,6 +150,40 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun `Anzahl je Filter wird beim Aktualisieren geholt`() = runTest {
+        comments.countsByFilter = mapOf(CommentFilter.PENDING to 3, CommentFilter.SPAM to 12)
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            val counts = expectMostRecentItem().counts
+            assertEquals(3, counts[CommentFilter.PENDING])
+            assertEquals(12, counts[CommentFilter.SPAM])
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `Moderation zieht die Anzahl nach`() = runTest {
+        // Jede Moderation verschiebt einen Kommentar zwischen zwei Filtern.
+        comments.countsByFilter = mapOf(CommentFilter.PENDING to 3)
+        val comment = testComment(1, status = CommentStatus.PENDING)
+        comments.comments.value = listOf(comment)
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            val before = comments.countCalls
+
+            model.moderate(comment, ModerationAction.Approve)
+            advanceUntilIdle()
+
+            assertTrue(comments.countCalls > before)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `Fehler beim Aktualisieren landet im Zustand statt in einer Ausnahme`() = runTest {
         comments.refreshResult = Outcome.Failure(AppError.NoConnection)
         val model = viewModel()

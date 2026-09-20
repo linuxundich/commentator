@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/christophlangner/commentator
  * Description:       Stellt der Android-App Commentator zwei schlanke REST-Endpunkte bereit, damit die regelmäßige Prüfung auf neue Kommentare die Installation nicht belastet.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -122,7 +122,12 @@ function commentator_bridge_summary(): WP_REST_Response {
 				'hold'    => (int) $counts->moderated,
 				'spam'    => (int) $counts->spam,
 				'trash'   => (int) $counts->trash,
-				'all'     => (int) $counts->total_comments,
+				// Absichtlich nicht total_comments: Das zaehlt Spam mit.
+				// WP_Comment_Query versteht unter 'all' genehmigt und offen,
+				// und genau das listet die REST-API bei status=all auf. Eine
+				// Zahl, die nicht zur zugehoerigen Liste passt, ist schlimmer
+				// als keine.
+				'all'     => (int) $counts->approved + (int) $counts->moderated,
 			),
 		)
 	);

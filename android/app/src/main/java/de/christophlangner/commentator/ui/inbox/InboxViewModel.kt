@@ -56,6 +56,8 @@ data class InboxUiState(
     val showAvatars: Boolean = false,
     /** Auffaelligkeiten je Kommentar-ID; fehlt ein Eintrag, gibt es nichts zu zeigen. */
     val signals: Map<Long, CommentSignals> = emptyMap(),
+    /** Anzahl je Filter. Fehlt ein Eintrag, zeigt die Leiste dort keine Zahl. */
+    val counts: Map<CommentFilter, Int> = emptyMap(),
 ) {
     /** Ohne Verbindung, ohne Berechtigung oder mit ungültiger Sitzung wird nicht moderiert. */
     val moderationEnabled: Boolean
@@ -89,6 +91,8 @@ class InboxViewModel @Inject constructor(
         val isLoadingMore: Boolean = false,
         val initialLoadDone: Boolean = false,
         val error: AppError? = null,
+        /** Anzahl je Filter, leer solange nicht ermittelt. */
+        val counts: Map<CommentFilter, Int> = emptyMap(),
     )
 
     private val filter = MutableStateFlow(CommentFilter.PENDING)
@@ -163,6 +167,7 @@ class InboxViewModel @Inject constructor(
             error = transient.error,
             showAvatars = environment.showAvatars,
             signals = signalsFor(comments),
+            counts = transient.counts,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -202,6 +207,7 @@ class InboxViewModel @Inject constructor(
                     error = outcome.errorOrNull,
                 )
             }
+            loadCounts()
         }
     }
 
@@ -212,6 +218,21 @@ class InboxViewModel @Inject constructor(
      * sich nur innerhalb des Geladenen erkennen - das genuegt fuer den Fall,
      * um den es geht: derselbe Text mehrfach in derselben Welle.
      */
+    /**
+     * Holt die Zahlen fuer die Filterleiste.
+     *
+     * Nach dem Aktualisieren, nicht davor: Die Liste soll nicht darauf
+     * warten. Scheitert es, bleiben die bisherigen Zahlen stehen - eine
+     * verschwindende Zahl waere irritierender als eine kurz veraltete.
+     */
+    private suspend fun loadCounts() {
+        val instanceId = instance.value?.id ?: return
+        val outcome = commentRepository.countsByFilter(instanceId)
+        if (outcome is Outcome.Success && outcome.value.isNotEmpty()) {
+            transient.update { it.copy(counts = outcome.value) }
+        }
+    }
+
     private fun signalsFor(comments: List<Comment>): Map<Long, CommentSignals> {
         if (comments.isEmpty()) return emptyMap()
         val duplicated = CommentSignals.duplicatedIds(comments)
@@ -244,14 +265,20 @@ class InboxViewModel @Inject constructor(
         val instanceId = instance.value?.id ?: return
         viewModelScope.launch {
             when (val outcome = moderateComment(instanceId, comment.id, action)) {
-                is Outcome.Success -> _events.tryEmit(
-                    Event.ModerationDone(
-                        commentId = comment.id,
-                        action = action,
-                        previousStatus = outcome.value.previousStatus,
-                        undoable = outcome.value.undoable,
-                    ),
-                )
+                is Outcome.Success -> {
+                    _events.tryEmit(
+                        Event.ModerationDone(
+                            commentId = comment.id,
+                            action = action,
+                            previousStatus = outcome.value.previousStatus,
+                            undoable = outcome.value.undoable,
+                        ),
+                    )
+                    // Jede Moderation verschiebt einen Kommentar zwischen zwei
+                    // Filtern; ohne das blieben die Zahlen bis zum naechsten
+                    // Aktualisieren falsch.
+                    loadCounts()
+                }
 
                 is Outcome.Failure -> _events.tryEmit(Event.Failed(outcome.error))
             }
@@ -262,7 +289,11 @@ class InboxViewModel @Inject constructor(
         val instanceId = instance.value?.id ?: return
         viewModelScope.launch {
             val outcome = undoModeration(instanceId, commentId, previousStatus)
-            if (outcome is Outcome.Failure) _events.tryEmit(Event.Failed(outcome.error))
+            if (outcome is Outcome.Failure) {
+                _events.tryEmit(Event.Failed(outcome.error))
+            } else {
+                loadCounts()
+            }
         }
     }
 }

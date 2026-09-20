@@ -49,6 +49,14 @@ interface CommentRepository {
         excludeCommentId: Long,
     ): Outcome<Int>
 
+    /**
+     * Anzahl der Kommentare je Filter, fuer die Zahlen an der Filterleiste.
+     *
+     * Fehlende Eintraege bedeuten „nicht ermittelt" - dann zeigt die
+     * Filterleiste schlicht keine Zahl, statt eine falsche Null zu behaupten.
+     */
+    suspend fun countsByFilter(instanceId: String): Outcome<Map<CommentFilter, Int>>
+
     suspend fun moderate(
         instanceId: String,
         commentId: Long,

@@ -183,6 +183,7 @@ internal fun InboxScreenContent(
             OfflineBanner(isOffline = state.isOffline, lastSync = state.lastSync)
             FilterRow(
                 selected = state.filter,
+                counts = state.counts,
                 onSelect = onFilterSelected,
             )
 
@@ -278,6 +279,7 @@ private fun InboxContent(
 @Composable
 private fun FilterRow(
     selected: CommentFilter,
+    counts: Map<CommentFilter, Int>,
     onSelect: (CommentFilter) -> Unit,
 ) {
     LazyRow(
@@ -289,7 +291,12 @@ private fun FilterRow(
             FilterChip(
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
-                label = { Text(stringResource(filter.labelRes())) },
+                label = {
+                    val name = stringResource(filter.labelRes())
+                    // Ist die Zahl nicht bekannt, steht dort nur der Name -
+                    // eine erfundene Null waere schlechter als keine Angabe.
+                    Text(counts[filter]?.let { "$name · $it" } ?: name)
+                },
                 colors = FilterChipDefaults.filterChipColors(),
             )
         }

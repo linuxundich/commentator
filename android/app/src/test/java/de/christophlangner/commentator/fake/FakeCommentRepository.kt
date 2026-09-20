@@ -65,6 +65,15 @@ class FakeCommentRepository : CommentRepository {
 
     override fun hasMorePages(instanceId: String, filter: CommentFilter): Boolean = morePages
 
+    /** Anzahl je Filter, die die Zaehlung liefert. */
+    var countsByFilter: Map<CommentFilter, Int> = emptyMap()
+    var countCalls = 0
+
+    override suspend fun countsByFilter(instanceId: String): Outcome<Map<CommentFilter, Int>> {
+        countCalls++
+        return Outcome.Success(countsByFilter)
+    }
+
     /** Bisher freigeschaltete Kommentare je Adresse. */
     val approvedByAuthor = mutableMapOf<String, Int>()
 
