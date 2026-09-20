@@ -9,9 +9,13 @@ android/captures/
 .kotlin/
 *.hprof
 
-# Keystores und Signaturmaterial dürfen niemals ins Repository
+# Keystores und Signaturmaterial dürfen niemals ins Repository.
+# Der echte Schlüssel liegt ohnehin außerhalb (~/.android/), diese Regeln
+# fangen nur den Fall ab, dass doch einmal einer hier landet.
 *.jks
 *.keystore
+*.p12
+*.bks
 keystore.properties
 signing.properties
 

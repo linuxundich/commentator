@@ -1,3 +1,18 @@
+/**
+ * Signaturdaten kommen ausschließlich aus Gradle-Properties, die außerhalb
+ * dieses Repositories liegen (~/.gradle/gradle.properties). Fehlen sie -
+ * etwa auf einem fremden Rechner oder in CI ohne Secrets -, entsteht ein
+ * unsigniertes Release statt eines Build-Fehlers.
+ */
+val signingProperties = listOf(
+    "COMMENTATOR_STORE_FILE",
+    "COMMENTATOR_STORE_PASSWORD",
+    "COMMENTATOR_KEY_ALIAS",
+    "COMMENTATOR_KEY_PASSWORD",
+).associateWith { providers.gradleProperty(it).orNull }
+
+val canSignRelease = signingProperties.values.none { it.isNullOrBlank() }
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -14,6 +29,23 @@ android {
     // Explizit gesetzt: AGP 9.4 würde sonst 36.0.0 anfordern und versuchen,
     // sie nachzuinstallieren. Installiert ist 37.0.0.
     buildToolsVersion = "37.0.0"
+
+    signingConfigs {
+        if (canSignRelease) {
+            create("release") {
+                storeFile = file(signingProperties.getValue("COMMENTATOR_STORE_FILE")!!)
+                storePassword = signingProperties.getValue("COMMENTATOR_STORE_PASSWORD")
+                keyAlias = signingProperties.getValue("COMMENTATOR_KEY_ALIAS")
+                keyPassword = signingProperties.getValue("COMMENTATOR_KEY_PASSWORD")
+
+                // v1 ist für minSdk 26 überflüssig; v2 und v3 decken alles ab,
+                // was die App unterstützt.
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "de.christophlangner.commentator"
@@ -37,8 +69,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Bewusst keine Signaturkonfiguration im Repository. Siehe README,
-            // Abschnitt "Release-Build".
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

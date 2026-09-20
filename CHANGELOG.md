@@ -87,6 +87,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 - Das Application Password wird nicht als Navigationsargument weitergereicht,
   damit es nicht im Backstack oder im gespeicherten Zustand landet.
 - Die App fordert drei Berechtigungen an und keine weiteren.
+- Die Signaturkonfiguration für Release-Builds liest ausschließlich
+  Gradle-Properties von außerhalb des Projekts. Weder Keystore noch Passwörter
+  liegen im Repository, und ohne sie entsteht ein unsigniertes Release statt
+  eines Build-Fehlers.
 - Sicherungsregeln greifen auch auf Android 11 und älter (`fullBackupContent`),
   nicht nur über `dataExtractionRules` ab Android 12.
 - Die Laufzeitberechtigung für Benachrichtigungen wird nur dort abgefragt, wo

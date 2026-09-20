@@ -225,19 +225,43 @@ prüfen.
 
 ### Release-Build
 
-Das Repository enthält bewusst **keine** Signaturkonfiguration und keinen
-Keystore. Ein unsigniertes Release-APK entsteht mit:
-
 ```bash
 ./gradlew assembleRelease
 ```
 
-Für ein signiertes Release einen eigenen Keystore anlegen und die
-Signaturdaten außerhalb des Repositories halten – zum Beispiel in
-`~/.gradle/gradle.properties`. `*.jks`, `*.keystore` und
-`keystore.properties` sind in `.gitignore` ausgeschlossen.
-
 Release-Builds verwenden R8 mit Code- und Ressourcenverkleinerung.
+
+Das Repository enthält **weder Keystore noch Passwörter**. Die
+Signaturkonfiguration liest vier Gradle-Properties, die außerhalb des
+Projekts liegen müssen – in `~/.gradle/gradle.properties`:
+
+```properties
+COMMENTATOR_STORE_FILE=/home/<benutzer>/.android/commentator-release.p12
+COMMENTATOR_STORE_PASSWORD=<Passwort>
+COMMENTATOR_KEY_ALIAS=commentator
+COMMENTATOR_KEY_PASSWORD=<Passwort>
+```
+
+Fehlt auch nur eine davon, entsteht ein **unsigniertes** Release statt eines
+Build-Fehlers. Ein fremder Klon des Repositories baut also weiterhin, nur eben
+ohne Signatur.
+
+Einen passenden Schlüssel erzeugt man so:
+
+```bash
+keytool -genkeypair \
+  -keystore ~/.android/commentator-release.p12 \
+  -storetype PKCS12 -alias commentator \
+  -keyalg RSA -keysize 4096 -validity 10950 \
+  -dname "CN=<Name>, O=<Organisation>, C=DE"
+chmod 600 ~/.android/commentator-release.p12
+```
+
+> **Der Schlüssel ist nicht ersetzbar.** Android erlaubt ein Update nur, wenn
+> es mit demselben Schlüssel signiert ist wie die installierte Version. Geht
+> er verloren, lässt sich die App nur deinstallieren und neu installieren –
+> mit Verlust aller lokalen Daten. Keystore und Passwort gehören deshalb in
+> eine Sicherung und in einen Passwortmanager, nicht ins Repository.
 
 ### Tests
 
