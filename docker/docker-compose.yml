@@ -1,0 +1,89 @@
+# Lokale WordPress-Testumgebung für die Entwicklung von Commentator.
+#
+# Die App spricht ausschließlich HTTPS. Deshalb steht vor WordPress ein
+# schlanker TLS-Proxy mit selbstsigniertem Zertifikat - ohne ihn wären
+# Application Passwords in WordPress gar nicht verfügbar, weil WordPress sie
+# nur über gesicherte Verbindungen anbietet.
+#
+#   docker compose up -d       startet die Umgebung
+#   docker compose down        beendet sie
+#   docker compose down -v     beendet sie und verwirft alle Daten
+
+name: commentator-test
+
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: root
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    image: wordpress:6-php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DEBUG: 1
+      # WordPress läuft hinter dem TLS-Proxy und muss deshalb erfahren, dass
+      # die Verbindung von außen gesichert ist. Sonst liefert is_ssl() false
+      # und der Autorisierungs-Flow für Application Passwords fehlt.
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_HOME', '${WP_SITE_URL:-https://localhost:8443}' );
+        define( 'WP_SITEURL', '${WP_SITE_URL:-https://localhost:8443}' );
+        if ( isset( $$_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === $$_SERVER['HTTP_X_FORWARDED_PROTO'] ) {
+            $$_SERVER['HTTPS'] = 'on';
+        }
+    volumes:
+      - wp-data:/var/www/html
+      # Das Bridge-Plugin wird direkt aus dem Repository eingebunden, damit
+      # Änderungen ohne Neuinstallation wirksam werden.
+      - ../wordpress-plugin/commentator-bridge:/var/www/html/wp-content/plugins/commentator-bridge:ro
+
+  proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    ports:
+      - "8443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+
+  # Einmalige Hilfsdienste, nur mit Profil aktiv:
+  #   docker compose --profile tools run --rm wpcli <befehl>
+  wpcli:
+    image: wordpress:cli-php8.3
+    profiles: ["tools"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    volumes:
+      - wp-data:/var/www/html
+      - ../wordpress-plugin/commentator-bridge:/var/www/html/wp-content/plugins/commentator-bridge:ro
+    user: "33:33"
+
+volumes:
+  db-data:
+  wp-data:

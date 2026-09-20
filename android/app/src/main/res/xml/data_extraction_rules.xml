@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Es wird nichts gesichert und nichts auf ein neues Gerät übertragen. Der
+  verschlüsselte Zugangsdatensatz wäre auf einem anderen Gerät ohnehin
+  wertlos, weil der Schlüssel den Android Keystore nicht verlässt.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>

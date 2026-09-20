@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Klartextverkehr ist ausnahmslos verboten - auch in Debug-Builds. Damit kann
+  ein Application Password die App nie unverschlüsselt verlassen.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+      Greift ausschließlich, wenn die Anwendung als debuggbar signiert ist;
+      die Plattform ignoriert diesen Block in Release-Builds vollständig.
+
+      Nötig für die lokale Testumgebung unter docker/, die ein
+      selbstsigniertes Zertifikat verwendet. Klartext bleibt auch hier
+      verboten - erlaubt wird nur, einem selbst installierten Zertifikat zu
+      vertrauen.
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

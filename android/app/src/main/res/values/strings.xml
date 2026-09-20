@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Standardsprache der App ist Deutsch; unter values-en liegt die englische
+  Fassung. Alle für Benutzer sichtbaren Texte stehen hier und nicht im Code.
+-->
+<resources>
+    <string name="app_name">Commentator</string>
+
+    <!-- Aktionen -->
+    <string name="action_approve">Genehmigen</string>
+    <string name="action_hold">Zurückstellen</string>
+    <string name="action_spam">Spam</string>
+    <string name="action_trash">Papierkorb</string>
+    <string name="action_delete_permanently">Endgültig löschen</string>
+    <string name="action_reply">Antworten</string>
+    <string name="action_send_reply">Antwort senden</string>
+    <string name="action_edit">Bearbeiten</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_undo">Rückgängig</string>
+    <string name="action_retry">Erneut versuchen</string>
+    <string name="action_refresh">Aktualisieren</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="action_back">Zurück</string>
+    <string name="action_more">Weitere Aktionen</string>
+    <string name="action_continue">Weiter</string>
+    <string name="action_sign_in">Anmelden</string>
+    <string name="action_sign_in_again">Neu anmelden</string>
+    <string name="action_sign_out">Abmelden</string>
+    <string name="action_authorize_in_browser">In WordPress autorisieren</string>
+    <string name="action_use_manual_credentials">Application Password manuell eingeben</string>
+
+    <!-- Status -->
+    <string name="status_approved">Genehmigt</string>
+    <string name="status_pending">Offen</string>
+    <string name="status_spam">Spam</string>
+    <string name="status_trash">Papierkorb</string>
+
+    <!-- Filter -->
+    <string name="filter_all">Alle</string>
+    <string name="filter_pending">Offen</string>
+    <string name="filter_approved">Genehmigt</string>
+    <string name="filter_spam">Spam</string>
+    <string name="filter_trash">Papierkorb</string>
+
+    <!-- Liste -->
+    <string name="comment_author_unknown">Unbekannt</string>
+    <string name="comment_on_post">Beitrag: %1$s</string>
+    <string name="cd_open_comment">Kommentar von %1$s öffnen</string>
+    <string name="state_loading">Kommentare werden geladen…</string>
+
+    <!-- Leerzustände -->
+    <string name="empty_pending_title">Nichts zu moderieren</string>
+    <string name="empty_pending_description">Es warten keine Kommentare auf eine Entscheidung.</string>
+    <string name="empty_spam_title">Kein Spam</string>
+    <string name="empty_trash_title">Papierkorb ist leer</string>
+    <string name="empty_generic_title">Keine Kommentare</string>
+    <string name="empty_generic_description">Für diesen Filter gibt es derzeit nichts anzuzeigen.</string>
+
+    <!-- Offline und Sitzung -->
+    <string name="offline_no_data">Offline. Es sind noch keine Kommentare gespeichert.</string>
+    <string name="offline_last_sync">Offline. Angezeigt wird der Stand von %1$s.</string>
+    <string name="session_invalid_banner">Die Zugangsdaten wurden abgelehnt. Moderation ist derzeit nicht möglich.</string>
+
+    <!-- Detailansicht -->
+    <string name="detail_title">Kommentar</string>
+    <string name="detail_post">Beitrag</string>
+    <string name="detail_website">Website</string>
+    <string name="detail_email">E-Mail</string>
+    <string name="detail_replies">Antworten</string>
+    <string name="detail_not_available">Dieser Kommentar ist nicht verfügbar.</string>
+
+    <!-- Antwort -->
+    <string name="reply_label">Antwort</string>
+    <string name="reply_placeholder">Antwort schreiben…</string>
+    <string name="reply_disabled_hint">Ohne Verbindung oder ohne Moderationsrecht kann nicht geantwortet werden.</string>
+
+    <!-- Dialoge -->
+    <string name="dialog_delete_title">Endgültig löschen?</string>
+    <string name="dialog_delete_message">Der Kommentar wird unwiderruflich entfernt und lässt sich nicht wiederherstellen.</string>
+    <string name="dialog_edit_title">Kommentar bearbeiten</string>
+    <string name="dialog_sign_out_title">Abmelden?</string>
+    <string name="dialog_sign_out_message">Die gespeicherten Zugangsdaten und der lokale Zwischenspeicher werden gelöscht. Das Application Password bleibt in WordPress bestehen, bis du es dort widerrufst.</string>
+
+    <!-- Rückmeldungen -->
+    <string name="snackbar_approved">Kommentar genehmigt</string>
+    <string name="snackbar_held">Kommentar zurückgestellt</string>
+    <string name="snackbar_spam">Als Spam markiert</string>
+    <string name="snackbar_trashed">In den Papierkorb verschoben</string>
+    <string name="snackbar_deleted">Endgültig gelöscht</string>
+    <string name="snackbar_reply_published">Antwort veröffentlicht</string>
+    <string name="snackbar_edit_saved">Änderung gespeichert</string>
+
+    <!-- Einrichtung -->
+    <string name="setup_title">WordPress verbinden</string>
+    <string name="setup_url_explanation">Gib die Adresse deines Blogs ein. Commentator prüft, ob dort eine WordPress-REST-API erreichbar ist.</string>
+    <string name="setup_url_label">Blog-Adresse</string>
+    <string name="setup_url_https_hint">Nur HTTPS. Unverschlüsselte Verbindungen werden abgelehnt.</string>
+    <string name="setup_authorize_explanation">Du wirst zu %1$s weitergeleitet und meldest dich dort in deinem Browser an. Commentator erhält danach ausschließlich ein Application Password, das du in WordPress jederzeit einzeln widerrufen kannst. Dein Kontokennwort sieht die App nie.</string>
+    <string name="setup_manual_explanation">Erzeuge in WordPress unter „Benutzer → Profil → Application Passwords" ein Passwort und trage es hier ein.</string>
+    <string name="setup_username_label">Benutzername</string>
+    <string name="setup_app_password_label">Application Password</string>
+    <string name="setup_app_password_hint">Leerzeichen dürfen enthalten sein, sie werden entfernt.</string>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_section_account">Verbindung</string>
+    <string name="settings_section_notifications">Benachrichtigungen</string>
+    <string name="settings_section_privacy">Datenschutz</string>
+    <string name="settings_blog">Blog</string>
+    <string name="settings_url">Adresse</string>
+    <string name="settings_user">Benutzer</string>
+    <string name="settings_plugin">Plugin commentator-bridge</string>
+    <string name="settings_plugin_detected">Erkannt – Abfragen laufen sparsam</string>
+    <string name="settings_plugin_missing">Nicht installiert – es wird die Kern-API verwendet</string>
+    <string name="settings_no_moderation_rights">Dieses Konto besitzt kein Recht zum Moderieren von Kommentaren. Moderationsaktionen sind deaktiviert.</string>
+    <string name="settings_notifications">Benachrichtigungen</string>
+    <string name="settings_notifications_description">Im Hintergrund auf neue Kommentare prüfen</string>
+    <string name="settings_interval">Prüfintervall</string>
+    <string name="settings_minutes">%1$d min</string>
+    <string name="settings_open_system_notifications">Systemeinstellungen für Benachrichtigungen öffnen</string>
+    <string name="settings_avatars">Avatare anzeigen</string>
+    <string name="settings_avatars_description">Lädt Bilder von Gravatar und baut damit eine Verbindung zu einem Dritten auf</string>
+    <string name="settings_author_email">E-Mail-Adressen anzeigen</string>
+    <string name="settings_author_email_description">Zeigt die Adresse des Kommentators in der Detailansicht</string>
+
+    <!-- Benachrichtigungskanäle -->
+    <string name="channel_new_comments">Neue Kommentare</string>
+    <string name="channel_new_comments_description">Kommentare, die auf eine Moderationsentscheidung warten</string>
+    <string name="channel_moderation_events">Antworten</string>
+    <string name="channel_moderation_events_description">Antworten auf bereits vorhandene Kommentare</string>
+    <string name="channel_sync_status">Synchronisierung</string>
+    <string name="channel_sync_status_description">Hinweise zu Verbindungs- und Anmeldeproblemen</string>
+
+    <!-- Benachrichtigungen -->
+    <string name="notification_new_comment_title">Neuer Kommentar von %1$s</string>
+    <string name="notification_new_reply_title">Neue Antwort von %1$s</string>
+    <string name="notification_session_invalid_title">Anmeldung abgelaufen</string>
+    <string name="notification_session_invalid_text">Commentator kann %1$s nicht mehr abfragen. Bitte neu anmelden.</string>
+    <plurals name="notification_new_comments_summary">
+        <item quantity="one">%1$d neuer Kommentar</item>
+        <item quantity="other">%1$d neue Kommentare</item>
+    </plurals>
+
+    <!-- Fehler -->
+    <string name="error_no_connection">Keine Internetverbindung.</string>
+    <string name="error_timeout">Der Server hat nicht rechtzeitig geantwortet.</string>
+    <string name="error_insecure_connection">Die gesicherte Verbindung ist fehlgeschlagen. Prüfe das Zertifikat der Website.</string>
+    <string name="error_unauthorized">Die Zugangsdaten sind ungültig oder wurden widerrufen.</string>
+    <string name="error_forbidden">Dieses Konto darf keine Kommentare moderieren.</string>
+    <string name="error_not_found">Der Eintrag wurde nicht gefunden.</string>
+    <string name="error_comment_gone">Dieser Kommentar existiert nicht mehr.</string>
+    <string name="error_rate_limited">Zu viele Anfragen. Bitte kurz warten.</string>
+    <plurals name="error_rate_limited_with_delay">
+        <item quantity="one">Zu viele Anfragen. Erneut möglich in %1$d Sekunde.</item>
+        <item quantity="other">Zu viele Anfragen. Erneut möglich in %1$d Sekunden.</item>
+    </plurals>
+    <string name="error_server">Der Server meldet ein Problem (Code %1$d).</string>
+    <string name="error_invalid_site">Unter dieser Adresse wurde keine WordPress-REST-API gefunden.</string>
+    <string name="error_insecure_site_url">Nur HTTPS-Adressen werden unterstützt.</string>
+    <string name="error_app_passwords_unavailable">Diese WordPress-Installation bietet keine Application Passwords an. Meist fehlt dafür HTTPS.</string>
+    <string name="error_malformed_response">Die Antwort des Servers war nicht lesbar.</string>
+    <string name="error_offline_write_blocked">Offline – Moderation ist derzeit nicht möglich.</string>
+    <string name="error_empty_reply">Die Antwort darf nicht leer sein.</string>
+    <string name="error_trash_disabled">Der Papierkorb ist in dieser Installation deaktiviert.</string>
+    <string name="error_wordpress">WordPress meldet einen Fehler (%1$s).</string>
+    <string name="error_unknown">Unerwarteter Fehler (%1$s).</string>
+</resources>

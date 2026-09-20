@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hintergrund des adaptiven App-Icons. Dunkel, damit das grüne Logo
+         auf hellen wie dunklen Hintergründen gut ablesbar bleibt. -->
+    <color name="ic_launcher_background">#11131A</color>
+    <color name="window_background">#FFFBFF</color>
+</resources>

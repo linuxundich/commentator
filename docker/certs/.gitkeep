@@ -1,0 +1,4 @@
+Dieses Verzeichnis nimmt das lokal erzeugte Testzertifikat auf.
+Es wird von docker/scripts/generate-cert.sh gefüllt und ist bewusst nicht
+Teil des Repositories - der private Schlüssel gehört nirgendwo hin außer auf
+den Entwicklungsrechner.

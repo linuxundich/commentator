@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Commentator</string>
+
+    <string name="action_approve">Approve</string>
+    <string name="action_hold">Hold</string>
+    <string name="action_spam">Spam</string>
+    <string name="action_trash">Trash</string>
+    <string name="action_delete_permanently">Delete permanently</string>
+    <string name="action_reply">Reply</string>
+    <string name="action_send_reply">Send reply</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_back">Back</string>
+    <string name="action_more">More actions</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_sign_in_again">Sign in again</string>
+    <string name="action_sign_out">Sign out</string>
+    <string name="action_authorize_in_browser">Authorize in WordPress</string>
+    <string name="action_use_manual_credentials">Enter application password manually</string>
+
+    <string name="status_approved">Approved</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_spam">Spam</string>
+    <string name="status_trash">Trash</string>
+
+    <string name="filter_all">All</string>
+    <string name="filter_pending">Pending</string>
+    <string name="filter_approved">Approved</string>
+    <string name="filter_spam">Spam</string>
+    <string name="filter_trash">Trash</string>
+
+    <string name="comment_author_unknown">Unknown</string>
+    <string name="comment_on_post">Post: %1$s</string>
+    <string name="cd_open_comment">Open comment by %1$s</string>
+    <string name="state_loading">Loading comments…</string>
+
+    <string name="empty_pending_title">Nothing to moderate</string>
+    <string name="empty_pending_description">No comments are waiting for a decision.</string>
+    <string name="empty_spam_title">No spam</string>
+    <string name="empty_trash_title">Trash is empty</string>
+    <string name="empty_generic_title">No comments</string>
+    <string name="empty_generic_description">There is nothing to show for this filter right now.</string>
+
+    <string name="offline_no_data">Offline. No comments have been stored yet.</string>
+    <string name="offline_last_sync">Offline. Showing data from %1$s.</string>
+    <string name="session_invalid_banner">Your credentials were rejected. Moderation is unavailable.</string>
+
+    <string name="detail_title">Comment</string>
+    <string name="detail_post">Post</string>
+    <string name="detail_website">Website</string>
+    <string name="detail_email">Email</string>
+    <string name="detail_replies">Replies</string>
+    <string name="detail_not_available">This comment is not available.</string>
+
+    <string name="reply_label">Reply</string>
+    <string name="reply_placeholder">Write a reply…</string>
+    <string name="reply_disabled_hint">Replying needs a connection and moderation rights.</string>
+
+    <string name="dialog_delete_title">Delete permanently?</string>
+    <string name="dialog_delete_message">The comment will be removed for good and cannot be restored.</string>
+    <string name="dialog_edit_title">Edit comment</string>
+    <string name="dialog_sign_out_title">Sign out?</string>
+    <string name="dialog_sign_out_message">Stored credentials and the local cache will be deleted. The application password stays valid in WordPress until you revoke it there.</string>
+
+    <string name="snackbar_approved">Comment approved</string>
+    <string name="snackbar_held">Comment set to pending</string>
+    <string name="snackbar_spam">Marked as spam</string>
+    <string name="snackbar_trashed">Moved to trash</string>
+    <string name="snackbar_deleted">Deleted permanently</string>
+    <string name="snackbar_reply_published">Reply published</string>
+    <string name="snackbar_edit_saved">Change saved</string>
+
+    <string name="setup_title">Connect WordPress</string>
+    <string name="setup_url_explanation">Enter your blog address. Commentator checks whether a WordPress REST API is reachable there.</string>
+    <string name="setup_url_label">Blog address</string>
+    <string name="setup_url_https_hint">HTTPS only. Unencrypted connections are rejected.</string>
+    <string name="setup_authorize_explanation">You will be sent to %1$s and sign in there in your browser. Commentator only ever receives an application password, which you can revoke individually in WordPress at any time. The app never sees your account password.</string>
+    <string name="setup_manual_explanation">Create a password in WordPress under Users → Profile → Application Passwords and enter it here.</string>
+    <string name="setup_username_label">Username</string>
+    <string name="setup_app_password_label">Application password</string>
+    <string name="setup_app_password_hint">Spaces are allowed and will be removed.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_account">Connection</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_blog">Blog</string>
+    <string name="settings_url">Address</string>
+    <string name="settings_user">User</string>
+    <string name="settings_plugin">commentator-bridge plugin</string>
+    <string name="settings_plugin_detected">Detected – checks stay lightweight</string>
+    <string name="settings_plugin_missing">Not installed – the core API is used</string>
+    <string name="settings_no_moderation_rights">This account cannot moderate comments. Moderation actions are disabled.</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_description">Check for new comments in the background</string>
+    <string name="settings_interval">Check interval</string>
+    <string name="settings_minutes">%1$d min</string>
+    <string name="settings_open_system_notifications">Open system notification settings</string>
+    <string name="settings_avatars">Show avatars</string>
+    <string name="settings_avatars_description">Loads images from Gravatar, which contacts a third party</string>
+    <string name="settings_author_email">Show email addresses</string>
+    <string name="settings_author_email_description">Shows the commenter address in the detail view</string>
+
+    <string name="channel_new_comments">New comments</string>
+    <string name="channel_new_comments_description">Comments waiting for a moderation decision</string>
+    <string name="channel_moderation_events">Replies</string>
+    <string name="channel_moderation_events_description">Replies to comments that already exist</string>
+    <string name="channel_sync_status">Synchronisation</string>
+    <string name="channel_sync_status_description">Notices about connection and sign-in problems</string>
+
+    <string name="notification_new_comment_title">New comment from %1$s</string>
+    <string name="notification_new_reply_title">New reply from %1$s</string>
+    <string name="notification_session_invalid_title">Sign-in expired</string>
+    <string name="notification_session_invalid_text">Commentator can no longer reach %1$s. Please sign in again.</string>
+    <plurals name="notification_new_comments_summary">
+        <item quantity="one">%1$d new comment</item>
+        <item quantity="other">%1$d new comments</item>
+    </plurals>
+
+    <string name="error_no_connection">No internet connection.</string>
+    <string name="error_timeout">The server did not respond in time.</string>
+    <string name="error_insecure_connection">The secure connection failed. Check the site certificate.</string>
+    <string name="error_unauthorized">The credentials are invalid or have been revoked.</string>
+    <string name="error_forbidden">This account is not allowed to moderate comments.</string>
+    <string name="error_not_found">The entry was not found.</string>
+    <string name="error_comment_gone">This comment no longer exists.</string>
+    <string name="error_rate_limited">Too many requests. Please wait a moment.</string>
+    <plurals name="error_rate_limited_with_delay">
+        <item quantity="one">Too many requests. Try again in %1$d second.</item>
+        <item quantity="other">Too many requests. Try again in %1$d seconds.</item>
+    </plurals>
+    <string name="error_server">The server reports a problem (code %1$d).</string>
+    <string name="error_invalid_site">No WordPress REST API was found at this address.</string>
+    <string name="error_insecure_site_url">Only HTTPS addresses are supported.</string>
+    <string name="error_app_passwords_unavailable">This WordPress installation does not offer application passwords. Usually HTTPS is missing.</string>
+    <string name="error_malformed_response">The server response could not be read.</string>
+    <string name="error_offline_write_blocked">Offline – moderation is unavailable.</string>
+    <string name="error_empty_reply">The reply cannot be empty.</string>
+    <string name="error_trash_disabled">Trash is disabled in this installation.</string>
+    <string name="error_wordpress">WordPress reports an error (%1$s).</string>
+    <string name="error_unknown">Unexpected error (%1$s).</string>
+</resources>

@@ -1,0 +1,192 @@
+package de.christophlangner.commentator.ui
+
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import de.christophlangner.commentator.core.error.AppError
+import de.christophlangner.commentator.domain.model.Comment
+import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.CommentStatus
+import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.fake.testComment
+import de.christophlangner.commentator.fake.testInstance
+import de.christophlangner.commentator.ui.inbox.InboxScreenContent
+import de.christophlangner.commentator.ui.inbox.InboxUiState
+import de.christophlangner.commentator.ui.theme.CommentatorTheme
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * Oberflächentests des Posteingangs.
+ *
+ * Geprüft wird der zustandslose Teil: Er bekommt einen Zustand und gibt
+ * Ereignisse zurück. Dadurch braucht der Test weder Hilt noch ein Gerät.
+ */
+@RunWith(RobolectricTestRunner::class)
+// Robolectric startet sonst mit englischem Gebietsschema und einer
+// Bildschirmgröße von 0 x 0. Beides muss festgelegt sein: Die Standardsprache
+// der App ist Deutsch, und ohne Fläche gilt in Compose nichts als sichtbar.
+@Config(qualifiers = "de-rDE-w411dp-h891dp")
+class InboxScreenTest {
+
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    private var selectedFilter: CommentFilter? = null
+    private var openedComment: Comment? = null
+    private val moderations = mutableListOf<Pair<Comment, ModerationAction>>()
+    private var refreshed = 0
+
+    private fun render(state: InboxUiState) {
+        composeRule.setContent {
+            CommentatorTheme(dynamicColor = false) {
+                InboxScreenContent(
+                    state = state,
+                    snackbarHostState = SnackbarHostState(),
+                    onRefresh = { refreshed++ },
+                    onFilterSelected = { selectedFilter = it },
+                    onOpenComment = { openedComment = it },
+                    onModerate = { comment, action -> moderations += comment to action },
+                    onLoadMore = {},
+                    onOpenSettings = {},
+                    onReauthenticate = {},
+                )
+            }
+        }
+    }
+
+    private fun stateWith(
+        comments: List<Comment>,
+        isOffline: Boolean = false,
+        error: AppError? = null,
+        sessionInvalid: Boolean = false,
+    ) = InboxUiState(
+        instance = testInstance(),
+        filter = CommentFilter.PENDING,
+        comments = comments,
+        isInitialLoad = false,
+        isOffline = isOffline,
+        sessionInvalid = sessionInvalid,
+        error = error,
+    )
+
+    @Test
+    fun `zeigt Autor Text und Beitrag eines Kommentars`() {
+        render(stateWith(listOf(testComment(1, content = "Sehr interessanter Artikel"))))
+
+        composeRule.onNodeWithText("Max Mustermann").assertIsDisplayed()
+        composeRule.onNodeWithText("Sehr interessanter Artikel").assertIsDisplayed()
+        composeRule.onNodeWithText("Beitrag: Linux auf dem Desktop").assertIsDisplayed()
+    }
+
+    @Test
+    fun `zeigt alle Filter an`() {
+        render(stateWith(emptyList()))
+
+        listOf("Alle", "Offen", "Genehmigt", "Spam", "Papierkorb").forEach { label ->
+            assertTrue(
+                "Filter $label fehlt",
+                composeRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty(),
+            )
+        }
+    }
+
+    @Test
+    fun `Filterauswahl wird gemeldet`() {
+        render(stateWith(emptyList()))
+
+        composeRule.onAllNodesWithText("Spam")[0].performClick()
+
+        assertEquals(CommentFilter.SPAM, selectedFilter)
+    }
+
+    @Test
+    fun `Antippen eines Kommentars oeffnet ihn`() {
+        val comment = testComment(42, content = "Bitte oeffnen")
+        render(stateWith(listOf(comment)))
+
+        composeRule.onNodeWithText("Bitte oeffnen").performClick()
+
+        assertEquals(42L, openedComment?.id)
+    }
+
+    @Test
+    fun `Genehmigen loest die passende Moderationsaktion aus`() {
+        val comment = testComment(7, status = CommentStatus.PENDING)
+        render(stateWith(listOf(comment)))
+
+        composeRule.onNodeWithText("Genehmigen").performClick()
+
+        assertEquals(1, moderations.size)
+        assertEquals(7L, moderations.first().first.id)
+        assertEquals(ModerationAction.Approve, moderations.first().second)
+    }
+
+    @Test
+    fun `Spam loest die passende Moderationsaktion aus`() {
+        render(stateWith(listOf(testComment(7))))
+
+        composeRule.onNodeWithText("Spam", useUnmergedTree = false).let { }
+        composeRule.onAllNodes(hasText("Spam"))[1].performClick()
+
+        assertEquals(ModerationAction.MarkAsSpam, moderations.single().second)
+    }
+
+    @Test
+    fun `Aktualisieren wird gemeldet`() {
+        render(stateWith(listOf(testComment(1))))
+
+        composeRule.onNodeWithContentDescription("Aktualisieren").performClick()
+
+        assertEquals(1, refreshed)
+    }
+
+    @Test
+    fun `Leerzustand erklaert die Lage statt leer zu bleiben`() {
+        render(stateWith(emptyList()))
+
+        composeRule.onNodeWithText("Nichts zu moderieren").assertIsDisplayed()
+        composeRule.onNodeWithText("Es warten keine Kommentare auf eine Entscheidung.")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `Fehlerzustand zeigt verstaendlichen Text und Wiederholung`() {
+        render(stateWith(emptyList(), error = AppError.NoConnection))
+
+        composeRule.onNodeWithText("Keine Internetverbindung.").assertIsDisplayed()
+        composeRule.onNodeWithText("Erneut versuchen").performClick()
+        assertEquals(1, refreshed)
+    }
+
+    @Test
+    fun `offline erscheint ein Hinweis und Aktionen sind gesperrt`() {
+        render(stateWith(listOf(testComment(1)), isOffline = true))
+
+        composeRule.onNodeWithText(
+            "Offline. Es sind noch keine Kommentare gespeichert.",
+        ).assertIsDisplayed()
+        composeRule.onNodeWithText("Genehmigen").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `abgelehnte Zugangsdaten werden als Band angezeigt`() {
+        render(stateWith(listOf(testComment(1)), sessionInvalid = true))
+
+        composeRule.onNodeWithText(
+            "Die Zugangsdaten wurden abgelehnt. Moderation ist derzeit nicht möglich.",
+        ).assertIsDisplayed()
+        composeRule.onNodeWithText("Neu anmelden").assertIsDisplayed()
+    }
+}

@@ -1,0 +1,39 @@
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/captures/
+.kotlin/
+*.hprof
+
+# Keystores und Signaturmaterial dürfen niemals ins Repository
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Zugangsdaten / lokale Konfiguration
+secrets.properties
+.env
+docker/.env
+
+# Das selbstsignierte Zertifikat der Testumgebung enthält einen privaten
+# Schlüssel und wird lokal erzeugt, nicht eingecheckt.
+docker/certs/*
+!docker/certs/.gitkeep
+*.pem
+*.key
+*.crt
+
+# Build-Artefakte
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# OS / Editor
+.DS_Store
+*.swp

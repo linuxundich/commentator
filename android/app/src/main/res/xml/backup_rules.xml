@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sicherungsregeln für Android 11 und älter; ab Android 12 gilt
+  data_extraction_rules.xml. Beide schließen alles aus.
+
+  Die App sichert grundsätzlich nichts: Der verschlüsselte Zugangsdatensatz
+  wäre auf einem anderen Gerät ohnehin wertlos, weil der Schlüssel den
+  Android Keystore nicht verlässt, und der Kommentar-Cache lässt sich
+  jederzeit neu laden.
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="file" />
+</full-backup-content>
