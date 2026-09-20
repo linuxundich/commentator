@@ -134,12 +134,30 @@ class DefaultCommentRepository @Inject constructor(
 
     override suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment> {
         val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
-        return executor.call { api.getComment(commentId) }.map { response ->
+        val outcome = executor.call { api.getComment(commentId) }.map { response ->
             val entity = CommentMapper.toEntity(response.body, instanceId)
             dao.upsertComments(listOf(entity))
             resolvePostTitles(instanceId, api, listOf(entity))
             CommentMapper.toDomain(entity, postTitleOf(instanceId, entity.postId))
         }
+        if (outcome is Outcome.Success) fetchReplies(instanceId, api, commentId)
+        return outcome
+    }
+
+    /**
+     * Der Antwortfaden haengt nicht am Listenfilter.
+     *
+     * Wer einen offenen Kommentar oeffnet, soll auch dessen bereits
+     * freigeschaltete Antworten sehen - die bringt die gefilterte Liste nie
+     * mit. Ein Fehler hier laesst den Kommentar selbst unangetastet: Der
+     * Faden fehlt dann, der Kommentar ist trotzdem da.
+     */
+    private suspend fun fetchReplies(instanceId: String, api: WordPressApi, parentId: Long) {
+        val result = executor.call { api.listReplies(parentId = parentId) }
+        if (result !is Outcome.Success) return
+        val entities = result.value.body.map { CommentMapper.toEntity(it, instanceId) }
+        dao.replaceReplies(instanceId, parentId, entities)
+        resolvePostTitles(instanceId, api, entities)
     }
 
     override suspend fun moderate(

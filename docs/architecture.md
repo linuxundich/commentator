@@ -349,6 +349,13 @@ Die Unterscheidung zwischen lokalem und frischem Stand ist **sichtbar**: Eine
 Leiste über der Liste nennt den Zeitpunkt der letzten Synchronisierung und
 kennzeichnet den Offline-Zustand. Es gibt keinen stillen Cache.
 
+Ein Sonderfall ist der Antwortfaden in der Detailansicht: Die Liste lädt immer
+nur einen Status, eine freigeschaltete Antwort auf einen offenen Kommentar
+käme darüber also nie in den Cache. Deshalb holt `fetchComment` den Faden mit
+`GET /wp/v2/comments?parent=<id>&status=all` eigens nach. Scheitert dieser
+Nachschlag, bleibt der Kommentar selbst erhalten — es fehlt dann nur der
+Faden.
+
 ### Schreiben
 
 Bewusste Entscheidung: **Offline-Moderation wird in Version 1 nicht

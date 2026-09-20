@@ -1,5 +1,11 @@
 package de.christophlangner.commentator.ui.detail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -400,33 +406,58 @@ private fun ActionButton(
     }
 }
 
+/**
+ * Eine Antwort im Faden.
+ *
+ * Eingerückt und mit einer senkrechten Linie am linken Rand: Ohne die sähen
+ * Antworten wie eigenständige Kommentare aus, und der Bezug zum darüber
+ * stehenden Beitrag ginge verloren. Die Linie ist über `IntrinsicSize.Min` so
+ * hoch wie die Karte daneben.
+ */
 @Composable
 private fun ReplyItem(reply: Comment, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        ),
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 8.dp)
+            .height(IntrinsicSize.Min),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+        )
+
+        Spacer(Modifier.width(12.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            ),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = reply.authorName,
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    StatusChip(status = reply.status)
+                }
                 Text(
-                    text = reply.authorName,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
+                    text = reply.contentPlain,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
-                StatusChip(status = reply.status)
+                Text(
+                    text = RelativeTime.relative(reply.date, LocalResources.current).toString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Text(
-                text = reply.contentPlain,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Text(
-                text = RelativeTime.relative(reply.date, LocalResources.current).toString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }

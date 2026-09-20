@@ -438,7 +438,9 @@ einzeln auf.
 * **Kommentarbearbeitung ist reines HTML.** Es gibt keinen Rich-Text-Editor;
   bearbeitet wird der gerenderte HTML-Text.
 * **Instrumentierungstests brauchen ein Gerät.** Ohne Gerät oder Emulator
-  laufen nur die JVM-Tests, die aber den Großteil abdecken.
+  laufen nur die JVM-Tests, die aber den Großteil abdecken. Der Lauf löscht die
+  App-Daten auf dem Gerät; eine dort eingerichtete Verbindung muss danach neu
+  aufgebaut werden.
 
 ---
 

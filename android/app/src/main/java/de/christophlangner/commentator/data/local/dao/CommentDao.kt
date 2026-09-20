@@ -127,6 +127,40 @@ interface CommentDao {
         )
     }
 
+    @Query(
+        """
+        DELETE FROM comments
+        WHERE instanceId = :instanceId
+          AND parentId = :parentId
+          AND id NOT IN (:keptIds)
+        """,
+    )
+    suspend fun deleteStaleReplies(instanceId: String, parentId: Long, keptIds: List<Long>)
+
+    @Query("DELETE FROM comments WHERE instanceId = :instanceId AND parentId = :parentId")
+    suspend fun deleteReplies(instanceId: String, parentId: Long)
+
+    /**
+     * Schreibt den Antwortfaden eines Kommentars und raeumt dabei auf.
+     *
+     * Der Server liefert hier alle Status auf einmal. Deshalb darf - anders
+     * als bei der gefilterten Liste - alles geloescht werden, was nicht mehr
+     * dabei ist.
+     */
+    @Transaction
+    suspend fun replaceReplies(
+        instanceId: String,
+        parentId: Long,
+        replies: List<CommentEntity>,
+    ) {
+        if (replies.isEmpty()) {
+            deleteReplies(instanceId, parentId)
+            return
+        }
+        upsertComments(replies)
+        deleteStaleReplies(instanceId, parentId, replies.map { it.id })
+    }
+
     // --- Synchronisierungszustand ---
 
     @Query("SELECT * FROM sync_state WHERE instanceId = :instanceId")

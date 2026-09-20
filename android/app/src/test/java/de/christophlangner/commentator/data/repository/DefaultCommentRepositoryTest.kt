@@ -216,10 +216,63 @@ class DefaultCommentRepositoryTest {
     }
 
     @Test
+    fun `Einzelabruf holt auch den Antwortfaden`() = runTest {
+        server.enqueue(jsonResponse(comment(2L)))
+        enqueuePostTitleLookup()
+        // Die Antwort ist freigeschaltet, der Kommentar offen: Die gefilterte
+        // Liste wuerde sie nie mitbringen.
+        server.enqueue(jsonResponse("[${comment(15L, status = "approved", parent = 2L)}]"))
+        enqueuePostTitleLookup()
+
+        val outcome = repository.fetchComment(instance.id, 2)
+
+        assertTrue(outcome is Outcome.Success)
+        assertEquals(
+            listOf(15L),
+            repository.observeReplies(instance.id, 2).first().map { it.id },
+        )
+    }
+
+    @Test
+    fun `geloeschte Antworten verschwinden aus dem Faden`() = runTest {
+        server.enqueue(jsonResponse(comment(2L)))
+        enqueuePostTitleLookup()
+        server.enqueue(jsonResponse("[${comment(15L, parent = 2L)}]"))
+        enqueuePostTitleLookup()
+        repository.fetchComment(instance.id, 2)
+        assertEquals(1, repository.observeReplies(instance.id, 2).first().size)
+
+        server.enqueue(jsonResponse(comment(2L)))
+        enqueuePostTitleLookup()
+        server.enqueue(jsonResponse("[]"))
+        repository.fetchComment(instance.id, 2)
+
+        assertTrue(repository.observeReplies(instance.id, 2).first().isEmpty())
+    }
+
+    @Test
+    fun `scheiternder Antwortabruf laesst den Kommentar stehen`() = runTest {
+        server.enqueue(jsonResponse(comment(2L)))
+        enqueuePostTitleLookup()
+        server.enqueue(MockResponse.Builder().code(500).build())
+
+        val outcome = repository.fetchComment(instance.id, 2)
+
+        assertTrue(outcome is Outcome.Success)
+        assertEquals(2L, repository.observeComment(instance.id, 2).first()?.id)
+    }
+
+    @Test
     fun `unbekannte Instanz fuehrt nicht zum Absturz`() = runTest {
         val outcome = repository.refresh("gibt-es-nicht", CommentFilter.PENDING)
 
         assertTrue(outcome is Outcome.Failure)
+    }
+
+    /** Der Titel wird erst bei den Beitraegen, dann bei den Seiten gesucht. */
+    private fun enqueuePostTitleLookup() {
+        server.enqueue(jsonResponse("[]"))
+        server.enqueue(jsonResponse("[]"))
     }
 
     private fun comment(id: Long, status: String = "hold", parent: Long = 0) = """

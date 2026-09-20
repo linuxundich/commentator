@@ -26,7 +26,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 - Bearbeiten des Kommentartexts, sofern die API es für das Konto zulässt.
 - Rückgängig-Funktion für alle zurücknehmbaren Moderationsaktionen.
 - Detailansicht mit vollständigem Text, Autor, Website, optional
-  E-Mail-Adresse, Datum, Beitrag, Status und vorhandenen Antworten.
+  E-Mail-Adresse, Datum, Beitrag, Status und vorhandenen Antworten. Der
+  Antwortfaden wird eingerückt und mit einer senkrechten Linie abgesetzt, damit
+  Antworten nicht wie eigenständige Kommentare wirken. Er wird beim Öffnen
+  eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
 - Hintergrundprüfung auf neue Kommentare über WorkManager, mit einstellbarem

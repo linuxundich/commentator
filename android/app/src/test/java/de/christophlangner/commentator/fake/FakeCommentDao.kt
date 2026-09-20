@@ -93,6 +93,22 @@ class FakeCommentDao : CommentDao {
         }
     }
 
+    override suspend fun deleteStaleReplies(
+        instanceId: String,
+        parentId: Long,
+        keptIds: List<Long>,
+    ) {
+        stored.value = stored.value.filterNot {
+            it.instanceId == instanceId && it.parentId == parentId && it.id !in keptIds
+        }
+    }
+
+    override suspend fun deleteReplies(instanceId: String, parentId: Long) {
+        stored.value = stored.value.filterNot {
+            it.instanceId == instanceId && it.parentId == parentId
+        }
+    }
+
     override fun observeSyncState(instanceId: String): Flow<SyncStateEntity?> =
         syncStates.map { it[instanceId] }
 
