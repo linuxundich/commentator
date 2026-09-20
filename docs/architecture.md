@@ -459,6 +459,36 @@ Kommentarverarbeitung gehängt und keine Daten nach außen gesendet.
 
 ---
 
+## 9a. Umschaltbares App-Symbol
+
+Android bietet keine Möglichkeit, das Startsymbol zur Laufzeit zu ändern.
+Der übliche Weg ist deshalb ein `activity-alias` je Variante, die alle auf
+dieselbe Activity zeigen; eingeschaltet ist immer genau einer
+(`PackageManager.setComponentEnabledSetting`).
+
+Drei Dinge sind dabei entscheidend und deshalb im Code festgehalten:
+
+* **Reihenfolge.** Erst die neue Variante einschalten, dann die alte aus.
+  Andersherum gibt es einen Moment ohne eingeschaltetes Startsymbol - die App
+  verschwindet dann aus dem Startbildschirm, bei manchen Herstellern dauerhaft.
+* **`DONT_KILL_APP`.** Ohne dieses Flag beendet Android den Prozess sofort,
+  mitten in der Bedienung der Einstellungen.
+* **Namensraum statt Paketkennung.** Der Klassenname des Alias folgt der
+  `namespace` des Moduls, die installierte Paketkennung dagegen der
+  `applicationId` - im Debug-Build mit dem Zusatz `.debug`. Wer den
+  Klassennamen aus der Paketkennung zusammensetzt, zeigt ins Leere, und das
+  Umschalten bleibt wirkungslos. Ein Test hält das fest.
+
+Maßgeblich für die Anzeige ist der Zustand im PackageManager, nicht eine
+gespeicherte Einstellung. Damit kann beides nicht auseinanderlaufen, etwa wenn
+die App-Daten gelöscht werden, der Systemzustand aber bestehen bleibt.
+
+Bekannte Einschränkung: `android:icon` am `<application>` bleibt unverändert.
+Die Systemeinstellungen und die Freigabeauswahl zeigen deshalb weiterhin die
+Standardvariante.
+
+---
+
 ## 10a. Nahtstellen für Tests
 
 An vier Stellen steht bewusst eine Schnittstelle, wo auch eine konkrete Klasse

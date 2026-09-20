@@ -28,6 +28,7 @@ eigene WordPress-Installation.
   Status
 * Filter: Alle, Offen, Genehmigt, Spam, Papierkorb
 * Optional Avatare (standardmäßig aus, siehe Datenschutz)
+* Umschaltbares App-Symbol (grün oder blau)
 * Pull-to-Refresh und Aktualisieren über die Kopfleiste
 * Seitenweises Nachladen, auch bei Blogs mit vielen Kommentaren
 * Lokaler Zwischenspeicher: Die Liste ist sofort da, auch ohne Verbindung
@@ -404,8 +405,12 @@ von Avataren standardmäßig **aus**.
 
 Es gibt keine Analytics, keine Absturzberichte, keine Telemetrie, keine
 Werbung, keine Werbekennungen und keinen Server des Entwicklers. Die App
-fordert drei Berechtigungen an: `INTERNET`, `ACCESS_NETWORK_STATE` und
-`POST_NOTIFICATIONS`.
+fordert selbst drei Berechtigungen an: `INTERNET`, `ACCESS_NETWORK_STATE`
+und `POST_NOTIFICATIONS`. Im fertigen APK stehen drei weitere, die
+`androidx.work` beim Zusammenführen der Manifeste beisteuert – `WAKE_LOCK`,
+`RECEIVE_BOOT_COMPLETED` und `FOREGROUND_SERVICE`. Keine davon eröffnet
+Zugriff auf Nutzerdaten; [`docs/privacy.md`](docs/privacy.md) führt jede
+einzeln auf.
 
 ---
 
@@ -437,13 +442,29 @@ fordert drei Berechtigungen an: `INTERNET`, `ACCESS_NETWORK_STATE` und
 
 ---
 
-## Marken
+## Symbol und Marken
 
-Das App-Symbol verwendet die WordPress-Bildmarke, eingefärbt in Android-Grün.
-„WordPress“ und das zugehörige Logo sind Marken der WordPress Foundation.
-Dieses Projekt steht in keiner Verbindung zur WordPress Foundation oder zu
-Automattic und wird von ihnen weder unterstützt noch geprüft. Wer die App
-veröffentlichen möchte, sollte vorher ein eigenes Symbol verwenden.
+Das App-Symbol ist eine eigene Zeichnung: eine Sprechblase – der Gegenstand
+der App sind Kommentare – mit einem W darin, in flacher Geometrie. Es
+verwendet **keine fremde Wort- oder Bildmarke** und kann deshalb bedenkenlos
+veröffentlicht werden.
+
+![App-Symbol in verschiedenen Masken und Grössen](docs/assets/icon-preview.png)
+
+Es gibt zwei Farbvarianten, **in den App-Einstellungen unter „Erscheinungsbild"
+umschaltbar**: Android-Grün und WordPress-Blau. Dahinter steckt je ein
+`activity-alias` auf dieselbe Activity, von dem immer genau einer eingeschaltet
+ist – einen direkten Weg, das Startsymbol zur Laufzeit zu ändern, kennt Android
+nicht. Beim Umschalten legt der Startbildschirm den Eintrag neu an; ein selbst
+platziertes Symbol muss danach unter Umständen neu abgelegt werden.
+
+Die Quelldateien liegen unter
+[`android/app/src/main/res/drawable/`](android/app/src/main/res/drawable/),
+samt monochromer Variante für themenbezogene Symbole ab Android 13.
+
+„WordPress" ist eine Marke der WordPress Foundation. Dieses Projekt steht in
+keiner Verbindung zur WordPress Foundation oder zu Automattic und wird von
+ihnen weder unterstützt noch geprüft.
 
 ---
 

@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Kleines Symbol für Benachrichtigungen. Android zeichnet es einfarbig als
-  Silhouette, deshalb reine Deckkraft ohne Farbe.
+  Kleines Symbol für Benachrichtigungen: dieselbe Sprechblase wie im
+  App-Symbol, nur als reine Silhouette. Android zeichnet Benachrichtigungs-
+  symbole einfarbig, deshalb ohne das W - das wäre bei dieser Grösse ohnehin
+  nur noch ein Fleck.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
+    android:viewportWidth="108"
+    android:viewportHeight="108"
     android:tint="#FFFFFF">
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M20,2L4,2c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h14l4,4L22,4c0,-1.1 -0.9,-2 -2,-2z" />
+        android:pathData="M40,28 H68 A14,14 0 0 1 82,42 V56 A14,14 0 0 1 68,70 H52 L36,80 L44,70 H40 A14,14 0 0 1 26,56 V42 A14,14 0 0 1 40,28 Z" />
 </vector>

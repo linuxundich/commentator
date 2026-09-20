@@ -2,14 +2,18 @@ package de.christophlangner.commentator.ui.settings
 
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,6 +37,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -40,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
+import de.christophlangner.commentator.domain.model.AppIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,6 +155,43 @@ fun SettingsScreen(
             }
 
             HorizontalDivider()
+            SectionTitle(stringResource(R.string.settings_section_appearance))
+
+            Text(
+                text = stringResource(R.string.settings_app_icon),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                AppIcon.entries.forEach { icon ->
+                    FilterChip(
+                        selected = state.appIcon == icon,
+                        onClick = { viewModel.setAppIcon(icon) },
+                        label = { Text(stringResource(icon.labelRes())) },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(icon.swatch()),
+                            )
+                        },
+                    )
+                }
+            }
+            Text(
+                text = stringResource(R.string.settings_app_icon_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+
+            HorizontalDivider()
             SectionTitle(stringResource(R.string.settings_section_privacy))
 
             SwitchRow(
@@ -196,6 +240,17 @@ fun SettingsScreen(
             },
         )
     }
+}
+
+private fun AppIcon.labelRes(): Int = when (this) {
+    AppIcon.Green -> R.string.settings_app_icon_green
+    AppIcon.Blue -> R.string.settings_app_icon_blue
+}
+
+/** Farbtupfer neben der Bezeichnung - die Farbe ist hier die eigentliche Aussage. */
+private fun AppIcon.swatch(): Color = when (this) {
+    AppIcon.Green -> Color(0xFF3DDC84)
+    AppIcon.Blue -> Color(0xFF3858E9)
 }
 
 @Composable

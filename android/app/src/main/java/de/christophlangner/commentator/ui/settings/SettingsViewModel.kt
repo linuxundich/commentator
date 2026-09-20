@@ -3,6 +3,8 @@ package de.christophlangner.commentator.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.christophlangner.commentator.data.system.AppIconManager
+import de.christophlangner.commentator.domain.model.AppIcon
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
@@ -16,6 +18,7 @@ import javax.inject.Inject
 data class SettingsUiState(
     val instance: WordPressInstance? = null,
     val settings: AppSettings = AppSettings.DEFAULT,
+    val appIcon: AppIcon = AppIcon.DEFAULT,
     val isSignedOut: Boolean = false,
 )
 
@@ -23,6 +26,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
+    private val appIconManager: AppIconManager,
 ) : ViewModel() {
 
     private val signedOut = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -30,9 +34,15 @@ class SettingsViewModel @Inject constructor(
     val state: StateFlow<SettingsUiState> = combine(
         authRepository.observeActiveInstance(),
         settingsRepository.settings,
+        appIconManager.current,
         signedOut,
-    ) { instance, settings, isSignedOut ->
-        SettingsUiState(instance = instance, settings = settings, isSignedOut = isSignedOut)
+    ) { instance, settings, appIcon, isSignedOut ->
+        SettingsUiState(
+            instance = instance,
+            settings = settings,
+            appIcon = appIcon,
+            isSignedOut = isSignedOut,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000),
@@ -53,6 +63,15 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowAuthorEmail(show: Boolean) {
         viewModelScope.launch { settingsRepository.setShowAuthorEmail(show) }
+    }
+
+    /**
+     * Wechselt das Startsymbol. Wirkt sofort auf den Startbildschirm, deshalb
+     * ohne Umweg über eine gespeicherte Einstellung - maßgeblich ist der
+     * Zustand im System.
+     */
+    fun setAppIcon(icon: AppIcon) {
+        appIconManager.select(icon)
     }
 
     fun signOut() {

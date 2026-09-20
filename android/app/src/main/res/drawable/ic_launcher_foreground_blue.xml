@@ -3,8 +3,8 @@
   App-Symbol: eine Sprechblase mit dem W darin.
 
   Die Sprechblase steht für den Gegenstand der App - Kommentare -, das W für
-  WordPress. Form und Farbe folgen dem Android-Stil: flache Geometrie, kräftige
-  Flächen, Android-Grün.
+  WordPress. Gleiche Form wie die grüne Variante, nur in WordPress-Blau; in den
+  Einstellungen der App umschaltbar.
 
   Bewusst eine eigene Zeichnung und keine fremde Wortmarke.
 -->
@@ -20,7 +20,7 @@
         android:scaleX="1.08"
         android:scaleY="1.08">
 
-        <path android:fillColor="#3DDC84" android:pathData="M40,28 H68 A14,14 0 0 1 82,42 V56 A14,14 0 0 1 68,70 H52 L36,80 L44,70 H40 A14,14 0 0 1 26,56 V42 A14,14 0 0 1 40,28 Z" />
+        <path android:fillColor="#3858E9" android:pathData="M40,28 H68 A14,14 0 0 1 82,42 V56 A14,14 0 0 1 68,70 H52 L36,80 L44,70 H40 A14,14 0 0 1 26,56 V42 A14,14 0 0 1 40,28 Z" />
 
         <path
             android:strokeColor="#FFFFFF"

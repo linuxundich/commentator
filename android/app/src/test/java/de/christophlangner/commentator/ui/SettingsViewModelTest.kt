@@ -1,6 +1,8 @@
 package de.christophlangner.commentator.ui
 
 import app.cash.turbine.test
+import androidx.test.core.app.ApplicationProvider
+import de.christophlangner.commentator.data.system.AppIconManager
 import de.christophlangner.commentator.fake.FakeAuthRepository
 import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.MainDispatcherRule
@@ -14,7 +16,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class SettingsViewModelTest {
 
     @get:Rule
@@ -23,7 +28,13 @@ class SettingsViewModelTest {
     private val auth = FakeAuthRepository(testInstance(hasBridgePlugin = true))
     private val settings = FakeSettingsRepository()
 
-    private fun viewModel() = SettingsViewModel(auth, settings)
+    // Der AppIconManager greift auf den PackageManager zu, deshalb Robolectric
+    // statt eines Doppelgängers: Sein eigenes Verhalten prüft AppIconManagerTest.
+    private fun viewModel() = SettingsViewModel(
+        auth,
+        settings,
+        AppIconManager(ApplicationProvider.getApplicationContext()),
+    )
 
     @Test
     fun `Avatare sind standardmaessig aus`() {

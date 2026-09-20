@@ -46,8 +46,12 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 - Material 3 mit Dynamic Color, hellem und dunklem Modus nach
   Systemeinstellung.
 - Deutsche und englische Oberfläche.
-- App-Symbol als adaptives Icon mit monochromer Variante für themenbezogene
-  Symbole ab Android 13.
+- Eigenes App-Symbol als adaptives Icon: eine Sprechblase mit einem W darin.
+  Zwei Farbvarianten, in den Einstellungen umschaltbar - Android-Grün und
+  WordPress-Blau -, umgesetzt über je einen `activity-alias`. Mit monochromer
+  Variante für themenbezogene Symbole ab Android 13; das
+  Benachrichtigungssymbol greift dieselbe Silhouette auf. Es wird keine fremde
+  Wort- oder Bildmarke verwendet.
 
 **WordPress-Plugin**
 
@@ -88,7 +92,9 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Zugangsdaten in Cloud-Backups oder auf ein neues Gerät gelangen.
 - Das Application Password wird nicht als Navigationsargument weitergereicht,
   damit es nicht im Backstack oder im gespeicherten Zustand landet.
-- Die App fordert drei Berechtigungen an und keine weiteren.
+- Die App fordert selbst drei Berechtigungen an. Drei weitere steuert
+  `androidx.work` beim Zusammenführen der Manifeste bei; alle sechs sind in
+  `docs/privacy.md` einzeln aufgeführt.
 - Die Signaturkonfiguration für Release-Builds liest ausschließlich
   Gradle-Properties von außerhalb des Projekts. Weder Keystore noch Passwörter
   liegen im Repository, und ohne sie entsteht ein unsigniertes Release statt

@@ -102,14 +102,36 @@ eingerichtet, wird zusätzlich der Keystore-Schlüssel entfernt.
 
 ## Berechtigungen
 
+Von der App selbst angefordert:
+
 | Berechtigung | Wofür |
 |---|---|
 | `INTERNET` | Zugriff auf die WordPress-REST-API |
 | `ACCESS_NETWORK_STATE` | Offline-Erkennung und Bedingung für die Hintergrundprüfung |
 | `POST_NOTIFICATIONS` | Hinweis auf neue Kommentare (ab Android 13, wird zur Laufzeit erfragt) |
 
-Mehr nicht. Kein Speicherzugriff, keine Kontakte, kein Standort, keine
-Kamera, kein Hintergrundstandort, kein Wecker, keine exakten Alarme.
+Beim Zusammenführen der Manifeste kommen drei weitere aus `androidx.work`
+hinzu. Sie stehen nicht im Manifest der App, landen aber im fertigen APK und
+sollen deshalb hier stehen:
+
+| Berechtigung | Wofür |
+|---|---|
+| `WAKE_LOCK` | WorkManager hält das Gerät wach, solange eine Hintergrundprüfung läuft |
+| `RECEIVE_BOOT_COMPLETED` | stellt die geplante Prüfung nach einem Neustart wieder her; ohne sie bliebe sie liegen, bis die App wieder geöffnet wird |
+| `FOREGROUND_SERVICE` | von WorkManager für beschleunigte Arbeit deklariert. Die App nutzt das nicht, die Bibliothek deklariert es aber pauschal |
+
+Dazu kommt `<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` – eine
+Berechtigung, die WorkManager für sich selbst definiert, damit seine internen
+Broadcast-Empfänger für andere Apps unerreichbar bleiben. Sie ist auf
+Signaturebene und für Dritte nicht erlangbar.
+
+Keine dieser Berechtigungen eröffnet Zugriff auf Nutzerdaten, und keine
+verlangt eine Zustimmung zur Laufzeit außer `POST_NOTIFICATIONS`.
+
+Nicht dabei: kein Speicherzugriff, keine Kontakte, kein Standort, keine
+Kamera, kein Mikrofon, kein Hintergrundstandort, kein Wecker, keine exakten
+Alarme, keine Abfrage installierter Apps.
+
 
 ## Datenverarbeitung durch das WordPress-Plugin
 
