@@ -8,7 +8,7 @@ gepackt und liegen deshalb außerhalb des Android-Moduls.
 | Datei | Variante |
 |---|---|
 | `icon-512.png` | Android-Grün, entspricht dem Standard-Startsymbol |
-| `icon-512-blau.png` | WordPress-Blau, falls die blaue Variante der Standard werden soll |
+| `icon-512-blau.png` | WordPress-Blau – weisse Blase auf blauem Grund, siehe unten |
 
 Erzeugt aus derselben Zeichnung wie das Launcher-Symbol
 (`android/app/src/main/res/drawable/ic_launcher_foreground.xml`).
@@ -32,6 +32,17 @@ Startsymbol. Geprüft wurde gegen
 
 Die Marke misst 328 × 304 px, also 64 % der Kantenlänge, und liegt damit
 deutlich innerhalb des Eckenradius von 154 px, den Play anlegt.
+
+Sie sitzt **optisch** zentriert, nicht geometrisch: Der Blasenkörper trägt
+nahezu die gesamte Fläche, der Schweif wiegt kaum etwas. Am Rahmen
+ausgerichtet wirkte die Marke deshalb nach oben gerutscht.
+
+## Warum die blaue Variante umgekehrt eingefärbt ist
+
+Blau `#3858E9` auf dem dunklen Grund erreicht nur einen Kontrast von 3,3:1;
+der Schweif der Sprechblase verschwindet dabei bei kleinen Größen fast. Mit
+weisser Blase auf blauem Grund sind es 5,6:1 in beide Richtungen, bei
+unveränderter Markenfarbe.
 
 ## Warum größer als im Startsymbol
 

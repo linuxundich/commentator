@@ -40,6 +40,7 @@
     <string name="comment_on_post">Post: %1$s</string>
     <string name="cd_open_comment">Open comment by %1$s</string>
     <string name="state_loading">Loading comments…</string>
+    <string name="time_just_now">Just now</string>
 
     <string name="empty_pending_title">Nothing to moderate</string>
     <string name="empty_pending_description">No comments are waiting for a decision.</string>

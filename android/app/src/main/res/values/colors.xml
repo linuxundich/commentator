@@ -3,5 +3,9 @@
     <!-- Hintergrund des adaptiven App-Icons. Dunkel, damit das grüne Logo
          auf hellen wie dunklen Hintergründen gut ablesbar bleibt. -->
     <color name="ic_launcher_background">#11131A</color>
+
+    <!-- Die blaue Variante trägt die Markenfarbe als Fläche und die Blase in
+         Weiss. Blau auf dem dunklen Grund wäre zu kontrastarm. -->
+    <color name="ic_launcher_background_blue">#3858E9</color>
     <color name="window_background">#FFFBFF</color>
 </resources>

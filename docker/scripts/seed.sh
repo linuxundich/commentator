@@ -83,9 +83,18 @@ for entry in "${POSTS[@]}"; do
     fi
 done
 
-POST_IDS=($(wp post list --post_type=post --post_status=publish --field=ID --format=ids --orderby=ID --order=ASC))
-if [[ ${#POST_IDS[@]} -eq 0 ]]; then
-    echo "Keine Beiträge vorhanden - Abbruch." >&2
+# Nur die oben angelegten Beiträge verwenden. Die Liste aller Beiträge
+# enthielte auch WordPress' Standardbeitrag "Hello world!", und die
+# Testkommentare landeten dann dort statt an den passenden Texten.
+POST_IDS=()
+for entry in "${POSTS[@]}"; do
+    title="${entry%%|*}"
+    id=$(wp post list --post_type=post --post_status=publish --title="$title" --field=ID --format=ids | tr -d '\r')
+    [[ -n "$id" ]] && POST_IDS+=("$id")
+done
+
+if [[ ${#POST_IDS[@]} -lt 3 ]]; then
+    echo "Die angelegten Beiträge wurden nicht gefunden - Abbruch." >&2
     exit 1
 fi
 

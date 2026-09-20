@@ -229,7 +229,11 @@ internal fun CommentDetailBody(
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp),
                 ) {
-                    CommentHeader(comment = comment, showEmail = state.showAuthorEmail)
+                    CommentHeader(
+                        comment = comment,
+                        showEmail = state.showAuthorEmail,
+                        showAvatar = state.showAvatars,
+                    )
 
                     Text(
                         text = AnnotatedString.fromHtml(comment.contentHtml),
@@ -270,12 +274,15 @@ internal fun CommentDetailBody(
 }
 
 @Composable
-private fun CommentHeader(comment: Comment, showEmail: Boolean) {
+private fun CommentHeader(comment: Comment, showEmail: Boolean, showAvatar: Boolean) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(top = 16.dp),
     ) {
-        comment.avatarUrl?.let { url ->
+        // Ohne diese Bedingung entstünde eine Anfrage an Gravatar, obwohl die
+        // Einstellung dagegen steht - die Liste beachtet sie, die Detailansicht
+        // tat es bisher nicht.
+        comment.avatarUrl?.takeIf { showAvatar }?.let { url ->
             AsyncImage(
                 model = url,
                 contentDescription = null,
@@ -413,7 +420,7 @@ private fun ReplyItem(reply: Comment, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(top = 4.dp),
             )
             Text(
-                text = RelativeTime.relative(reply.date).toString(),
+                text = RelativeTime.relative(reply.date, LocalResources.current).toString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

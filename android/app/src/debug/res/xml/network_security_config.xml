@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Netzwerkkonfiguration ausschliesslich für Debug-Builds.
+  Sie ersetzt beim Zusammenführen der Ressourcen die Fassung aus src/main.
+
+  Unterschied zur Release-Fassung: Selbst installierten Zertifikaten wird
+  vertraut, damit gegen die lokale Testumgebung unter docker/ entwickelt
+  werden kann. Klartextverkehr bleibt auch hier verboten.
+
+  Bewusst als eigene Datei im Debug-Quellverzeichnis statt als
+  <debug-overrides> in der Hauptfassung: So enthält die Konfiguration des
+  Release-Builds keine einzige Zeile, die das Vertrauen lockern könnte.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

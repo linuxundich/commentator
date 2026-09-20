@@ -15,6 +15,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import de.christophlangner.commentator.R
@@ -55,7 +56,7 @@ fun OfflineBanner(
                     } else {
                         stringResource(
                             R.string.offline_last_sync,
-                            RelativeTime.relative(lastSync).toString(),
+                            RelativeTime.relative(lastSync, LocalResources.current).toString(),
                         )
                     },
                     style = MaterialTheme.typography.bodySmall,

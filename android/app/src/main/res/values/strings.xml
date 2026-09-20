@@ -48,6 +48,7 @@
     <string name="comment_on_post">Beitrag: %1$s</string>
     <string name="cd_open_comment">Kommentar von %1$s öffnen</string>
     <string name="state_loading">Kommentare werden geladen…</string>
+    <string name="time_just_now">Gerade eben</string>
 
     <!-- Leerzustände -->
     <string name="empty_pending_title">Nichts zu moderieren</string>

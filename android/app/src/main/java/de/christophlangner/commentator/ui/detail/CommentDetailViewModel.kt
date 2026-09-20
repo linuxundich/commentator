@@ -37,6 +37,7 @@ data class CommentDetailUiState(
     val isSendingReply: Boolean = false,
     val isSavingEdit: Boolean = false,
     val showAuthorEmail: Boolean = false,
+    val showAvatars: Boolean = false,
     val isOffline: Boolean = false,
     val sessionInvalid: Boolean = false,
     val canModerate: Boolean = false,
@@ -90,14 +91,14 @@ class CommentDetailViewModel @Inject constructor(
         commentRepository.observeComment(instanceId, commentId),
         commentRepository.observeReplies(instanceId, commentId),
         busy,
-        settingsRepository.settings.map { it.showAuthorEmail },
+        settingsRepository.settings,
         combine(
             connectivity.isOnline,
             authRepository.observeSessionInvalid(),
             authRepository.observeActiveInstance().map { it?.canModerate == true },
             ::Triple,
         ),
-    ) { comment, replies, busy, showEmail, environment ->
+    ) { comment, replies, busy, settings, environment ->
         val (isOnline, sessionInvalid, canModerate) = environment
         CommentDetailUiState(
             comment = comment,
@@ -105,7 +106,8 @@ class CommentDetailViewModel @Inject constructor(
             isLoading = busy.isLoading && comment == null,
             isSendingReply = busy.isSendingReply,
             isSavingEdit = busy.isSavingEdit,
-            showAuthorEmail = showEmail,
+            showAuthorEmail = settings.showAuthorEmail,
+            showAvatars = settings.showAvatars,
             isOffline = !isOnline,
             sessionInvalid = sessionInvalid,
             canModerate = canModerate,

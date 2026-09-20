@@ -3,8 +3,12 @@
   App-Symbol: eine Sprechblase mit dem W darin.
 
   Die Sprechblase steht für den Gegenstand der App - Kommentare -, das W für
-  WordPress. Form und Farbe folgen dem Android-Stil: flache Geometrie, kräftige
-  Flächen, Android-Grün.
+  WordPress. Flache Geometrie und kräftige Fläche nach Android-Art.
+
+  Die Zeichnung sitzt vier Einheiten unterhalb der Rastermitte. Das ist
+  Absicht: Der Blasenkörper trägt fast die gesamte Fläche, der Schweif wiegt
+  kaum etwas. Geometrisch mittig ausgerichtet wirkte die Marke deshalb nach
+  oben gerutscht. So liegt der Flächenschwerpunkt bei 53,4 statt 49,1.
 
   Bewusst eine eigene Zeichnung und keine fremde Wortmarke.
 -->
@@ -17,16 +21,16 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="1.08"
-        android:scaleY="1.08">
+        android:scaleX="1.05"
+        android:scaleY="1.05">
 
-        <path android:fillColor="#3DDC84" android:pathData="M40,28 H68 A14,14 0 0 1 82,42 V56 A14,14 0 0 1 68,70 H52 L36,80 L44,70 H40 A14,14 0 0 1 26,56 V42 A14,14 0 0 1 40,28 Z" />
+        <path android:fillColor="#3DDC84" android:pathData="M40,32 H68 A14,14 0 0 1 82,46 V60 A14,14 0 0 1 68,74 H52 L36,84 L44,74 H40 A14,14 0 0 1 26,60 V46 A14,14 0 0 1 40,32 Z" />
 
         <path
             android:strokeColor="#FFFFFF"
             android:strokeWidth="6"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
-            android:pathData="M43,42 L48.5,56 L54,46.5 L59.5,56 L65,42" />
+            android:pathData="M43,46 L48.5,60 L54,50.5 L59.5,60 L65,46" />
     </group>
 </vector>

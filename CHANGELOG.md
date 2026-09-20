@@ -56,6 +56,22 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 - Play-Store-Symbol als 512 × 512 px großes 32-Bit-PNG unter `store/play/`,
   geprüft gegen die Spezifikationen für das App-Symbol im Play Store.
 
+**Behoben nach dem ersten Lauf auf einem Gerät**
+
+- Die Detailansicht lud den Avatar eines Kommentators, ohne die Einstellung
+  „Avatare anzeigen" zu beachten. Damit entstand eine Anfrage an Gravatar,
+  obwohl sie abgelehnt war. Die Listenansicht war davon nicht betroffen.
+- Eine soeben veröffentlichte Antwort zeigte „Vor 0 Min.". Unterhalb einer
+  Minute steht jetzt „Gerade eben".
+- `seed.sh` hängte die Testkommentare an WordPress' Standardbeitrag
+  „Hello world!" statt an die selbst angelegten Beiträge.
+- Die blaue Symbolvariante erreichte auf dem dunklen Grund nur 3,3:1 Kontrast.
+  Sie ist jetzt umgekehrt eingefärbt - weisse Blase auf WordPress-Blau - und
+  kommt auf 5,6:1.
+- Die Marke sitzt in allen Symbolebenen optisch statt geometrisch zentriert.
+  Der Blasenkörper trägt fast die gesamte Fläche, weshalb die am Rahmen
+  ausgerichtete Zeichnung nach oben gerutscht wirkte.
+
 **WordPress-Plugin**
 
 - `commentator-bridge` mit den Leseendpunkten `commentator/v1/status` und
