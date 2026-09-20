@@ -10,9 +10,11 @@ import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.data.remote.WordPressClientFactory
 import de.christophlangner.commentator.data.repository.DefaultAuthRepository
 import de.christophlangner.commentator.data.repository.DefaultCommentRepository
+import de.christophlangner.commentator.data.repository.DefaultReplyTemplateRepository
 import de.christophlangner.commentator.data.repository.DefaultSettingsRepository
 import de.christophlangner.commentator.domain.repository.AuthRepository
 import de.christophlangner.commentator.domain.repository.CommentRepository
+import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.notification.NewCommentSource
 import de.christophlangner.commentator.notification.PollingNewCommentSource
@@ -39,6 +41,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: DefaultSettingsRepository): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReplyTemplateRepository(
+        impl: DefaultReplyTemplateRepository,
+    ): ReplyTemplateRepository
 
     @Binds
     @Singleton

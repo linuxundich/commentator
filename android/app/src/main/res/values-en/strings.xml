@@ -72,6 +72,17 @@
     </plurals>
     <string name="signal_duplicate">Text appears more than once</string>
 
+    <!-- Reply templates -->
+    <string name="templates_title">Templates</string>
+    <string name="templates_section">Reply templates</string>
+    <string name="templates_description">Recurring replies you can insert into the reply field with one tap</string>
+    <string name="templates_empty">No templates yet</string>
+    <string name="templates_add">Add template</string>
+    <string name="templates_edit">Edit template</string>
+    <string name="templates_delete">Delete template</string>
+    <string name="templates_text_label">Text</string>
+    <string name="templates_full">More than %d templates are not supported</string>
+
     <string name="reply_label">Reply</string>
     <string name="reply_placeholder">Write a reply…</string>
     <string name="reply_disabled_hint">Replying needs a connection and moderation rights.</string>

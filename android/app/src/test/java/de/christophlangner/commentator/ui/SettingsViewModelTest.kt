@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import androidx.test.core.app.ApplicationProvider
 import de.christophlangner.commentator.data.system.AppIconManager
 import de.christophlangner.commentator.fake.FakeAuthRepository
+import de.christophlangner.commentator.fake.FakeReplyTemplateRepository
 import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.MainDispatcherRule
 import de.christophlangner.commentator.fake.testInstance
@@ -27,6 +28,7 @@ class SettingsViewModelTest {
 
     private val auth = FakeAuthRepository(testInstance(hasBridgePlugin = true))
     private val settings = FakeSettingsRepository()
+    private val replyTemplates = FakeReplyTemplateRepository()
 
     // Der AppIconManager greift auf den PackageManager zu, deshalb Robolectric
     // statt eines Doppelgängers: Sein eigenes Verhalten prüft AppIconManagerTest.
@@ -34,6 +36,7 @@ class SettingsViewModelTest {
         auth,
         settings,
         AppIconManager(ApplicationProvider.getApplicationContext()),
+        replyTemplates,
     )
 
     @Test
@@ -45,6 +48,7 @@ class SettingsViewModelTest {
             auth,
             settings,
             AppIconManager(ApplicationProvider.getApplicationContext()),
+            replyTemplates,
         )
         model.state.test {
             advanceUntilIdle()

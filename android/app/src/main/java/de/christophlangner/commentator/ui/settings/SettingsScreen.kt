@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -25,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,11 +45,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.AppIcon
+import de.christophlangner.commentator.domain.repository.ReplyTemplate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +64,9 @@ fun SettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showSignOutDialog by rememberSaveable { mutableStateOf(false) }
+    // null = kein Dialog offen, "" = neuer Baustein, sonst die Kennung des
+    // zu bearbeitenden.
+    var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(state.isSignedOut) {
         if (state.isSignedOut) onSignedOut()
@@ -96,7 +103,26 @@ fun SettingsScreen(
                 )
             },
             onSignOutRequest = { showSignOutDialog = true },
+            onAddTemplate = { editingTemplateId = "" },
+            onEditTemplate = { editingTemplateId = it.id },
+            onDeleteTemplate = viewModel::removeTemplate,
             modifier = Modifier.padding(innerPadding),
+        )
+    }
+
+    editingTemplateId?.let { id ->
+        val existing = state.templates.firstOrNull { it.id == id }
+        TemplateDialog(
+            initialText = existing?.text.orEmpty(),
+            onDismiss = { editingTemplateId = null },
+            onConfirm = { text ->
+                if (existing == null) {
+                    viewModel.addTemplate(text)
+                } else {
+                    viewModel.updateTemplate(existing.id, text)
+                }
+                editingTemplateId = null
+            },
         )
     }
 
@@ -137,6 +163,9 @@ internal fun SettingsContent(
     onShowAuthorEmail: (Boolean) -> Unit,
     onOpenSystemNotifications: () -> Unit,
     onSignOutRequest: () -> Unit,
+    onAddTemplate: () -> Unit,
+    onEditTemplate: (ReplyTemplate) -> Unit,
+    onDeleteTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -251,6 +280,48 @@ internal fun SettingsContent(
         )
 
         HorizontalDivider()
+        SectionTitle(stringResource(R.string.templates_section))
+
+        Text(
+            text = stringResource(R.string.templates_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+
+        if (state.templates.isEmpty()) {
+            Text(
+                text = stringResource(R.string.templates_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        } else {
+            state.templates.forEach { template ->
+                TemplateRow(
+                    template = template,
+                    onEdit = { onEditTemplate(template) },
+                    onDelete = { onDeleteTemplate(template.id) },
+                )
+            }
+        }
+
+        TextButton(
+            onClick = onAddTemplate,
+            enabled = state.canAddTemplate,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            Text(stringResource(R.string.templates_add))
+        }
+        if (!state.canAddTemplate) {
+            Text(
+                text = stringResource(R.string.templates_full, ReplyTemplate.MAX_TEMPLATES),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+
+        HorizontalDivider()
         SectionTitle(stringResource(R.string.settings_section_privacy))
 
         SwitchRow(
@@ -277,6 +348,83 @@ internal fun SettingsContent(
             )
         }
     }
+}
+
+@Composable
+private fun TemplateRow(
+    template: ReplyTemplate,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onEdit)
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+    ) {
+        Text(
+            text = template.text,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onDelete) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = stringResource(R.string.templates_delete),
+            )
+        }
+    }
+}
+
+/**
+ * Dialog zum Anlegen und Bearbeiten.
+ *
+ * Derselbe Dialog fuer beides: Der Unterschied ist allein, ob ein Text
+ * vorbelegt ist.
+ */
+@Composable
+private fun TemplateDialog(
+    initialText: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var text by rememberSaveable { mutableStateOf(initialText) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(
+                    if (initialText.isEmpty()) R.string.templates_add else R.string.templates_edit,
+                ),
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(stringResource(R.string.templates_text_label)) },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(text) },
+                enabled = text.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
 }
 
 private fun AppIcon.labelRes(): Int = when (this) {

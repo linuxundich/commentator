@@ -8,6 +8,8 @@ import de.christophlangner.commentator.domain.model.AppIcon
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
+import de.christophlangner.commentator.domain.repository.ReplyTemplate
+import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -20,13 +22,17 @@ data class SettingsUiState(
     val settings: AppSettings = AppSettings.DEFAULT,
     val appIcon: AppIcon = AppIcon.DEFAULT,
     val isSignedOut: Boolean = false,
-)
+    val templates: List<ReplyTemplate> = emptyList(),
+) {
+    val canAddTemplate: Boolean get() = templates.size < ReplyTemplate.MAX_TEMPLATES
+}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
     private val appIconManager: AppIconManager,
+    private val replyTemplateRepository: ReplyTemplateRepository,
 ) : ViewModel() {
 
     private val signedOut = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -36,12 +42,14 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.settings,
         appIconManager.current,
         signedOut,
-    ) { instance, settings, appIcon, isSignedOut ->
+        replyTemplateRepository.templates,
+    ) { instance, settings, appIcon, isSignedOut, templates ->
         SettingsUiState(
             instance = instance,
             settings = settings,
             appIcon = appIcon,
             isSignedOut = isSignedOut,
+            templates = templates,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -54,6 +62,18 @@ class SettingsViewModel @Inject constructor(
         // nachträglich installiert, soll ein Blick in die Einstellungen
         // genügen, damit die App es bemerkt.
         viewModelScope.launch { authRepository.refreshSiteCapabilities() }
+    }
+
+    fun addTemplate(text: String) {
+        viewModelScope.launch { replyTemplateRepository.add(text) }
+    }
+
+    fun updateTemplate(id: String, text: String) {
+        viewModelScope.launch { replyTemplateRepository.update(id, text) }
+    }
+
+    fun removeTemplate(id: String) {
+        viewModelScope.launch { replyTemplateRepository.remove(id) }
     }
 
     fun setNotificationsEnabled(enabled: Boolean) {

@@ -83,6 +83,17 @@
     </plurals>
     <string name="signal_duplicate">Text kommt mehrfach vor</string>
 
+    <!-- Textbausteine -->
+    <string name="templates_title">Textbausteine</string>
+    <string name="templates_section">Textbausteine</string>
+    <string name="templates_description">Wiederkehrende Antworten, die sich mit einem Tipp in das Antwortfeld übernehmen lassen</string>
+    <string name="templates_empty">Noch keine Textbausteine angelegt</string>
+    <string name="templates_add">Baustein hinzufügen</string>
+    <string name="templates_edit">Baustein bearbeiten</string>
+    <string name="templates_delete">Baustein löschen</string>
+    <string name="templates_text_label">Text</string>
+    <string name="templates_full">Mehr als %d Bausteine sind nicht vorgesehen</string>
+
     <!-- Antwort -->
     <string name="reply_label">Antwort</string>
     <string name="reply_placeholder">Antwort schreiben…</string>

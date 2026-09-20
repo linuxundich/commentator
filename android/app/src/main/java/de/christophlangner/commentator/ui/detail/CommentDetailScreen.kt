@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -32,6 +34,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,6 +77,7 @@ import de.christophlangner.commentator.R
 import de.christophlangner.commentator.core.time.RelativeTime
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentSignals
+import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.ui.common.ErrorTexts
@@ -281,6 +285,7 @@ internal fun CommentDetailBody(
                     onTextChange = onReplyTextChange,
                     enabled = state.actionsEnabled,
                     isSending = state.isSendingReply,
+                    templates = state.templates,
                     onSend = onSendReply,
                 )
             }
@@ -471,15 +476,60 @@ private fun ReplyItem(reply: Comment, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Haengt einen Baustein an den vorhandenen Text an, statt ihn zu ersetzen.
+ *
+ * Ersetzen waere der haeufigere Fall, aber der teurere Irrtum: Ein aus
+ * Versehen geloeschter, halb getippter Absatz laesst sich nicht
+ * wiederherstellen, ein zu viel eingefuegter Satz dagegen schon.
+ */
+internal fun insertTemplate(current: String, template: String): String =
+    if (current.isBlank()) template else current.trimEnd() + "\n\n" + template
+
+@Composable
+private fun TemplateStrip(
+    templates: List<ReplyTemplate>,
+    onPick: (ReplyTemplate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.templates_title),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 4.dp),
+        ) {
+            items(templates, key = { it.id }) { template ->
+                AssistChip(
+                    onClick = { onPick(template) },
+                    label = { Text(template.shortLabel) },
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun ReplyComposer(
     text: String,
+    templates: List<ReplyTemplate>,
     onTextChange: (String) -> Unit,
     enabled: Boolean,
     isSending: Boolean,
     onSend: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
+        if (templates.isNotEmpty() && enabled && !isSending) {
+            TemplateStrip(
+                templates = templates,
+                onPick = { template -> onTextChange(insertTemplate(text, template.text)) },
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+
         OutlinedTextField(
             value = text,
             onValueChange = onTextChange,

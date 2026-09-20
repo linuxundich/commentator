@@ -14,6 +14,8 @@ import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.repository.AuthRepository
 import de.christophlangner.commentator.domain.repository.CommentRepository
+import de.christophlangner.commentator.domain.repository.ReplyTemplate
+import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.usecase.ModerateCommentUseCase
 import de.christophlangner.commentator.domain.usecase.ReplyToCommentUseCase
@@ -35,6 +37,8 @@ data class CommentDetailUiState(
     val comment: Comment? = null,
     val replies: List<Comment> = emptyList(),
     val signals: CommentSignals = CommentSignals(),
+    /** Gespeicherte Antworttexte fuer die Leiste ueber dem Antwortfeld. */
+    val templates: List<ReplyTemplate> = emptyList(),
     /** Bisher freigeschaltete Kommentare dieser Adresse, `null` solange unbekannt. */
     val approvedByAuthor: Int? = null,
     val isLoading: Boolean = true,
@@ -55,6 +59,7 @@ class CommentDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val commentRepository: CommentRepository,
     private val moderateComment: ModerateCommentUseCase,
+    replyTemplateRepository: ReplyTemplateRepository,
     private val undoModeration: UndoModerationUseCase,
     private val replyToComment: ReplyToCommentUseCase,
     authRepository: AuthRepository,
@@ -86,12 +91,13 @@ class CommentDetailViewModel @Inject constructor(
 
     private val authorHistory = MutableStateFlow<Int?>(null)
 
-    /** Vier Umgebungswerte, weil `combine` nur eine begrenzte Stelligkeit hat. */
+    /** Zusammengefasst, weil `combine` nur eine begrenzte Stelligkeit hat. */
     private data class Environment(
         val isOnline: Boolean,
         val sessionInvalid: Boolean,
         val canModerate: Boolean,
         val approvedByAuthor: Int?,
+        val templates: List<ReplyTemplate>,
     )
 
     private data class BusyState(
@@ -111,6 +117,7 @@ class CommentDetailViewModel @Inject constructor(
             authRepository.observeSessionInvalid(),
             authRepository.observeActiveInstance().map { it?.canModerate == true },
             authorHistory,
+            replyTemplateRepository.templates,
             ::Environment,
         ),
     ) { comment, replies, busy, settings, environment ->
@@ -125,6 +132,7 @@ class CommentDetailViewModel @Inject constructor(
                 )
             } ?: CommentSignals(),
             approvedByAuthor = approvedByAuthor,
+            templates = environment.templates,
             isLoading = busy.isLoading && comment == null,
             isSendingReply = busy.isSendingReply,
             isSavingEdit = busy.isSavingEdit,

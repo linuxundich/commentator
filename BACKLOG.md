@@ -135,9 +135,9 @@ Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
 Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
 geprüft, die Abrufe sind belegt.
 
-Umgesetzt sind Autorenkontext, Spam-Signale und die Zählungen an den Filtern.
-Als Nächstes die Textbausteine; „Spam leeren" und das Sperren von Absendern
-erst, wenn das Plugin ohnehin angefasst wird.
+Umgesetzt sind Autorenkontext, Spam-Signale, die Zählungen an den Filtern und
+die Textbausteine. Offen bleiben „Spam leeren" und das Sperren von Absendern;
+beides erst, wenn das Plugin ohnehin angefasst wird.
 
 - [x] **P1** Autorenkontext in der Detailansicht
       *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
@@ -167,7 +167,7 @@ erst, wenn das Plugin ohnehin angefasst wird.
       Einzellöschungen; ein Endpunkt im Plugin macht daraus eine Anfrage.
       Sinnvoller Anlass, das Plugin für etwas zu nutzen, das es wirklich
       besser kann als die Kern-API.*
-- [ ] **P2** Textbausteine für wiederkehrende Antworten
+- [x] **P2** Textbausteine für wiederkehrende Antworten
       *Kein API-Thema, reine lokale Ablage. „Danke für den Hinweis, ist
       korrigiert." tippt man sonst zum zwanzigsten Mal.*
 

@@ -13,10 +13,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentSignals
+import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.ui.detail.CommentDetailBody
+import de.christophlangner.commentator.ui.detail.insertTemplate
 import de.christophlangner.commentator.ui.detail.CommentDetailUiState
 import de.christophlangner.commentator.ui.theme.CommentatorTheme
 import org.junit.Assert.assertEquals
@@ -64,16 +66,64 @@ class CommentDetailScreenTest {
         isLoading: Boolean = false,
         signals: CommentSignals = CommentSignals(),
         approvedByAuthor: Int? = null,
+        templates: List<ReplyTemplate> = emptyList(),
     ) = CommentDetailUiState(
         comment = comment,
         replies = replies,
         signals = signals,
         approvedByAuthor = approvedByAuthor,
+        templates = templates,
         isLoading = isLoading,
         showAuthorEmail = showEmail,
         isOffline = isOffline,
         canModerate = canModerate,
     )
+
+    @Test
+    fun `ein Baustein landet im Antwortfeld`() {
+        render(
+            stateWith(
+                testComment(1),
+                templates = listOf(ReplyTemplate("t1", "Danke für den Hinweis.")),
+            ),
+        )
+
+        // Vorher steht der Text nur auf dem Chip.
+        assertEquals(
+            1,
+            composeRule.onAllNodesWithText("Danke für den Hinweis.", substring = true)
+                .fetchSemanticsNodes().size,
+        )
+
+        composeRule.onNodeWithText("Danke für den Hinweis.").performClick()
+
+        // Danach zusaetzlich im Antwortfeld.
+        assertEquals(
+            2,
+            composeRule.onAllNodesWithText("Danke für den Hinweis.", substring = true)
+                .fetchSemanticsNodes().size,
+        )
+    }
+
+    @Test
+    fun `ein Baustein haengt an, statt Getipptes zu ueberschreiben`() {
+        // Ein versehentlich geloeschter Absatz laesst sich nicht
+        // wiederherstellen, ein Satz zu viel dagegen schon.
+        val expected = "Schon getippt\n\nDanke!"
+        assertEquals(expected, insertTemplate("Schon getippt", "Danke!"))
+        assertEquals("Danke!", insertTemplate("", "Danke!"))
+        // Abschliessende Leerzeichen werden dabei entfernt.
+        assertEquals(expected, insertTemplate("Schon getippt   ", "Danke!"))
+    }
+
+    @Test
+    fun `ohne Bausteine erscheint keine Leiste`() {
+        render(stateWith(testComment(1), templates = emptyList()))
+
+        composeRule.onAllNodesWithText("Textbausteine")
+            .fetchSemanticsNodes()
+            .let { assertTrue("Leiste darf nicht erscheinen", it.isEmpty()) }
+    }
 
     @Test
     fun `Erstkommentator wird benannt`() {

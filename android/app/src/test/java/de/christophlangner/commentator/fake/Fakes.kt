@@ -6,6 +6,8 @@ import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
+import de.christophlangner.commentator.domain.repository.ReplyTemplate
+import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.repository.SiteDiscovery
 import kotlinx.coroutines.flow.Flow
@@ -58,6 +60,34 @@ class FakeAuthRepository(
     override suspend fun signOut() {
         signedOut = true
         activeInstance.value = null
+    }
+}
+
+class FakeReplyTemplateRepository(
+    initial: List<ReplyTemplate> = emptyList(),
+) : ReplyTemplateRepository {
+
+    val state = MutableStateFlow(initial)
+
+    override val templates: Flow<List<ReplyTemplate>> = state
+
+    override suspend fun add(text: String): ReplyTemplate? {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return null
+        if (state.value.size >= ReplyTemplate.MAX_TEMPLATES) return null
+        val template = ReplyTemplate(id = "t${state.value.size + 1}", text = trimmed)
+        state.value = state.value + template
+        return template
+    }
+
+    override suspend fun update(id: String, text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
+        state.value = state.value.map { if (it.id == id) it.copy(text = trimmed) else it }
+    }
+
+    override suspend fun remove(id: String) {
+        state.value = state.value.filterNot { it.id == id }
     }
 }
 

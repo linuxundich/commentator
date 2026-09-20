@@ -32,6 +32,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
+- Textbausteine für wiederkehrende Antworten. In den Einstellungen anlegen,
+  bearbeiten und löschen; über dem Antwortfeld erscheint eine Leiste, die sie
+  mit einem Tipp einfügt. Ein Baustein hängt an den vorhandenen Text an, statt
+  ihn zu ersetzen. Die Texte liegen ausschließlich auf dem Gerät.
 - Sprachwahl je App: Die App erscheint in den Systemeinstellungen unter
   „Sprachen der App" und lässt sich dort unabhängig vom Systemgebietsschema
   auf Deutsch oder Englisch stellen (ab Android 13). Die Liste der Sprachen
