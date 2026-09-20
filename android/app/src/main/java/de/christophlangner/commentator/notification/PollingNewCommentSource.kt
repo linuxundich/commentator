@@ -92,18 +92,28 @@ class PollingNewCommentSource @Inject constructor(
         }
     }
 
+    override suspend fun hasBaseline(instance: WordPressInstance): Boolean =
+        (dao.syncState(instance.id)?.lastNotifiedDateEpochMillis ?: 0L) > 0L
+
+    /**
+     * Hält den Stand fest.
+     *
+     * Läuft auch mit leerer Liste durch: Findet der erste Lauf nichts
+     * Offenes, muss trotzdem ein Ausgangszustand entstehen. Sonst gälte der
+     * nächste Lauf erneut als erster, und die erste echte Benachrichtigung
+     * bliebe aus.
+     */
     override suspend fun markNotified(instance: WordPressInstance, comments: List<Comment>) {
-        if (comments.isEmpty()) return
         val now = System.currentTimeMillis()
 
-        dao.markNotified(
-            comments.map { NotifiedCommentEntity(instance.id, it.id, now) },
-        )
+        if (comments.isNotEmpty()) {
+            dao.markNotified(comments.map { NotifiedCommentEntity(instance.id, it.id, now) })
+        }
 
         val current = dao.syncState(instance.id)
-        val newestId = maxOf(comments.maxOf { it.id }, current?.lastNotifiedCommentId ?: 0L)
+        val newestId = maxOf(comments.maxOfOrNull { it.id } ?: 0L, current?.lastNotifiedCommentId ?: 0L)
         val newestDate = maxOf(
-            comments.maxOf { it.date.toEpochMilli() },
+            comments.maxOfOrNull { it.date.toEpochMilli() } ?: now,
             current?.lastNotifiedDateEpochMillis ?: 0L,
         )
 

@@ -26,4 +26,18 @@ interface NewCommentSource {
 
     /** Vermerkt, dass über diese Kommentare benachrichtigt wurde. */
     suspend fun markNotified(instance: WordPressInstance, comments: List<Comment>)
+
+    /**
+     * Ob für diese Instanz bereits ein Ausgangszustand festgehalten wurde.
+     *
+     * Beim allerersten Lauf gibt es keinen sinnvollen Vergleichspunkt: Alles,
+     * was gerade offen ist, wäre „neu“ und käme als Schwall. Der erste Lauf
+     * hält deshalb nur den Stand fest, ohne zu melden.
+     *
+     * Bewusst Teil dieser Schnittstelle: Vorher las der Hintergrunddienst
+     * dafür ein Datenbankfeld aus, das diese Klasse nebenbei beschrieb - ein
+     * Vertrag, der nirgends stand und den eine andere Implementierung
+     * stillschweigend gebrochen hätte.
+     */
+    suspend fun hasBaseline(instance: WordPressInstance): Boolean
 }

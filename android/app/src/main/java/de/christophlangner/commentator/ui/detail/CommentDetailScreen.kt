@@ -334,7 +334,10 @@ private fun DetailRow(label: String, value: String) {
             text = label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(96.dp),
+            // Gerade breit genug für die längste Beschriftung („Website"),
+            // damit die Werte untereinander fluchten, ohne dass eine Lücke
+            // klafft. 96 dp waren rund doppelt so viel wie nötig.
+            modifier = Modifier.width(64.dp),
         )
         Text(text = value, style = MaterialTheme.typography.bodySmall)
     }

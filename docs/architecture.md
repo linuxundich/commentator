@@ -428,6 +428,14 @@ sind über die Android-Systemeinstellungen einzeln steuerbar; die App verlinkt
 direkt dorthin. Die Laufzeitberechtigung
 `POST_NOTIFICATIONS` (ab Android 13) wird erst kontextbezogen erfragt.
 
+**Erster Lauf meldet nichts.** Beim allerersten Durchgang gibt es keinen
+Vergleichspunkt - alles Offene wäre „neu" und käme als Schwall. Der erste Lauf
+hält deshalb nur den Stand fest. Ob ein solcher Ausgangszustand existiert,
+beantwortet `NewCommentSource.hasBaseline`; der Hintergrunddienst liest dafür
+bewusst kein Datenbankfeld mehr aus, das die Quelle nebenbei beschreibt. Der
+Stand wird auch dann festgehalten, wenn gerade nichts offen ist - sonst gälte
+der nächste Lauf erneut als erster und die erste echte Meldung bliebe aus.
+
 **Keine Doppelbenachrichtigungen:** Gemeldet wird nur, was neuer ist als die
 pro Instanz gespeicherte `lastNotifiedCommentId`/`lastNotifiedDate`. Zusätzlich
 werden bereits gemeldete IDs in Room vermerkt. Die Notification-ID leitet sich

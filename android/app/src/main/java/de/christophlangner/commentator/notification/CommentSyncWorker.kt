@@ -10,8 +10,6 @@ import de.christophlangner.commentator.core.AppLog
 import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.data.account.InstanceStore
-import de.christophlangner.commentator.data.local.dao.CommentDao
-import de.christophlangner.commentator.data.local.entity.SyncStateEntity
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
 
@@ -30,7 +28,6 @@ class CommentSyncWorker @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
     private val newCommentSource: NewCommentSource,
     private val notifier: CommentNotifier,
-    private val dao: CommentDao,
 ) : CoroutineWorker(context, parameters) {
 
     override suspend fun doWork(): Result {
@@ -40,18 +37,19 @@ class CommentSyncWorker @AssistedInject constructor(
         return when (val outcome = newCommentSource.fetchUnnotified(instance)) {
             is Outcome.Success -> {
                 val comments = outcome.value
-                if (comments.isNotEmpty()) {
-                    if (isFirstRun(instance.id)) {
-                        // Beim allerersten Lauf gibt es keinen sinnvollen
-                        // Vergleichspunkt. Statt den gesamten Rückstand zu
-                        // melden, wird nur der Ausgangszustand festgehalten.
-                        AppLog.d("Erster Lauf: Ausgangszustand wird gesetzt")
-                        newCommentSource.markNotified(instance, comments)
-                    } else {
-                        notifier.notifyNewComments(instance, comments)
-                        newCommentSource.markNotified(instance, comments)
-                    }
+
+                if (!newCommentSource.hasBaseline(instance)) {
+                    // Beim allerersten Lauf gibt es keinen Vergleichspunkt.
+                    // Der Stand wird festgehalten, ohne zu melden - auch wenn
+                    // gerade nichts offen ist, sonst gälte der nächste Lauf
+                    // erneut als erster.
+                    AppLog.d("Erster Lauf: Ausgangszustand wird gesetzt")
+                    newCommentSource.markNotified(instance, comments)
+                } else if (comments.isNotEmpty()) {
+                    notifier.notifyNewComments(instance, comments)
+                    newCommentSource.markNotified(instance, comments)
                 }
+
                 notifier.clearSessionInvalid()
                 Result.success()
             }
@@ -73,22 +71,6 @@ class CommentSyncWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun isFirstRun(instanceId: String): Boolean {
-        val state = dao.syncState(instanceId)
-        if (state != null && state.lastNotifiedCommentId > 0L) return false
-
-        if (state == null) {
-            dao.upsertSyncState(
-                SyncStateEntity(
-                    instanceId = instanceId,
-                    lastSyncEpochMillis = null,
-                    lastNotifiedCommentId = 0,
-                    lastNotifiedDateEpochMillis = 0,
-                ),
-            )
-        }
-        return true
-    }
 
     companion object {
         const val UNIQUE_NAME = "commentator-comment-sync"

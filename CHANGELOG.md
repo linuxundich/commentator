@@ -65,6 +65,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Minute steht jetzt „Gerade eben".
 - `seed.sh` hängte die Testkommentare an WordPress' Standardbeitrag
   „Hello world!" statt an die selbst angelegten Beiträge.
+- Der Hintergrunddienst leitete „erster Lauf" aus einem Datenbankfeld ab, das
+  die Kommentarquelle nebenbei beschrieb - ein Vertrag, der nicht in der
+  Schnittstelle stand. `NewCommentSource.hasBaseline` macht ihn jetzt
+  ausdrücklich. Dabei fiel auf: Lief die Prüfung zum ersten Mal, während nichts
+  offen war, entstand gar kein Ausgangszustand, und die erste echte
+  Benachrichtigung blieb aus.
+- Die Beschriftungsspalte der Detailansicht war mit 96 dp rund doppelt so breit
+  wie nötig und riss eine Lücke zwischen Bezeichnung und Wert.
 - Die blaue Symbolvariante erreichte auf dem dunklen Grund nur 3,3:1 Kontrast.
   Sie ist jetzt umgekehrt eingefärbt - weisse Blase auf WordPress-Blau - und
   kommt auf 5,6:1.
