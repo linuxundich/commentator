@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -51,6 +52,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.AppIcon
+import de.christophlangner.commentator.ui.common.BlogTitle
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +60,7 @@ import de.christophlangner.commentator.domain.repository.ReplyTemplate
 fun SettingsScreen(
     onNavigateUp: () -> Unit,
     onSignedOut: () -> Unit,
+    onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -103,6 +106,7 @@ fun SettingsScreen(
                 )
             },
             onSignOutRequest = { showSignOutDialog = true },
+            onOpenAbout = onOpenAbout,
             onAddTemplate = { editingTemplateId = "" },
             onEditTemplate = { editingTemplateId = it.id },
             onDeleteTemplate = viewModel::removeTemplate,
@@ -163,6 +167,7 @@ internal fun SettingsContent(
     onShowAuthorEmail: (Boolean) -> Unit,
     onOpenSystemNotifications: () -> Unit,
     onSignOutRequest: () -> Unit,
+    onOpenAbout: () -> Unit,
     onAddTemplate: () -> Unit,
     onEditTemplate: (ReplyTemplate) -> Unit,
     onDeleteTemplate: (String) -> Unit,
@@ -175,7 +180,22 @@ internal fun SettingsContent(
     ) {
         SectionTitle(stringResource(R.string.settings_section_account))
         state.instance?.let { instance ->
-            InfoRow(stringResource(R.string.settings_blog), instance.displayName)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_blog),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(96.dp),
+                )
+                BlogTitle(
+                    name = instance.displayName,
+                    iconUrl = instance.iconUrl,
+                    iconSize = 24.dp,
+                )
+            }
             InfoRow(stringResource(R.string.settings_url), instance.siteUrl)
             InfoRow(stringResource(R.string.settings_user), instance.username)
             InfoRow(
@@ -338,6 +358,13 @@ internal fun SettingsContent(
         )
 
         HorizontalDivider()
+        TextButton(
+            onClick = onOpenAbout,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            Text(stringResource(R.string.about_open))
+        }
+
         TextButton(
             onClick = onSignOutRequest,
             modifier = Modifier.padding(16.dp),

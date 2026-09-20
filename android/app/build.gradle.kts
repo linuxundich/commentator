@@ -22,6 +22,49 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+/**
+ * Version und Buildnummer aus Git.
+ *
+ * Die Buildnummer ist die Anzahl der Commits: monoton steigend, ohne dass
+ * jemand sie pflegen muss. Der Name kommt aus dem jüngsten Tag; fehlt einer,
+ * bleibt es bei der Basisversion aus `gradle.properties`, ergänzt um den
+ * Commit. So lässt sich jeder Build eindeutig einem Stand zuordnen.
+ *
+ * Ohne Git - etwa beim Bauen aus einem Quellarchiv - greifen die Rückfallwerte,
+ * damit der Build nicht am fehlenden Werkzeug scheitert.
+ */
+fun git(vararg args: String): String? = runCatching {
+    // providers.exec statt ProcessBuilder: Nur so bleibt der
+    // Konfigurations-Cache von Gradle nutzbar. Ein selbst gestarteter Prozess
+    // laesst sich nicht zwischenspeichern und laesst den Build scheitern.
+    val execution = providers.exec {
+        commandLine(listOf("git") + args)
+        workingDir = rootDir
+        isIgnoreExitValue = true
+    }
+    if (execution.result.get().exitValue != 0) return@runCatching null
+    execution.standardOutput.asText.get().trim().ifEmpty { null }
+}.getOrNull()
+
+val baseVersion: String = providers.gradleProperty("COMMENTATOR_VERSION").orNull ?: "0.1.0"
+
+val gitCommitCount: Int = git("rev-list", "--count", "HEAD")?.toIntOrNull() ?: 1
+
+val gitShortSha: String = git("rev-parse", "--short=8", "HEAD") ?: "unbekannt"
+
+// git() liefert bei leerer Ausgabe null - und leer heisst hier: nichts
+// Uncommittetes im Arbeitsbaum.
+val gitIsDirty: Boolean = git("status", "--porcelain") != null
+
+val appVersionName: String = run {
+    val tag = git("describe", "--tags", "--exact-match", "HEAD")
+    when {
+        // Auf einem Tag: genau dessen Name, ohne Anhängsel.
+        tag != null -> tag.removePrefix("v")
+        else -> "$baseVersion-dev+$gitCommitCount.g$gitShortSha" + if (gitIsDirty) ".dirty" else ""
+    }
+}
+
 android {
     namespace = "de.christophlangner.commentator"
     compileSdk = 37
@@ -51,8 +94,12 @@ android {
         applicationId = "de.christophlangner.commentator"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = gitCommitCount
+        versionName = appVersionName
+
+        // Für den Info-Bildschirm in der App.
+        buildConfigField("String", "GIT_COMMIT", "\"$gitShortSha\"")
+        buildConfigField("boolean", "GIT_DIRTY", gitIsDirty.toString())
 
         testInstrumentationRunner = "de.christophlangner.commentator.HiltTestRunner"
     }

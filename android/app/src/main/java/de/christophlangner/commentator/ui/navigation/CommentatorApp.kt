@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
+import de.christophlangner.commentator.ui.about.AboutScreen
 import de.christophlangner.commentator.ui.common.LoadingState
 import de.christophlangner.commentator.ui.detail.CommentDetailScreen
 import de.christophlangner.commentator.ui.inbox.InboxScreen
@@ -84,9 +85,14 @@ fun CommentatorApp(
                         CommentDetailScreen(onNavigateUp = { navController.navigateUp() })
                     }
 
+                    composable<AboutRoute> {
+                        AboutScreen(onNavigateUp = { navController.navigateUp() })
+                    }
+
                     composable<SettingsRoute> {
                         SettingsScreen(
                             onNavigateUp = { navController.navigateUp() },
+                            onOpenAbout = { navController.navigate(AboutRoute) },
                             onSignedOut = {
                                 navController.navigate(SetupRoute) {
                                     popUpTo(navController.graph.id) { inclusive = true }

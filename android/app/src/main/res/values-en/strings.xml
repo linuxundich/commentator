@@ -83,6 +83,20 @@
     <string name="templates_text_label">Text</string>
     <string name="templates_full">More than %d templates are not supported</string>
 
+    <!-- About -->
+    <string name="about_title">About this app</string>
+    <string name="about_open">About this app</string>
+    <string name="about_tagline">Comment moderation for WordPress blogs</string>
+    <string name="about_version">Version</string>
+    <string name="about_build">Build</string>
+    <string name="about_commit">Commit</string>
+    <string name="about_commit_dirty">(with local changes)</string>
+    <string name="about_privacy_title">Data and connections</string>
+    <string name="about_privacy_body">The app connects only to the WordPress blog you set up. There is no analytics, no advertising and no transfer to third parties. Avatars are loaded only if you allow it in the settings; they then come from Gravatar.</string>
+    <string name="about_license_title">License</string>
+    <string name="about_license_body">MIT license. The source code is publicly available.</string>
+    <string name="about_open_repository">Open source code</string>
+
     <string name="reply_label">Reply</string>
     <string name="reply_placeholder">Write a reply…</string>
     <string name="reply_disabled_hint">Replying needs a connection and moderation rights.</string>

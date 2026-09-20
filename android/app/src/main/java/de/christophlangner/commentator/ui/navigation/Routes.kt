@@ -24,6 +24,9 @@ data class CommentDetailRoute(
 @Serializable
 data object SettingsRoute
 
+@Serializable
+data object AboutRoute
+
 object DeepLinks {
     const val SCHEME = "commentator"
 

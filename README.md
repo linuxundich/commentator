@@ -222,6 +222,27 @@ cd android
 ./gradlew check                  # Lint und Tests zusammen
 ```
 
+### Versionierung
+
+Version und Buildnummer werden beim Bauen aus Git abgeleitet, nicht von Hand
+gepflegt:
+
+| | |
+|---|---|
+| `versionCode` | Anzahl der Commits (`git rev-list --count HEAD`) |
+| `versionName` | Name des Tags auf `HEAD`, sonst `<Basisversion>-dev+<Anzahl>.g<Commit>` |
+
+Die Basisversion steht als `COMMENTATOR_VERSION` in `gradle.properties` und
+greift, solange kein Tag gesetzt ist. Liegt im Arbeitsbaum Uncommittetes, hängt
+`.dirty` an.
+
+Ohne Git – etwa beim Bauen aus einem Quellarchiv – greifen Rückfallwerte,
+damit der Build nicht am fehlenden Werkzeug scheitert.
+
+Der Bildschirm **Über diese App** zeigt beides zusammen mit dem Commit an, aus
+dem der Build entstanden ist. Damit lässt sich eine Fehlermeldung eindeutig
+einem Stand zuordnen.
+
 ### Datenbankschema
 
 Room exportiert das Schema nach `android/app/schemas/`. Diese Dateien gehören

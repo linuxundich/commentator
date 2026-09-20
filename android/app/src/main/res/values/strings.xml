@@ -94,6 +94,20 @@
     <string name="templates_text_label">Text</string>
     <string name="templates_full">Mehr als %d Bausteine sind nicht vorgesehen</string>
 
+    <!-- Über diese App -->
+    <string name="about_title">Über diese App</string>
+    <string name="about_open">Über diese App</string>
+    <string name="about_tagline">Kommentarmoderation für WordPress-Blogs</string>
+    <string name="about_version">Version</string>
+    <string name="about_build">Build</string>
+    <string name="about_commit">Commit</string>
+    <string name="about_commit_dirty">(mit lokalen Änderungen)</string>
+    <string name="about_privacy_title">Daten und Verbindungen</string>
+    <string name="about_privacy_body">Die App verbindet sich ausschließlich mit dem eingerichteten WordPress-Blog. Es gibt keine Analyse, keine Werbung und keine Übertragung an Dritte. Avatare werden nur geladen, wenn du es in den Einstellungen erlaubst; sie kommen dann von Gravatar.</string>
+    <string name="about_license_title">Lizenz</string>
+    <string name="about_license_body">MIT-Lizenz. Der Quelltext ist offen einsehbar.</string>
+    <string name="about_open_repository">Quelltext öffnen</string>
+
     <!-- Antwort -->
     <string name="reply_label">Antwort</string>
     <string name="reply_placeholder">Antwort schreiben…</string>

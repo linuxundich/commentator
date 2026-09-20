@@ -56,6 +56,7 @@ class SettingsScreenTest {
                     onShowAuthorEmail = {},
                     onOpenSystemNotifications = {},
                     onSignOutRequest = {},
+                    onOpenAbout = {},
                     onAddTemplate = { addRequested++ },
                     onEditTemplate = {},
                     onDeleteTemplate = { deleted += it },

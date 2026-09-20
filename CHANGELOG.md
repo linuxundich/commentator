@@ -32,6 +32,12 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
 - Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
   mit Bezug auf den ursprünglichen veröffentlicht.
+- Bildschirm „Über diese App" mit Version, Buildnummer und dem Commit, aus
+  dem der Build entstanden ist, dazu eine Kurzfassung zu Datenverarbeitung
+  und Lizenz.
+- Symbol des Blogs neben seinem Namen, in der Kopfleiste des Posteingangs und
+  in den Einstellungen. Es stammt aus dem REST-Index des eigenen Blogs; es
+  entsteht dadurch keine Verbindung zu einem Dritten.
 - Textbausteine für wiederkehrende Antworten. In den Einstellungen anlegen,
   bearbeiten und löschen; über dem Antwortfeld erscheint eine Leiste, die sie
   mit einem Tipp einfügt. Ein Baustein hängt an den vorhandenen Text an, statt
@@ -142,6 +148,15 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Spam mitzählt. Die REST-API listet bei `status=all` aber nur Genehmigtes und
   Offenes auf – die Zahl passte damit nicht zu der Liste, die sie beschreibt.
   Jetzt genehmigt plus offen. Plugin-Version 1.1.0.
+
+### Changed
+
+**Android-App**
+
+- Version und Buildnummer kommen aus Git statt aus fest eingetragenen Werten:
+  die Buildnummer aus der Anzahl der Commits, der Versionsname aus dem
+  jüngsten Tag beziehungsweise aus Basisversion und Commit. Ohne Git greifen
+  Rückfallwerte, damit ein Build aus einem Quellarchiv nicht scheitert.
 
 ### Security
 
