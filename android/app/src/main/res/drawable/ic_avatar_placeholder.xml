@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Platzhalter für Kommentatoren ohne Gravatar.
+
+  Angelehnt an die Standard-Silhouette von WordPress: eine graue Gestalt auf
+  hellem Grund. Bewusst mit festen Farben statt Theme-Attributen - das Symbol
+  steht an derselben Stelle wie ein echtes Foto, und ein Foto passt sich dem
+  Theme auch nicht an.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <path
+        android:fillColor="#D5D8DC"
+        android:pathData="M0,0 H96 V96 H0 Z" />
+
+    <!-- Kopf -->
+    <path
+        android:fillColor="#8C9196"
+        android:pathData="M48,44 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
+
+    <!-- Schultern, unten am Rahmen abgeschnitten wie bei WordPress -->
+    <path
+        android:fillColor="#8C9196"
+        android:pathData="M48,66 C31.4,66 18,79.4 18,96 H78 C78,79.4 64.6,66 48,66 Z" />
+</vector>

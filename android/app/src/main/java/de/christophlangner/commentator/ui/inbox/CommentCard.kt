@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -32,13 +31,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.core.time.RelativeTime
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.ui.common.CommentAvatar
 import de.christophlangner.commentator.ui.common.SignalChips
 import de.christophlangner.commentator.ui.common.StatusChip
 
@@ -72,14 +71,8 @@ fun CommentCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (showAvatar && comment.avatarUrl != null) {
-                    AsyncImage(
-                        model = comment.avatarUrl,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape),
-                    )
+                if (showAvatar) {
+                    CommentAvatar(url = comment.avatarUrl, size = 40.dp)
                     Spacer(Modifier.width(12.dp))
                 }
 

@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -73,7 +72,6 @@ import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.core.time.RelativeTime
 import de.christophlangner.commentator.domain.model.Comment
@@ -84,6 +82,7 @@ import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.LoadingState
 import de.christophlangner.commentator.ui.common.OfflineBanner
+import de.christophlangner.commentator.ui.common.CommentAvatar
 import de.christophlangner.commentator.ui.common.SignalChips
 import de.christophlangner.commentator.ui.common.StatusChip
 
@@ -336,14 +335,8 @@ private fun CommentHeader(comment: Comment, showEmail: Boolean, showAvatar: Bool
         // Ohne diese Bedingung entstünde eine Anfrage an Gravatar, obwohl die
         // Einstellung dagegen steht - die Liste beachtet sie, die Detailansicht
         // tat es bisher nicht.
-        comment.avatarUrl?.takeIf { showAvatar }?.let { url ->
-            AsyncImage(
-                model = url,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape),
-            )
+        if (showAvatar) {
+            CommentAvatar(url = comment.avatarUrl, size = 48.dp)
             Spacer(Modifier.width(12.dp))
         }
 

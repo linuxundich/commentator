@@ -70,6 +70,38 @@ class CommentMapperTest {
     }
 
     @Test
+    fun `Gravatar soll kein eigenes Ersatzbild liefern`() {
+        // WordPress haengt d=mm an; dann kommt auch ohne Gravatar-Konto eine
+        // fremde Silhouette. Mit d=404 antwortet Gravatar stattdessen mit
+        // einem Fehler und die App setzt ihr eigenes Platzhaltersymbol.
+        val dto = json.decodeFromString<CommentDto>(
+            """{"id":1,"author_avatar_urls":
+                {"96":"https://secure.gravatar.com/avatar/abc?s=96&d=mm&r=g"}}""",
+        )
+
+        assertEquals("https://secure.gravatar.com/avatar/abc?s=96&d=404&r=g", dto.bestAvatarUrl())
+    }
+
+    @Test
+    fun `fehlender Parameter wird ergaenzt`() {
+        val dto = json.decodeFromString<CommentDto>(
+            """{"id":1,"author_avatar_urls":{"96":"https://secure.gravatar.com/avatar/abc?s=96"}}""",
+        )
+
+        assertEquals("https://secure.gravatar.com/avatar/abc?s=96&d=404", dto.bestAvatarUrl())
+    }
+
+    @Test
+    fun `andere Avatar-Dienste bleiben unberuehrt`() {
+        // Ein erzwungener 404 wuerde dort echte Bilder verhindern.
+        val dto = json.decodeFromString<CommentDto>(
+            """{"id":1,"author_avatar_urls":{"96":"https://blog.test/avatare/abc.png?d=mm"}}""",
+        )
+
+        assertEquals("https://blog.test/avatare/abc.png?d=mm", dto.bestAvatarUrl())
+    }
+
+    @Test
     fun `abgeschaltete Avatare liefern false statt eines Objekts`() {
         // WordPress antwortet hier tatsächlich mit dem Wert false. Ohne
         // Sonderbehandlung bricht das Einlesen der gesamten Liste ab.

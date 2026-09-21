@@ -13,6 +13,16 @@ data class RenderedDto(
     val rendered: String = "",
 )
 
+/**
+ * Der `d`-Parameter von Gravatar, samt vorangehendem Trennzeichen.
+ *
+ * Bewusst auf Dateiebene und nicht als Companion in [CommentDto]: Die Klasse
+ * ist `@Serializable`, und kotlinx.serialization legt dort selbst einen
+ * Companion mit `serializer()` an. Ein eigener - noch dazu privater - verdeckt
+ * ihn, und das Einlesen bricht erst zur Laufzeit.
+ */
+private val GRAVATAR_DEFAULT_PARAM = Regex("""([?&])d=[^&]*""")
+
 @Serializable
 data class CommentDto(
     val id: Long,
@@ -43,7 +53,29 @@ data class CommentDto(
             }
             .maxByOrNull { it.first }
             ?.second
+            ?.let(::withoutGravatarFallback)
     }
+
+    /**
+     * Nimmt Gravatar sein Ersatzbild weg.
+     *
+     * WordPress haengt `d=mm` an - dann liefert Gravatar auch fuer Adressen
+     * ohne Konto eine Silhouette. Mit `d=404` antwortet es stattdessen mit
+     * einem Fehler, und die App kann ihr eigenes Platzhaltersymbol setzen,
+     * statt ein fremdes Bild anzuzeigen.
+     *
+     * Bewusst nur fuer Gravatar: Andere Avatar-Dienste kennen den Parameter
+     * nicht, und ein erzwungener 404 wuerde dort echte Bilder verhindern.
+     */
+    private fun withoutGravatarFallback(url: String): String {
+        if (!url.contains("gravatar.com", ignoreCase = true)) return url
+        return when {
+            GRAVATAR_DEFAULT_PARAM.containsMatchIn(url) -> GRAVATAR_DEFAULT_PARAM.replace(url, "${'$'}1d=404")
+            url.contains('?') -> "$url&d=404"
+            else -> "$url?d=404"
+        }
+    }
+
 }
 
 /** Anlegen eines Kommentars, etwa als Antwort. */
