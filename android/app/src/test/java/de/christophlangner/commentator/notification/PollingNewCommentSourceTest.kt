@@ -6,6 +6,7 @@ import de.christophlangner.commentator.data.remote.ApiExecutor
 import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.fake.FakeCommentDao
+import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.testInstance
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -35,6 +36,7 @@ class PollingNewCommentSourceTest {
     private lateinit var server: MockWebServer
     private lateinit var source: PollingNewCommentSource
     private val dao = FakeCommentDao()
+    private val settings = FakeSettingsRepository()
     private val instance = testInstance()
 
     private val json = Json {
@@ -56,7 +58,7 @@ class PollingNewCommentSourceTest {
             .create(WordPressApi::class.java)
 
         val provider = WordPressApiProvider { _, _ -> api }
-        source = PollingNewCommentSource(provider, ApiExecutor(json), dao)
+        source = PollingNewCommentSource(provider, ApiExecutor(json), dao, settings)
     }
 
     @After
@@ -126,14 +128,49 @@ class PollingNewCommentSourceTest {
     }
 
     @Test
-    fun `ohne Plugin wird nur der ausstehende Status abgefragt`() = runTest {
+    fun `standardmaessig zaehlt jeder neue Kommentar`() = runTest {
+        // Blogs, die automatisch freischalten, haben nie etwas mit Status
+        // "hold" - eine Pruefung nur darauf waere dort wirkungslos.
         server.enqueue(jsonResponse("[]"))
 
         source.fetchUnnotified(instance)
 
         val request = server.takeRequest()
-        assertEquals("hold", request.url.queryParameter("status"))
+        assertEquals("all", request.url.queryParameter("status"))
         assertEquals("edit", request.url.queryParameter("context"))
+    }
+
+    @Test
+    fun `eine aeltere Plugin-Fassung bricht die Pruefung nicht ab`() = runTest {
+        // Fassungen vor 1.3.0 kennen latest_any_comment_id nicht und melden 0.
+        // Dann darf die Abkuerzung nicht greifen, sonst kaeme nie etwas an.
+        dao.upsertSyncState(
+            SyncStateEntity(
+                instanceId = instance.id,
+                lastSyncEpochMillis = null,
+                lastNotifiedCommentId = 98,
+                lastNotifiedDateEpochMillis = 0,
+            ),
+        )
+        server.enqueue(
+            jsonResponse("""{"pending_count":1,"latest_comment_id":98,"plugin_version":"1.2.0"}"""),
+        )
+        server.enqueue(jsonResponse("[]"))
+
+        source.fetchUnnotified(testInstance(hasBridgePlugin = true))
+
+        server.takeRequest()
+        assertEquals("all", server.takeRequest().url.queryParameter("status"))
+    }
+
+    @Test
+    fun `auf Wunsch nur was auf Moderation wartet`() = runTest {
+        settings.state.value = settings.state.value.copy(notifyOnlyPending = true)
+        server.enqueue(jsonResponse("[]"))
+
+        source.fetchUnnotified(instance)
+
+        assertEquals("hold", server.takeRequest().url.queryParameter("status"))
     }
 
     @Test
@@ -148,7 +185,8 @@ class PollingNewCommentSourceTest {
         )
         server.enqueue(
             jsonResponse(
-                """{"pending_count":1,"latest_comment_id":98,"plugin_version":"1.0.0"}""",
+                """{"pending_count":1,"latest_comment_id":98,"latest_any_comment_id":98,
+                    "plugin_version":"1.3.0"}""",
             ),
         )
 

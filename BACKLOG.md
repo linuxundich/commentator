@@ -65,8 +65,10 @@ bleibt.
       Geräteregistrierung im Plugin. Damit entstünden Metadaten bei Google
       und eine Abhängigkeit von den Play Services. Die Abwägung steht in
       `docs/architecture.md`; die Schnittstelle ist vorbereitet.*
-- [ ] **P3** Benachrichtigung auch für automatisch genehmigte Kommentare
-      *Heute wird nur gemeldet, was auf Moderation wartet.*
+- [x] **P3** Benachrichtigung auch für automatisch genehmigte Kommentare
+      *Umgesetzt und zur Voreinstellung gemacht: Auf Blogs, die automatisch
+      freischalten, kam zuvor nie eine Benachrichtigung an. Ein Schalter
+      beschränkt die Meldung wieder auf die Moderationswarteschlange.*
 
 ---
 

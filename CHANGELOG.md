@@ -153,6 +153,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **WordPress-Plugin**
 
+- Version 1.3.0: `commentator/v1/status` meldet zusätzlich den neuesten
+  Kommentar unabhängig vom Status. Ohne dieses Feld könnte die App auf Blogs
+  mit automatischer Freischaltung nicht abkürzen. Ältere Fassungen sind
+  weiterhin nutzbar; die App fragt dann regulär über die Kern-API.
+- Der neueste Kommentar wird nach Kennung statt nach Datum bestimmt. Die App
+  vergleicht Kennungen; ein zurückdatierter Kommentar – beim Import keine
+  Seltenheit – wäre sonst der „neueste“ gewesen und hätte die Prüfung
+  fälschlich abbrechen lassen.
 - Zwei neue Endpunkte in Version 1.2.0: `/empty` leert Spam oder Papierkorb
   in Stapeln, `/blocklist` pflegt `disallowed_keys`. Beide tun nur das, was im
   Backend ohnehin möglich ist, und prüfen dieselben Rechte – `/empty`
@@ -166,6 +174,11 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Benachrichtigungen melden jetzt jeden neuen Kommentar, nicht mehr nur
+  solche, die auf Moderation warten. Auf Blogs, die Kommentare automatisch
+  freischalten, kam zuvor nie eine Benachrichtigung an – dort gibt es nichts
+  mit Status „offen“. Ein Schalter in den Einstellungen beschränkt die Meldung
+  wieder auf die Moderationswarteschlange.
 - Umschalten zwischen den Filtern kostet keine Netzanfragen mehr, solange der
   Stand jünger als zwei Minuten ist. Zuvor löste jeder Tipp auf einen Filter
   bis zu neun Anfragen aus – Liste, Beitragstitel, Rechteabfrage und

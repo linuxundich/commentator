@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
@@ -46,10 +47,12 @@ class SettingsScreenTest {
                             syncIntervalMinutes = 15,
                             showAvatars = false,
                             showAuthorEmail = false,
+                            notifyOnlyPending = false,
                         ),
                     ),
                     intervalOptions = intervalOptions,
                     onNotificationsEnabled = {},
+                    onNotifyOnlyPending = {},
                     onSyncInterval = {},
                     onAppIcon = {},
                     onShowAvatars = {},
@@ -69,7 +72,11 @@ class SettingsScreenTest {
     fun `ohne Bausteine steht ein Hinweis statt einer leeren Liste`() {
         render()
 
-        composeRule.onNodeWithText("Noch keine Textbausteine angelegt").assertIsDisplayed()
+        // Der Bildschirm ist laenger als die Testflaeche; ohne Scrollen gilt
+        // in Compose nichts weiter unten als sichtbar.
+        composeRule.onNodeWithText("Noch keine Textbausteine angelegt")
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -81,7 +88,9 @@ class SettingsScreenTest {
             ),
         )
 
-        composeRule.onNodeWithText("Danke für den Hinweis.").assertIsDisplayed()
+        composeRule.onNodeWithText("Danke für den Hinweis.")
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onAllNodesWithContentDescription("Baustein löschen")[0].performClick()
 
         assertEquals(listOf("t1"), deleted)
@@ -91,7 +100,7 @@ class SettingsScreenTest {
     fun `an der Obergrenze laesst sich nichts mehr hinzufuegen`() {
         render(List(ReplyTemplate.MAX_TEMPLATES) { ReplyTemplate("t$it", "Baustein $it") })
 
-        composeRule.onNodeWithText("Baustein hinzufügen").assertIsNotEnabled()
+        composeRule.onNodeWithText("Baustein hinzufügen").performScrollTo().assertIsNotEnabled()
     }
 
     @Test

@@ -10,6 +10,14 @@ data class AppSettings(
     val showAvatars: Boolean,
     /** E-Mail-Adressen der Kommentatoren in der Detailansicht anzeigen. */
     val showAuthorEmail: Boolean,
+    /**
+     * Nur ueber Kommentare benachrichtigen, die auf Moderation warten.
+     *
+     * Standardmaessig aus: Blogs, die Kommentare automatisch freischalten,
+     * haetten sonst nie etwas zu melden - und gerade dort ist ein neuer
+     * Kommentar bereits oeffentlich und damit eher dringlicher.
+     */
+    val notifyOnlyPending: Boolean,
 ) {
     companion object {
         /**
@@ -26,6 +34,7 @@ data class AppSettings(
             syncIntervalMinutes = DEFAULT_SYNC_INTERVAL_MINUTES,
             showAvatars = false,
             showAuthorEmail = false,
+            notifyOnlyPending = false,
         )
     }
 }
@@ -36,4 +45,5 @@ interface SettingsRepository {
     suspend fun setSyncIntervalMinutes(minutes: Int)
     suspend fun setShowAvatars(show: Boolean)
     suspend fun setShowAuthorEmail(show: Boolean)
+    suspend fun setNotifyOnlyPending(onlyPending: Boolean)
 }

@@ -23,6 +23,7 @@ class DefaultSettingsRepository @Inject constructor(
             syncIntervalMinutes = prefs[INTERVAL] ?: AppSettings.DEFAULT_SYNC_INTERVAL_MINUTES,
             showAvatars = prefs[AVATARS] ?: AppSettings.DEFAULT.showAvatars,
             showAuthorEmail = prefs[AUTHOR_EMAIL] ?: AppSettings.DEFAULT.showAuthorEmail,
+            notifyOnlyPending = prefs[ONLY_PENDING] ?: AppSettings.DEFAULT.notifyOnlyPending,
         )
     }
 
@@ -44,10 +45,15 @@ class DefaultSettingsRepository @Inject constructor(
         dataStore.edit { it[AUTHOR_EMAIL] = show }
     }
 
+    override suspend fun setNotifyOnlyPending(onlyPending: Boolean) {
+        dataStore.edit { it[ONLY_PENDING] = onlyPending }
+    }
+
     private companion object {
         val NOTIFICATIONS = booleanPreferencesKey("notifications_enabled")
         val INTERVAL = intPreferencesKey("sync_interval_minutes")
         val AVATARS = booleanPreferencesKey("show_avatars")
         val AUTHOR_EMAIL = booleanPreferencesKey("show_author_email")
+        val ONLY_PENDING = booleanPreferencesKey("notify_only_pending")
     }
 }

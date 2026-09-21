@@ -97,6 +97,7 @@ class FakeSettingsRepository(
         syncIntervalMinutes = 15,
         showAvatars = false,
         showAuthorEmail = false,
+        notifyOnlyPending = false,
     ),
 ) : SettingsRepository {
 
@@ -113,6 +114,10 @@ class FakeSettingsRepository(
 
     override suspend fun setShowAvatars(show: Boolean) {
         state.value = state.value.copy(showAvatars = show)
+    }
+
+    override suspend fun setNotifyOnlyPending(onlyPending: Boolean) {
+        state.value = state.value.copy(notifyOnlyPending = onlyPending)
     }
 
     override suspend fun setShowAuthorEmail(show: Boolean) {

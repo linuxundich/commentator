@@ -162,6 +162,8 @@
     <string name="settings_no_moderation_rights">This account cannot moderate comments. Moderation actions are disabled.</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_description">Check for new comments in the background</string>
+    <string name="settings_only_pending">Only comments awaiting moderation</string>
+    <string name="settings_only_pending_description">Off: notify about every new comment. On blogs that approve automatically there would otherwise never be one.</string>
     <string name="settings_interval">Check interval</string>
     <string name="settings_minutes">%1$d min</string>
     <string name="settings_open_system_notifications">Open system notification settings</string>

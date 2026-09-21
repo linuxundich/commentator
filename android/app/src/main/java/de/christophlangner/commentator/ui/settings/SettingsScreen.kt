@@ -95,6 +95,7 @@ fun SettingsScreen(
             state = state,
             intervalOptions = viewModel.intervalOptions,
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
+            onNotifyOnlyPending = viewModel::setNotifyOnlyPending,
             onSyncInterval = viewModel::setSyncInterval,
             onAppIcon = viewModel::setAppIcon,
             onShowAvatars = viewModel::setShowAvatars,
@@ -161,6 +162,7 @@ internal fun SettingsContent(
     state: SettingsUiState,
     intervalOptions: List<Int>,
     onNotificationsEnabled: (Boolean) -> Unit,
+    onNotifyOnlyPending: (Boolean) -> Unit,
     onSyncInterval: (Int) -> Unit,
     onAppIcon: (AppIcon) -> Unit,
     onShowAvatars: (Boolean) -> Unit,
@@ -226,6 +228,13 @@ internal fun SettingsContent(
             description = stringResource(R.string.settings_notifications_description),
             checked = state.settings.notificationsEnabled,
             onCheckedChange = onNotificationsEnabled,
+        )
+
+        SwitchRow(
+            title = stringResource(R.string.settings_only_pending),
+            description = stringResource(R.string.settings_only_pending_description),
+            checked = state.settings.notifyOnlyPending,
+            onCheckedChange = onNotifyOnlyPending,
         )
 
         Text(

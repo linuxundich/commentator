@@ -178,6 +178,8 @@
     <string name="settings_no_moderation_rights">Dieses Konto besitzt kein Recht zum Moderieren von Kommentaren. Moderationsaktionen sind deaktiviert.</string>
     <string name="settings_notifications">Benachrichtigungen</string>
     <string name="settings_notifications_description">Im Hintergrund auf neue Kommentare prüfen</string>
+    <string name="settings_only_pending">Nur was auf Moderation wartet</string>
+    <string name="settings_only_pending_description">Aus: Benachrichtigung über jeden neuen Kommentar. Auf Blogs, die automatisch freischalten, käme sonst nie eine.</string>
     <string name="settings_interval">Prüfintervall</string>
     <string name="settings_minutes">%1$d min</string>
     <string name="settings_open_system_notifications">Systemeinstellungen für Benachrichtigungen öffnen</string>

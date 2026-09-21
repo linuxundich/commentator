@@ -80,6 +80,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setNotificationsEnabled(enabled) }
     }
 
+    fun setNotifyOnlyPending(onlyPending: Boolean) {
+        viewModelScope.launch { settingsRepository.setNotifyOnlyPending(onlyPending) }
+    }
+
     fun setSyncInterval(minutes: Int) {
         viewModelScope.launch { settingsRepository.setSyncIntervalMinutes(minutes) }
     }

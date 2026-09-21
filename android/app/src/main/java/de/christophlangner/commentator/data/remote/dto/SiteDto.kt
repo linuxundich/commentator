@@ -91,6 +91,11 @@ data class BridgeStatusDto(
     @SerialName("pending_count") val pendingCount: Int = 0,
     @SerialName("latest_comment_id") val latestCommentId: Long = 0,
     @SerialName("latest_comment_date_gmt") val latestCommentDateGmt: String? = null,
+    /**
+     * Neuester Kommentar unabhaengig vom Status. `0` bei aelteren
+     * Plugin-Fassungen, die dieses Feld noch nicht kennen.
+     */
+    @SerialName("latest_any_comment_id") val latestAnyCommentId: Long = 0,
     @SerialName("plugin_version") val pluginVersion: String = "",
 )
 

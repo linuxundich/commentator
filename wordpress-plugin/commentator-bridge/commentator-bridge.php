@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/christophlangner/commentator
  * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.2.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.3.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -147,31 +147,22 @@ function commentator_bridge_status(): WP_REST_Response {
 	// wp_count_comments() ist zwischengespeichert und deshalb günstig.
 	$counts = wp_count_comments();
 
-	$latest = get_comments(
-		array(
-			'status'  => 'hold',
-			'number'  => 1,
-			'orderby' => 'comment_date_gmt',
-			'order'   => 'DESC',
-			'type'    => 'comment',
-		)
-	);
+	list( $latest_id, $latest_date ) = commentator_bridge_latest( 'hold' );
 
-	$latest_id   = 0;
-	$latest_date = null;
-
-	if ( ! empty( $latest ) ) {
-		$comment     = $latest[0];
-		$latest_id   = (int) $comment->comment_ID;
-		$latest_date = mysql_to_rfc3339( $comment->comment_date_gmt );
-	}
+	// Zusaetzlich der neueste Kommentar unabhaengig vom Status: Auf Blogs, die
+	// Kommentare automatisch freischalten, gibt es nie etwas mit Status
+	// 'hold' - die App wuerde dort sonst nie bemerken, dass ueberhaupt ein
+	// Kommentar eingegangen ist.
+	list( $latest_any_id, $latest_any_date ) = commentator_bridge_latest( 'all' );
 
 	$response = new WP_REST_Response(
 		array(
-			'pending_count'           => (int) $counts->moderated,
-			'latest_comment_id'       => $latest_id,
-			'latest_comment_date_gmt' => $latest_date,
-			'plugin_version'          => COMMENTATOR_BRIDGE_VERSION,
+			'pending_count'               => (int) $counts->moderated,
+			'latest_comment_id'           => $latest_id,
+			'latest_comment_date_gmt'     => $latest_date,
+			'latest_any_comment_id'       => $latest_any_id,
+			'latest_any_comment_date_gmt' => $latest_any_date,
+			'plugin_version'              => COMMENTATOR_BRIDGE_VERSION,
 		)
 	);
 
@@ -179,6 +170,36 @@ function commentator_bridge_status(): WP_REST_Response {
 	$response->header( 'Cache-Control', 'no-store, private' );
 
 	return $response;
+}
+
+/**
+ * Neuester Kommentar eines Status als Paar aus Kennung und Zeitpunkt.
+ *
+ * @param string $status Status im Sinne von WP_Comment_Query.
+ * @return array{0:int,1:?string}
+ */
+function commentator_bridge_latest( string $status ): array {
+	// Sortiert nach Kennung, nicht nach Datum: Die App vergleicht Kennungen,
+	// um zu entscheiden, ob es etwas Neues gibt. Ein Kommentar mit
+	// zurueckdatiertem Zeitpunkt - beim Import keine Seltenheit - waere sonst
+	// der "neueste" und wuerde die Pruefung faelschlich abbrechen lassen.
+	$latest = get_comments(
+		array(
+			'status'  => $status,
+			'number'  => 1,
+			'orderby' => 'comment_ID',
+			'order'   => 'DESC',
+			'type'    => 'comment',
+		)
+	);
+
+	if ( empty( $latest ) ) {
+		return array( 0, null );
+	}
+
+	$comment = $latest[0];
+
+	return array( (int) $comment->comment_ID, mysql_to_rfc3339( $comment->comment_date_gmt ) );
 }
 
 /**
