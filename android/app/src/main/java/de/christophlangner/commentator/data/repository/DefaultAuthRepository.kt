@@ -16,9 +16,11 @@ import de.christophlangner.commentator.data.remote.WordPressClientFactory
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AuthRepository
 import de.christophlangner.commentator.domain.repository.SiteDiscovery
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.ResponseBody
 import okio.Buffer
@@ -191,9 +193,23 @@ class DefaultAuthRepository @Inject constructor(
      */
     private suspend fun themeIcon(api: WordPressApi, siteUrl: String): String? {
         val antwort = executor.call { api.homePage(siteUrl) }.valueOrNull?.body ?: return null
-        val kopf = antwort.use { koerper ->
-            runCatching { koerper.kopfbereich(MAX_KOPF_BYTES) }.getOrNull()
+
+        // Zwingend auf einem Hintergrund-Thread: Anders als bei den uebrigen
+        // Aufrufen liest hier nicht Retrofit den Koerper, sondern diese
+        // Methode - und zwar blockierend. Fortgesetzt wird sie aber auf dem
+        // Dispatcher des Aufrufers, und das ist ueber viewModelScope der
+        // Hauptthread. Ohne withContext fliegt eine
+        // NetworkOnMainThreadException, und zwar auch beim Schliessen, weil
+        // ein nicht zu Ende gelesener Koerper dabei die Verbindung leerraeumt.
+        // Die Absicherung liegt um das Schliessen herum, nicht nur um das
+        // Lesen: Ein nicht zu Ende gelesener Koerper raeumt beim Schliessen
+        // die Verbindung leer, und auch dabei kann es schiefgehen. Eine
+        // Ausnahme von hier wuerde sonst das Auffrischen mitreissen - wegen
+        // eines Symbols.
+        val kopf = withContext(Dispatchers.IO) {
+            runCatching { antwort.use { it.kopfbereich(MAX_KOPF_BYTES) } }.getOrNull()
         } ?: return null
+
         return SiteIcon.fromHtml(kopf, siteUrl)
     }
 
