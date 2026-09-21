@@ -174,6 +174,17 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Beim Erstaufbau der Liste liefen zwei Ladeanzeigen gleichzeitig: die des
+  Herunterziehens und die der Liste. Statt eines Kreises im Leeren stehen
+  jetzt Platzhalterkarten in der Form der späteren Inhalte; die Liste springt
+  dadurch beim Eintreffen der Daten nicht mehr.
+- Die Aktionen auf einer Kommentarkarte standen als vier beschriftete
+  Schaltflächen auf zwei Zeilen. Jetzt trägt eine hervorgehobene Hauptaktion
+  die Beschriftung – genehmigen, bei bereits genehmigten Kommentaren
+  antworten –, die übrigen stehen als Symbole daneben. Auf denselben
+  Bildschirm passen dadurch drei Kommentare statt zweieinhalb.
+- Die Kopfleiste des Posteingangs weicht beim Scrollen nach oben und kommt
+  beim Zurückscrollen sofort wieder.
 - Das Symbol in der Statusleiste füllte nur rund die Hälfte seiner Fläche und
   erschien neben den Symbolen anderer Apps als kaum erkennbarer Punkt. Es
   füllt jetzt gut 90 Prozent, wie für Statusleistensymbole vorgesehen, und

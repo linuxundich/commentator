@@ -37,6 +37,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.content.ContextCompat
@@ -64,7 +66,7 @@ import de.christophlangner.commentator.ui.common.BlogTitle
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.EmptyState
 import de.christophlangner.commentator.ui.common.ErrorState
-import de.christophlangner.commentator.ui.common.LoadingState
+import de.christophlangner.commentator.ui.common.CommentSkeletonList
 import de.christophlangner.commentator.ui.common.OfflineBanner
 import de.christophlangner.commentator.ui.common.SessionInvalidBanner
 
@@ -211,11 +213,17 @@ internal fun InboxScreenContent(
     onReauthenticate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Die Kopfleiste weicht beim Scrollen nach oben und kommt beim
+    // Zurueckscrollen sofort wieder - auf einer langen Liste gewinnt das eine
+    // ganze Kartenhoehe an sichtbarem Inhalt.
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
+                scrollBehavior = scrollBehavior,
                 title = {
                     BlogTitle(
                         name = state.instance?.displayName
@@ -275,7 +283,10 @@ internal fun InboxScreenContent(
             )
 
             PullToRefreshBox(
-                isRefreshing = state.isRefreshing,
+                // Waehrend des Erstaufbaus nicht: Dort stehen bereits
+                // Platzhalterkarten, und beides zusammen ergaebe zwei
+                // Ladeanzeigen uebereinander.
+                isRefreshing = state.isRefreshing && !state.isInitialLoad,
                 onRefresh = onRefresh,
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -314,7 +325,8 @@ private fun InboxContent(
     }
 
     when {
-        state.isInitialLoad && state.comments.isEmpty() && state.error == null -> LoadingState()
+        state.isInitialLoad && state.comments.isEmpty() && state.error == null ->
+            CommentSkeletonList()
 
         state.comments.isEmpty() && state.error != null ->
             ErrorState(

@@ -85,6 +85,40 @@ class InboxScreenTest {
     )
 
     @Test
+    fun `beim Erstaufbau erscheint nur eine Ladeanzeige`() {
+        // Vorher liefen zwei gleichzeitig: die Platzhalter und der Kreis des
+        // Herunterziehens.
+        render(InboxUiState(instance = testInstance(), isInitialLoad = true, isRefreshing = true))
+
+        assertEquals(
+            1,
+            composeRule.onAllNodesWithContentDescription("Kommentare werden geladen…")
+                .fetchSemanticsNodes().size,
+        )
+    }
+
+    @Test
+    fun `genehmigter Kommentar bietet Antworten als Hauptaktion`() {
+        render(stateWith(listOf(testComment(1, status = CommentStatus.APPROVED))))
+
+        // Als Text, nicht als Symbol: Die Hauptaktion ist beschriftet.
+        composeRule.onNodeWithText("Antworten").assertIsDisplayed()
+        composeRule.onAllNodesWithContentDescription("Genehmigen")
+            .fetchSemanticsNodes()
+            .let { assertEquals(0, it.size) }
+    }
+
+    @Test
+    fun `offener Kommentar bietet Genehmigen als Hauptaktion`() {
+        render(stateWith(listOf(testComment(1, status = CommentStatus.PENDING))))
+
+        composeRule.onNodeWithText("Genehmigen").assertIsDisplayed()
+        // Die uebrigen Aktionen sind Symbole mit gesprochener Beschriftung.
+        composeRule.onNodeWithContentDescription("Papierkorb").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Antworten").assertIsDisplayed()
+    }
+
+    @Test
     fun `Leeren erscheint nur bei Spam und Papierkorb`() {
         render(
             InboxUiState(
@@ -216,8 +250,10 @@ class InboxScreenTest {
     fun `Spam loest die passende Moderationsaktion aus`() {
         render(stateWith(listOf(testComment(7))))
 
-        composeRule.onNodeWithText("Spam", useUnmergedTree = false).let { }
-        composeRule.onAllNodes(hasText("Spam"))[1].performClick()
+        // Ueber die gesprochene Beschriftung, nicht ueber den Text: Die
+        // Kartenaktion ist ein Symbolknopf, "Spam" steht als Text nur noch
+        // am Filter.
+        composeRule.onNodeWithContentDescription("Spam").performClick()
 
         assertEquals(ModerationAction.MarkAsSpam, moderations.single().second)
     }

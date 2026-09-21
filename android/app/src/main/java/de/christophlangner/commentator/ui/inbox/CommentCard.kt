@@ -3,8 +3,6 @@ package de.christophlangner.commentator.ui.inbox
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,10 +15,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +47,6 @@ import de.christophlangner.commentator.ui.common.StatusChip
  * Die wichtigsten Moderationsentscheidungen sind direkt erreichbar, ohne den
  * Kommentar öffnen zu müssen - das ist der eigentliche Zweck der App.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CommentCard(
     comment: Comment,
@@ -122,61 +121,104 @@ fun CommentCard(
                 modifier = Modifier.padding(top = 8.dp),
             )
 
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(top = 4.dp),
-            ) {
-                if (comment.status != CommentStatus.APPROVED) {
-                    CardAction(
-                        icon = Icons.Default.CheckCircle,
-                        label = stringResource(R.string.action_approve),
-                        enabled = actionsEnabled,
-                        onClick = { onModerate(ModerationAction.Approve) },
-                    )
-                }
-                if (comment.status != CommentStatus.SPAM) {
-                    CardAction(
-                        icon = Icons.Default.Warning,
-                        label = stringResource(R.string.action_spam),
-                        enabled = actionsEnabled,
-                        onClick = { onModerate(ModerationAction.MarkAsSpam) },
-                    )
-                }
-                if (comment.status != CommentStatus.TRASH) {
-                    CardAction(
-                        icon = Icons.Default.Delete,
-                        label = stringResource(R.string.action_trash),
-                        enabled = actionsEnabled,
-                        onClick = { onModerate(ModerationAction.Delete(permanent = false)) },
-                    )
-                }
-                CardAction(
-                    icon = null,
-                    label = stringResource(R.string.action_reply),
-                    enabled = actionsEnabled,
-                    onClick = onReply,
-                )
-            }
+            CardActions(
+                comment = comment,
+                enabled = actionsEnabled,
+                onModerate = onModerate,
+                onReply = onReply,
+            )
         }
     }
 }
 
 @Composable
-private fun CardAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector?,
+private fun CardActions(
+    comment: Comment,
+    enabled: Boolean,
+    onModerate: (ModerationAction) -> Unit,
+    onReply: () -> Unit,
+) {
+    // Eine hervorgehobene Hauptaktion, der Rest als Symbole. Vorher standen
+    // vier beschriftete Schaltflaechen da, die auf zwei Zeilen umbrachen -
+    // jede Karte wurde dadurch so hoch, dass kaum drei Kommentare auf den
+    // Bildschirm passten.
+    val approved = comment.status == CommentStatus.APPROVED
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+    ) {
+        if (approved) {
+            FilledTonalButton(onClick = onReply, enabled = enabled) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.action_reply))
+            }
+        } else {
+            FilledTonalButton(
+                onClick = { onModerate(ModerationAction.Approve) },
+                enabled = enabled,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.action_approve))
+            }
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        if (!approved) {
+            CardIconAction(
+                icon = Icons.AutoMirrored.Filled.Send,
+                label = stringResource(R.string.action_reply),
+                enabled = enabled,
+                onClick = onReply,
+            )
+        }
+        if (comment.status != CommentStatus.SPAM) {
+            CardIconAction(
+                icon = Icons.Default.Warning,
+                label = stringResource(R.string.action_spam),
+                enabled = enabled,
+                onClick = { onModerate(ModerationAction.MarkAsSpam) },
+            )
+        }
+        if (comment.status != CommentStatus.TRASH) {
+            CardIconAction(
+                icon = Icons.Default.Delete,
+                label = stringResource(R.string.action_trash),
+                enabled = enabled,
+                onClick = { onModerate(ModerationAction.Delete(permanent = false)) },
+            )
+        }
+    }
+}
+
+/**
+ * Symbolknopf mit gesprochener Beschriftung.
+ *
+ * Ohne Text auf dem Bildschirm, aber mit contentDescription: Fuer
+ * Bildschirmleser bleibt die Aktion benannt, und der Knopf behaelt die voll
+ * bedienbare Groesse von IconButton.
+ */
+@Composable
+private fun CardIconAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    TextButton(onClick = onClick, enabled = enabled) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-        }
-        Text(label)
+    IconButton(onClick = onClick, enabled = enabled) {
+        Icon(imageVector = icon, contentDescription = label)
     }
 }
