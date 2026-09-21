@@ -174,11 +174,20 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
-- Benachrichtigungen melden jetzt jeden neuen Kommentar, nicht mehr nur
-  solche, die auf Moderation warten. Auf Blogs, die Kommentare automatisch
-  freischalten, kam zuvor nie eine Benachrichtigung an – dort gibt es nichts
-  mit Status „offen“. Ein Schalter in den Einstellungen beschränkt die Meldung
-  wieder auf die Moderationswarteschlange.
+- App-Symbol nach dem Muster gängiger Messenger überarbeitet: fast
+  quadratischer Blasenkörper mit großem Eckradius statt eines länglichen, und
+  ein kurzer angewachsener Schweif statt eines dünnen Stachels. Die Marke hält
+  jetzt rund 5 Einheiten Abstand zur Sicherheitszone statt 1,8.
+
+- Benachrichtigungen lassen sich in drei Stufen einstellen: nur was auf
+  Moderation wartet, jeder neue Kommentar (Voreinstellung), oder zusätzlich
+  Spam und Papierkorb. Zuvor wurde nur die Moderationswarteschlange geprüft –
+  auf Blogs, die Kommentare automatisch freischalten, kam deshalb nie eine
+  Benachrichtigung an. Was ein Spamfilter aussortiert hat, bleibt in der
+  Voreinstellung außen vor; die dritte Stufe macht Fehleinstufungen sichtbar.
+- Kommentatoren ohne Gravatar bekommen ein eigenes Platzhaltersymbol statt der
+  Silhouette von Gravatar. Dafür fragt die App `d=404` statt `d=mm` an.
+  Avatar-Adressen anderer Dienste bleiben unangetastet.
 - Umschalten zwischen den Filtern kostet keine Netzanfragen mehr, solange der
   Stand jünger als zwei Minuten ist. Zuvor löste jeder Tipp auf einen Filter
   bis zu neun Anfragen aus – Liste, Beitragstitel, Rechteabfrage und

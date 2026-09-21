@@ -5,10 +5,23 @@
   Die Sprechblase steht für den Gegenstand der App - Kommentare -, das W für
   WordPress. Flache Geometrie und kräftige Fläche nach Android-Art.
 
-  Die Zeichnung sitzt vier Einheiten unterhalb der Rastermitte. Das ist
-  Absicht: Der Blasenkörper trägt fast die gesamte Fläche, der Schweif wiegt
-  kaum etwas. Geometrisch mittig ausgerichtet wirkte die Marke deshalb nach
-  oben gerutscht. So liegt der Flächenschwerpunkt bei 53,4 statt 49,1.
+  Form nach dem Muster gängiger Messenger-Symbole: ein fast quadratischer
+  Körper mit großem Eckradius und einem kurzen, angewachsenen Schweif unten
+  links. Der frühere Körper war mit 56 zu 42 Einheiten deutlich breiter als
+  hoch und der Schweif ein dünner Stachel, der abgelöst wirkte.
+
+  Die Zeichnung sitzt etwas unterhalb der Rastermitte. Das ist Absicht: Der
+  Blasenkörper trägt fast die gesamte Fläche, der Schweif wiegt kaum etwas.
+  Geometrisch mittig ausgerichtet wirkte die Marke nach oben gerutscht. So
+  liegt der Flächenschwerpunkt bei 53,5 statt 49,1.
+
+  Skalierung 0,90: Die Marke hält damit rund 5 Einheiten Abstand zur
+  Sicherheitszone. Vorher waren es 1,8 - der Schweif klebte sichtbar am Rand.
+
+  Skalierung 0,90: Die Marke misst damit rund 50 von 66 Einheiten der
+  Sicherheitszone und hält gut 6 Einheiten Abstand zu deren Rand. Vorher waren
+  es 1,8 - der Schweif klebte sichtbar am Rand. Kleiner als 0,86 sollte sie
+  nicht werden, dann unterschreitet die Breite das Mindestmaß von 48.
 
   Bewusst eine eigene Zeichnung und keine fremde Wortmarke.
 -->
@@ -19,18 +32,19 @@
     android:viewportHeight="108">
 
     <group
+        android:translateY="1"
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="1.05"
-        android:scaleY="1.05">
+        android:scaleX="0.90"
+        android:scaleY="0.90">
 
-        <path android:fillColor="#3DDC84" android:pathData="M40,32 H68 A14,14 0 0 1 82,46 V60 A14,14 0 0 1 68,74 H52 L36,84 L44,74 H40 A14,14 0 0 1 26,60 V46 A14,14 0 0 1 40,32 Z" />
+        <path android:fillColor="#3DDC84" android:pathData="M44,28 H64 A16,16 0 0 1 80,44 V60 A16,16 0 0 1 64,76 H46 L32,84 L38,76 A16,16 0 0 1 28,60 V44 A16,16 0 0 1 44,28 Z" />
 
         <path
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="6"
+            android:strokeWidth="6.5"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
-            android:pathData="M43,46 L48.5,60 L54,50.5 L59.5,60 L65,46" />
+            android:pathData="M42,45 L48.5,61 L54,50 L59.5,61 L66,45" />
     </group>
 </vector>
