@@ -27,6 +27,7 @@ import de.christophlangner.commentator.domain.repository.TeamRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -86,6 +87,17 @@ class DefaultCommentRepository @Inject constructor(
         dao.observeComment(instanceId, commentId)
             .map { row -> row?.let(CommentMapper::toDomain) }
 
+    override fun observeCommentsByIds(
+        instanceId: String,
+        ids: List<Long>,
+    ): Flow<List<Comment>> =
+        if (ids.isEmpty()) {
+            flowOf(emptyList())
+        } else {
+            dao.observeCommentsByIds(instanceId, ids)
+                .map { rows -> rows.map(CommentMapper::toDomain) }
+        }
+
     override fun observeReplies(instanceId: String, parentId: Long): Flow<List<Comment>> =
         dao.observeReplies(instanceId, parentId)
             .map { rows -> rows.map(CommentMapper::toDomain) }
@@ -127,6 +139,37 @@ class DefaultCommentRepository @Inject constructor(
             }
         } finally {
             syncing[instanceId] = false
+        }
+    }
+
+    override suspend fun search(
+        instanceId: String,
+        query: String,
+        filter: CommentFilter,
+    ): Outcome<List<Long>> {
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+
+        val result = executor.call {
+            api.listComments(
+                status = filter.queryValue,
+                page = 1,
+                perPage = PAGE_SIZE,
+                search = query,
+                authorExclude = hiddenAuthors(instanceId),
+            )
+        }
+
+        return when (result) {
+            is Outcome.Failure -> result
+            is Outcome.Success -> {
+                val entities = result.value.body.map { CommentMapper.toEntity(it, instanceId) }
+                // Nur einfuegen, nicht aufraeumen: Ein Treffer kann ausserhalb
+                // des geladenen Zeitfensters liegen, und die gefilterten Listen
+                // duerfen davon nichts verlieren.
+                dao.upsertComments(entities)
+                resolvePostTitles(instanceId, api, entities)
+                Outcome.Success(entities.map { it.id })
+            }
         }
     }
 

@@ -34,6 +34,10 @@ class FakeCommentRepository : CommentRepository {
 
     var refreshCount: Int = 0
         private set
+
+    /** Was die Suche liefert; ohne Vorgabe wird lokal nach dem Text gesucht. */
+    var searchResult: Outcome<List<Long>>? = null
+    val searches = mutableListOf<Pair<String, CommentFilter>>()
     val moderated = mutableListOf<Pair<Long, ModerationAction>>()
     val restored = mutableListOf<Pair<Long, CommentStatus>>()
 
@@ -46,10 +50,31 @@ class FakeCommentRepository : CommentRepository {
     override fun observeComment(instanceId: String, commentId: Long): Flow<Comment?> =
         comments.map { list -> list.firstOrNull { it.id == commentId } }
 
+    override fun observeCommentsByIds(
+        instanceId: String,
+        ids: List<Long>,
+    ): Flow<List<Comment>> =
+        comments.map { list -> list.filter { it.id in ids } }
+
     override fun observeReplies(instanceId: String, parentId: Long): Flow<List<Comment>> =
         comments.map { list -> list.filter { it.parentId == parentId } }
 
     override fun observeSyncState(instanceId: String): Flow<SyncState> = syncState
+
+    override suspend fun search(
+        instanceId: String,
+        query: String,
+        filter: CommentFilter,
+    ): Outcome<List<Long>> {
+        searches += query to filter
+        searchResult?.let { return it }
+        val treffer = comments.value
+            .filter { it.contentPlain.contains(query, ignoreCase = true) ||
+                it.authorName.contains(query, ignoreCase = true) }
+            .filter { filter.status == null || it.status == filter.status }
+            .map { it.id }
+        return Outcome.Success(treffer)
+    }
 
     override suspend fun refresh(instanceId: String, filter: CommentFilter): Outcome<Unit> {
         refreshCount++

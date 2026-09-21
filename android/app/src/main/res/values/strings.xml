@@ -20,6 +20,12 @@
     <string name="action_undo">Rückgängig</string>
     <string name="action_retry">Erneut versuchen</string>
     <string name="action_refresh">Aktualisieren</string>
+    <string name="action_search">Suchen</string>
+    <string name="action_search_close">Suche schließen</string>
+    <string name="search_hint">Kommentare durchsuchen</string>
+    <string name="search_empty_title">Nichts gefunden</string>
+    <string name="search_empty_description">Zu „%1$s“ gibt es in diesem Filter keinen Kommentar. Ein anderer Filter kann mehr zeigen.</string>
+    <string name="search_hint_short">Mindestens zwei Zeichen eingeben</string>
     <string name="action_settings">Einstellungen</string>
     <string name="action_back">Zurück</string>
     <string name="action_more">Weitere Aktionen</string>

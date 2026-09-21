@@ -40,6 +40,25 @@ interface CommentDao {
     )
     fun observeComment(instanceId: String, commentId: Long): Flow<CommentWithPost?>
 
+    /**
+     * Genau die genannten Kommentare, fortlaufend beobachtet.
+     *
+     * Für Suchergebnisse: Welche gefunden wurden, entscheidet der Server;
+     * was in ihnen steht, kommt wie überall aus dem Zwischenspeicher. Dadurch
+     * wirkt eine Moderation auch in der Trefferliste sofort.
+     */
+    @Transaction
+    @Query(
+        """
+        SELECT c.*, p.title AS postTitle
+        FROM comments c
+        LEFT JOIN post_titles p ON p.instanceId = c.instanceId AND p.postId = c.postId
+        WHERE c.instanceId = :instanceId AND c.id IN (:ids)
+        ORDER BY c.dateEpochMillis DESC
+        """,
+    )
+    fun observeCommentsByIds(instanceId: String, ids: List<Long>): Flow<List<CommentWithPost>>
+
     @Transaction
     @Query(
         """

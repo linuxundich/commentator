@@ -206,6 +206,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
   weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
   Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
+- Kommentarsuche über die Kopfleiste. Gesucht wird auf dem Server über den
+  `search`-Parameter der WordPress-API und innerhalb des gewählten Filters –
+  die Filterleiste behält damit ihre Bedeutung. Lokal zu suchen wäre
+  schneller, durchsuchte aber nur, was zufällig im Zwischenspeicher liegt.
+  Gesucht wird erst, wenn die Eingabe kurz steht, und ab zwei Zeichen; sonst
+  wäre jeder Tastendruck eine eigene Anfrage. Die Treffer kommen wie die
+  Liste aus dem Zwischenspeicher, deshalb wirkt eine Moderation auch in der
+  Trefferliste sofort.
 - Beschriftungsspalten richten sich nach der gemessenen Textbreite statt nach
   einer festen Angabe. Bei 200 % Systemschriftgröße wurde aus „Beitrag" zuvor
   ein „Beitr / ag" – ein Umbruch mitten im Wort. Ein Test hält das für die

@@ -37,6 +37,16 @@ class FakeCommentDao : CommentDao {
             list.firstOrNull { it.instanceId == instanceId && it.id == commentId }?.let(::withTitle)
         }
 
+    override fun observeCommentsByIds(
+        instanceId: String,
+        ids: List<Long>,
+    ): Flow<List<CommentWithPost>> =
+        stored.map { list ->
+            list.filter { it.instanceId == instanceId && it.id in ids }
+                .sortedByDescending { it.dateEpochMillis }
+                .map(::withTitle)
+        }
+
     override fun observeReplies(instanceId: String, parentId: Long): Flow<List<CommentWithPost>> =
         stored.map { list ->
             list.filter { it.instanceId == instanceId && it.parentId == parentId }.map(::withTitle)

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -63,6 +64,12 @@ data class InboxUiState(
     val counts: Map<CommentFilter, Int> = emptyMap(),
     /** Nutzer-IDs des Teams; deren Kommentare werden abgesetzt dargestellt. */
     val team: Team = Team(),
+    /** Ob das Suchfeld offen ist. Die Liste zeigt dann Treffer statt des Filters. */
+    val searchActive: Boolean = false,
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    /** Ob zur aktuellen Eingabe schon ein Ergebnis vorliegt. */
+    val searchDone: Boolean = false,
 ) {
     /** Ohne Verbindung, ohne Berechtigung oder mit ungültiger Sitzung wird nicht moderiert. */
     val moderationEnabled: Boolean
@@ -106,6 +113,21 @@ class InboxViewModel @Inject constructor(
     private val filter = MutableStateFlow(CommentFilter.PENDING)
     private val transient = MutableStateFlow(Transient())
 
+    /**
+     * Zustand der Suche.
+     *
+     * [treffer] ist `null`, solange zur aktuellen Eingabe nichts gesucht
+     * wurde - das unterscheidet "noch nichts gesucht" von "nichts gefunden".
+     */
+    private data class Suche(
+        val aktiv: Boolean = false,
+        val text: String = "",
+        val treffer: List<Long>? = null,
+        val laeuft: Boolean = false,
+    )
+
+    private val suche = MutableStateFlow(Suche())
+
     /** Ob Rechte und Zaehlungen in diesem Lauf schon einmal geholt wurden. */
     private var siteDataLoaded = false
 
@@ -127,12 +149,23 @@ class InboxViewModel @Inject constructor(
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val comments = combine(instance, filter, ::Pair)
-        .flatMapLatest { (instance, filter) ->
-            if (instance == null) flowOf(emptyList()) else {
-                commentRepository.observeComments(instance.id, filter)
-            }
+    private val comments = combine(
+        instance,
+        filter,
+        // Nur die beiden Felder, die die Liste bestimmen - sonst wuerde jeder
+        // Tastendruck die Abfrage neu aufsetzen.
+        suche.map { it.aktiv to it.treffer }.distinctUntilChanged(),
+        ::Triple,
+    ).flatMapLatest { (instance, filter, suchstand) ->
+        val (aktiv, treffer) = suchstand
+        when {
+            instance == null -> flowOf(emptyList())
+            // Welche Kommentare Treffer sind, entscheidet der Server; was in
+            // ihnen steht, kommt wie sonst auch aus dem Zwischenspeicher.
+            aktiv -> commentRepository.observeCommentsByIds(instance.id, treffer.orEmpty())
+            else -> commentRepository.observeComments(instance.id, filter)
         }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val syncState = instance.flatMapLatest { instance ->
@@ -155,13 +188,23 @@ class InboxViewModel @Inject constructor(
         val lastSync: Instant?,
     )
 
+    private data class Zwischenstand(
+        val instance: WordPressInstance?,
+        val filter: CommentFilter,
+        val comments: List<Comment>,
+        val transient: Transient,
+        val environment: Environment,
+    )
+
     val state: StateFlow<InboxUiState> = combine(
-        instance,
-        filter,
-        comments,
-        transient,
-        environment,
-    ) { instance, filter, comments, transient, environment ->
+        combine(instance, filter, comments, transient, environment, ::Zwischenstand),
+        suche,
+    ) { stand, suche ->
+        val instance = stand.instance
+        val filter = stand.filter
+        val comments = stand.comments
+        val transient = stand.transient
+        val environment = stand.environment
         InboxUiState(
             instance = instance,
             filter = filter,
@@ -169,7 +212,10 @@ class InboxViewModel @Inject constructor(
             isInitialLoad = !transient.initialLoadDone && comments.isEmpty(),
             isRefreshing = transient.isRefreshing,
             isLoadingMore = transient.isLoadingMore,
-            canLoadMore = instance != null &&
+            // Waehrend der Suche wird nicht nachgeladen: Die Trefferliste
+            // ist eine Antwort auf eine Frage, keine fortlaufende Liste.
+            canLoadMore = !suche.aktiv &&
+                instance != null &&
                 comments.isNotEmpty() &&
                 commentRepository.hasMorePages(instance.id, filter),
             isOffline = !environment.isOnline,
@@ -180,6 +226,10 @@ class InboxViewModel @Inject constructor(
             signals = signalsFor(comments),
             counts = transient.counts,
             team = transient.team,
+            searchActive = suche.aktiv,
+            searchQuery = suche.text,
+            isSearching = suche.laeuft,
+            searchDone = suche.treffer != null,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -194,6 +244,60 @@ class InboxViewModel @Inject constructor(
                 .collect { (instance, filter) ->
                     if (instance != null) refreshIfStale(instance.id, filter)
                 }
+        }
+
+        // Gesucht wird erst, wenn die Eingabe einen Moment steht. Jeder
+        // Tastendruck waere eine eigene Anfrage an den Blog.
+        viewModelScope.launch {
+            combine(suche.map { it.text.trim() }.distinctUntilChanged(), filter, ::Pair)
+                .debounce(SUCHVERZOEGERUNG)
+                .collect { (text, _) -> sucheAusfuehren(text) }
+        }
+    }
+
+    fun openSearch() {
+        suche.update { it.copy(aktiv = true) }
+    }
+
+    /** Schliesst die Suche und zeigt wieder die gefilterte Liste. */
+    fun closeSearch() {
+        suche.value = Suche()
+    }
+
+    fun setSearchQuery(text: String) {
+        suche.update { it.copy(text = text, treffer = if (text.isBlank()) null else it.treffer) }
+    }
+
+    /**
+     * Fuehrt die Suche aus.
+     *
+     * Unter [MINDESTLAENGE] Zeichen wird nicht gesucht: Ein einzelner
+     * Buchstabe trifft fast alles und kostet nur eine Anfrage.
+     */
+    private suspend fun sucheAusfuehren(text: String) {
+        if (!suche.value.aktiv) return
+        val instanceId = instance.value?.id
+        if (instanceId == null || text.length < MINDESTLAENGE) {
+            suche.update { it.copy(treffer = null, laeuft = false) }
+            return
+        }
+
+        suche.update { it.copy(laeuft = true) }
+        when (val outcome = commentRepository.search(instanceId, text, filter.value)) {
+            is Outcome.Success -> suche.update {
+                // Nur uebernehmen, wenn die Antwort noch zur Eingabe passt -
+                // sonst ueberholt eine langsame Anfrage eine neuere.
+                if (it.text.trim() == text) {
+                    it.copy(treffer = outcome.value, laeuft = false)
+                } else {
+                    it
+                }
+            }
+
+            is Outcome.Failure -> {
+                suche.update { it.copy(laeuft = false) }
+                _events.tryEmit(Event.Failed(outcome.error))
+            }
         }
     }
 
@@ -233,7 +337,15 @@ class InboxViewModel @Inject constructor(
     }
 
     /** Vom Benutzer ausgeloest: holt alles, auch Rechte und Zaehlungen. */
-    fun refresh() = refresh(withSiteData = true)
+    fun refresh() {
+        // Steht eine Suche, ist das Erwartete ein neuer Blick auf dieselbe
+        // Frage - nicht ein Nachladen der Liste dahinter.
+        if (suche.value.aktiv) {
+            viewModelScope.launch { sucheAusfuehren(suche.value.text.trim()) }
+            return
+        }
+        refresh(withSiteData = true)
+    }
 
     private fun refresh(withSiteData: Boolean) {
         val instanceId = instance.value?.id ?: return
@@ -293,6 +405,12 @@ class InboxViewModel @Inject constructor(
          * veralteten Stand sitzt, ohne es zu merken.
          */
         val FILTER_CACHE_LIFETIME: Duration = Duration.ofMinutes(2)
+
+        /** Wie lange die Eingabe stehen muss, bevor gesucht wird. */
+        const val SUCHVERZOEGERUNG = 400L
+
+        /** Ab wie vielen Zeichen gesucht wird. */
+        const val MINDESTLAENGE = 2
     }
 
     /**

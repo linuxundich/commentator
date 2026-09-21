@@ -22,6 +22,9 @@ interface CommentRepository {
 
     fun observeComment(instanceId: String, commentId: Long): Flow<Comment?>
 
+    /** Genau die genannten Kommentare - fuer die Trefferliste einer Suche. */
+    fun observeCommentsByIds(instanceId: String, ids: List<Long>): Flow<List<Comment>>
+
     fun observeReplies(instanceId: String, parentId: Long): Flow<List<Comment>>
 
     fun observeSyncState(instanceId: String): Flow<SyncState>
@@ -43,6 +46,24 @@ interface CommentRepository {
      * erneuter Abruf überhaupt lohnt.
      */
     fun lastRefreshAt(instanceId: String, filter: CommentFilter): Instant?
+
+    /**
+     * Sucht Kommentare auf dem Server und gibt die gefundenen IDs zurueck.
+     *
+     * Ueber den `search`-Parameter der WordPress-API, und zwar innerhalb des
+     * gewaehlten Filters - die Filterleiste behaelt damit ihre Bedeutung.
+     * Lokal zu suchen waere schneller, durchsuchte aber nur, was zufaellig
+     * im Zwischenspeicher liegt; wer sucht, sucht gerade das, was er nicht
+     * vor Augen hat.
+     *
+     * Die Treffer landen im Zwischenspeicher. Die Oberflaeche beobachtet sie
+     * darueber, sodass eine Moderation auch in der Trefferliste sofort wirkt.
+     */
+    suspend fun search(
+        instanceId: String,
+        query: String,
+        filter: CommentFilter,
+    ): Outcome<List<Long>>
 
     /** Holt einen einzelnen Kommentar frisch vom Server, etwa nach einem Deep Link. */
     suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment>

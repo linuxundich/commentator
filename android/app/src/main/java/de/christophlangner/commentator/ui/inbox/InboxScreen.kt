@@ -15,11 +15,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +39,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -49,6 +54,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
@@ -57,6 +65,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -191,6 +200,9 @@ fun InboxScreen(
         onLoadMore = viewModel::loadMore,
         onOpenSettings = onOpenSettings,
         onReauthenticate = onReauthenticate,
+        onOpenSearch = viewModel::openSearch,
+        onCloseSearch = viewModel::closeSearch,
+        onSearchQueryChange = viewModel::setSearchQuery,
         modifier = modifier,
     )
 }
@@ -214,6 +226,9 @@ internal fun InboxScreenContent(
     onLoadMore: () -> Unit,
     onOpenSettings: () -> Unit,
     onReauthenticate: () -> Unit,
+    onOpenSearch: () -> Unit = {},
+    onCloseSearch: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // Die Kopfleiste weicht beim Scrollen nach oben und kommt beim
@@ -227,47 +242,78 @@ internal fun InboxScreenContent(
         topBar = {
             TopAppBar(
                 scrollBehavior = scrollBehavior,
-                title = {
-                    BlogTitle(
-                        name = state.instance?.displayName
-                            ?: stringResource(R.string.app_name),
-                        iconUrl = state.instance?.iconUrl,
-                    )
-                },
-                actions = {
-                    // Nur bei Spam und Papierkorb, und nur wenn dort ueberhaupt
-                    // etwas liegt: Ein Knopf, der nichts tut, waere irritierend.
-                    val emptyLabel = when (state.filter) {
-                        CommentFilter.SPAM -> stringResource(R.string.action_empty_spam)
-                        CommentFilter.TRASH -> stringResource(R.string.action_empty_trash)
-                        else -> null
-                    }
-                    if (emptyLabel != null && (state.counts[state.filter] ?: 0) > 0) {
-                        IconButton(
-                            onClick = onEmptyRequest,
-                            enabled = state.moderationEnabled && !state.isRefreshing,
-                        ) {
+                navigationIcon = {
+                    if (state.searchActive) {
+                        IconButton(onClick = onCloseSearch) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = emptyLabel,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(
+                                    R.string.action_search_close,
+                                ),
                             )
                         }
                     }
-
-                    IconButton(
-                        onClick = onRefresh,
-                        enabled = !state.isRefreshing,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = stringResource(R.string.action_refresh),
+                },
+                title = {
+                    if (state.searchActive) {
+                        SearchField(
+                            query = state.searchQuery,
+                            onQueryChange = onSearchQueryChange,
+                        )
+                    } else {
+                        BlogTitle(
+                            name = state.instance?.displayName
+                                ?: stringResource(R.string.app_name),
+                            iconUrl = state.instance?.iconUrl,
                         )
                     }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.action_settings),
-                        )
+                },
+                actions = {
+                    // Waehrend der Suche bleibt die Leiste dem Suchfeld
+                    // ueberlassen; die uebrigen Knoepfe passen ohnehin nicht
+                    // mehr daneben.
+                    if (!state.searchActive) {
+                        // Nur bei Spam und Papierkorb, und nur wenn dort
+                        // ueberhaupt etwas liegt: Ein Knopf, der nichts tut,
+                        // waere irritierend.
+                        val emptyLabel = when (state.filter) {
+                            CommentFilter.SPAM -> stringResource(R.string.action_empty_spam)
+                            CommentFilter.TRASH -> stringResource(R.string.action_empty_trash)
+                            else -> null
+                        }
+                        if (emptyLabel != null && (state.counts[state.filter] ?: 0) > 0) {
+                            IconButton(
+                                onClick = onEmptyRequest,
+                                enabled = state.moderationEnabled && !state.isRefreshing,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = emptyLabel,
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = onOpenSearch) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = stringResource(R.string.action_search),
+                            )
+                        }
+                        IconButton(
+                            onClick = onRefresh,
+                            enabled = !state.isRefreshing,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(R.string.action_refresh),
+                            )
+                        }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = stringResource(R.string.action_settings),
+                            )
+                        }
                     }
                 },
             )
@@ -336,6 +382,22 @@ private fun InboxContent(
                 message = ErrorTexts.message(LocalResources.current, state.error),
                 onRetry = onRetry,
             )
+
+        // Waehrend der Suche sagt der leere Zustand etwas anderes: Nicht
+        // "hier ist nichts", sondern "dazu wurde nichts gefunden".
+        state.comments.isEmpty() && state.searchActive -> EmptyState(
+            icon = Icons.Default.Search,
+            title = if (state.searchDone) {
+                stringResource(R.string.search_empty_title)
+            } else {
+                stringResource(R.string.search_hint)
+            },
+            description = if (state.searchDone) {
+                stringResource(R.string.search_empty_description, state.searchQuery.trim())
+            } else {
+                stringResource(R.string.search_hint_short)
+            },
+        )
 
         state.comments.isEmpty() -> EmptyState(
             icon = Icons.Default.Email,
@@ -478,4 +540,38 @@ private fun CommentFilter.emptyTitleRes(): Int = when (this) {
 private fun CommentFilter.emptyDescriptionRes(): Int = when (this) {
     CommentFilter.PENDING -> R.string.empty_pending_description
     else -> R.string.empty_generic_description
+}
+
+/**
+ * Das Suchfeld in der Kopfleiste.
+ *
+ * Ohne eigenen Rahmen und ohne Hintergrund: Es sitzt bereits in der
+ * Kopfleiste, ein zweiter Rahmen darin wirkte wie ein Feld im Feld. Der Fokus
+ * springt beim Öffnen hinein, damit die Tastatur ohne weiteren Tipp kommt.
+ */
+@Composable
+private fun SearchField(
+    query: String,
+    onQueryChange: (String) -> Unit,
+) {
+    val fokus = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) { fokus.requestFocus() }
+
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        singleLine = true,
+        placeholder = { Text(stringResource(R.string.search_hint)) },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+        ),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(fokus),
+    )
 }

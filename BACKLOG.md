@@ -194,7 +194,11 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
 
 ## Suche und Filter
 
-- [ ] **P1** Kommentarsuche über den `search`-Parameter der API
+- [x] **P1** Kommentarsuche über den `search`-Parameter der API
+      *Wirkt innerhalb des gewählten Filters, mit Verzögerung und ab zwei
+      Zeichen. Die Treffer landen im Zwischenspeicher und werden von dort
+      beobachtet – dadurch wirkt eine Moderation auch in der Trefferliste
+      sofort, ohne einen zweiten Weg für Listenzustände.*
 - [ ] **P2** Filter nach Beitrag
 - [ ] **P2** Filter nach Autor
 - [ ] **P3** Lokale Volltextsuche im Cache über Room FTS
