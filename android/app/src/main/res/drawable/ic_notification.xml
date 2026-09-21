@@ -4,6 +4,15 @@
   App-Symbol, nur als reine Silhouette. Android zeichnet Benachrichtigungs-
   symbole einfarbig, deshalb ohne das W - das wäre bei dieser Grösse ohnehin
   nur noch ein Fleck.
+
+  Anders als beim Startsymbol füllt die Zeichnung hier fast die gesamte
+  Fläche. Das ist kein Versehen: Android zeigt das Symbol in der Statusleiste
+  in 24 dp und fügt selbst keinen Rand hinzu. Zuvor belegte die Blase nur
+  rund die Hälfte des Rasters - in der Statusleiste blieb davon neben den
+  Symbolen anderer Apps ein kaum erkennbarer Punkt.
+
+  Skalierung 1,75 ergibt gut 90 % Füllgrad und entspricht damit dem für
+  Statusleistensymbole vorgesehenen Rand von etwa 1 dp je Seite.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
@@ -11,7 +20,16 @@
     android:viewportWidth="108"
     android:viewportHeight="108"
     android:tint="#FFFFFF">
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M40,28 H68 A14,14 0 0 1 82,42 V56 A14,14 0 0 1 68,70 H52 L36,80 L44,70 H40 A14,14 0 0 1 26,56 V42 A14,14 0 0 1 40,28 Z" />
+
+    <group
+        android:translateY="-2"
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="1.75"
+        android:scaleY="1.75">
+
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M44,28 H64 A16,16 0 0 1 80,44 V60 A16,16 0 0 1 64,76 H46 L32,84 L38,76 A16,16 0 0 1 28,60 V44 A16,16 0 0 1 44,28 Z" />
+    </group>
 </vector>

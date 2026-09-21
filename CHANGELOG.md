@@ -174,6 +174,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Das Symbol in der Statusleiste füllte nur rund die Hälfte seiner Fläche und
+  erschien neben den Symbolen anderer Apps als kaum erkennbarer Punkt. Es
+  füllt jetzt gut 90 Prozent, wie für Statusleistensymbole vorgesehen, und
+  zeigt dieselbe Blasenform wie das App-Symbol.
 - App-Symbol nach dem Muster gängiger Messenger überarbeitet: fast
   quadratischer Blasenkörper mit großem Eckradius statt eines länglichen, und
   ein kurzer angewachsener Schweif statt eines dünnen Stachels. Die Marke hält
