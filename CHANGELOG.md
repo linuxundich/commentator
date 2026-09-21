@@ -179,6 +179,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Die Rollenmarke steht jetzt unter dem Namen statt daneben. Neben Marke und
+  Statuskennzeichen blieben für den Namen kaum 80 dp – „Christoph Langner"
+  wurde zu „Christop…".
+
 - Erste Datenbankmigration des Projekts: Die Kommentartabelle bekommt die
   Nutzer-ID des Verfassers. Bewusst eine Migration statt eines Neuaufbaus –
   mit dem Cache ginge der Ausgangszustand der Benachrichtigungen verloren, und
@@ -190,6 +194,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   allein an der Farbe. Welche Rollen dazuzählen, ist in den Einstellungen
   wählbar; voreingestellt sind Administrator und Redakteur. Das eigene Konto
   zählt immer dazu.
+- Adressen, die unverlinkt im Text stehen, zählen jetzt als Verweis mit.
+  Zuvor wurde nur das Markup betrachtet – WordPress verlinkt aber nicht jede
+  Adresse, und ein Kommentar mit ausgeschriebener URL blieb damit unauffällig.
+  Eine verlinkte Adresse zählt weiterhin nur einmal.
 - Schalter, um Kommentare des Teams aus allen Übersichten auszublenden – sie
   müssen in der Regel nicht moderiert werden. Der Ausschluss geschieht
   serverseitig über `author_exclude` und wirkt deshalb auch auf die Zahlen an

@@ -97,20 +97,28 @@ fun CommentCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
-                        text = RelativeTime.relative(comment.date, LocalResources.current).toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.semantics {
-                            contentDescription = RelativeTime.absolute(comment.date)
-                        },
-                    )
+                    // Rolle unter dem Namen statt daneben: Neben Marke und
+                    // Statuschip blieben fuer den Namen kaum 80 dp, und
+                    // "Christoph Langner" wurde zu "Christop...".
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = RelativeTime.relative(
+                                comment.date,
+                                LocalResources.current,
+                            ).toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.semantics {
+                                contentDescription = RelativeTime.absolute(comment.date)
+                            },
+                        )
+                        teamRole?.let { rolle ->
+                            Spacer(Modifier.width(8.dp))
+                            TeamBadge(rolle)
+                        }
+                    }
                 }
 
-                teamRole?.let { rolle ->
-                    TeamBadge(rolle)
-                    Spacer(Modifier.width(8.dp))
-                }
                 StatusChip(status = comment.status)
             }
 

@@ -23,10 +23,35 @@ class CommentSignalsTest {
     }
 
     @Test
-    fun `eine nackte Adresse im Text ist noch kein Link`() {
-        // WordPress verlinkt nicht jede Adresse automatisch. Gezaehlt wird,
-        // was tatsaechlich als Verweis im Markup steht.
-        assertEquals(0, CommentSignals.linkCountOf("<p>Siehe https://example.test</p>"))
+    fun `eine nackte Adresse zaehlt mit`() {
+        // Frueher zaehlte nur, was als Verweis im Markup stand. Auf einem
+        // echten Blog fiel auf, dass WordPress nicht jede Adresse verlinkt -
+        // ein Kommentar mit ausgeschriebener URL blieb damit unauffaellig.
+        assertEquals(1, CommentSignals.linkCountOf("<p>Siehe https://example.test</p>"))
+        assertEquals(1, CommentSignals.linkCountOf("<p>Mehr auf www.example.test</p>"))
+    }
+
+    @Test
+    fun `eine verlinkte Adresse zaehlt trotzdem nur einmal`() {
+        // Steht die Adresse als Beschriftung im Link, waere sie sonst zweimal
+        // drin: einmal als Anker, einmal als Text.
+        val html = """<p><a href="https://a.test">https://a.test</a></p>"""
+
+        assertEquals(1, CommentSignals.linkCountOf(html))
+    }
+
+    @Test
+    fun `Text ueber eine Seite ist kein Verweis`() {
+        // Ein blosses "beispiel.de" traefe zu oft Saetze, in denen nur ueber
+        // eine Seite gesprochen wird.
+        assertEquals(0, CommentSignals.linkCountOf("<p>Ich nutze beispiel.de gerne.</p>"))
+    }
+
+    @Test
+    fun `gesetzte und nackte Adressen werden zusammengezaehlt`() {
+        val html = """<p><a href="https://a.test">hier</a> und https://b.test</p>"""
+
+        assertEquals(2, CommentSignals.linkCountOf(html))
     }
 
     @Test

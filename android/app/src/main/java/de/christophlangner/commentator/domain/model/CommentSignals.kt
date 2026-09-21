@@ -26,14 +26,22 @@ data class CommentSignals(
 
     companion object {
         /**
-         * Zählt Links im gerenderten HTML.
+         * Zählt Verweise im gerenderten HTML.
          *
-         * Über das Markup statt über den reinen Text: Ein Link, dessen
-         * Beschriftung harmlos aussieht, zählt genauso - und genau der ist
-         * der interessante Fall.
+         * Gezählt wird beides: gesetzte Links und nackt im Text stehende
+         * Adressen. Nur das Markup zu betrachten griff zu kurz – WordPress
+         * verlinkt nicht jede Adresse automatisch, und ein Spamkommentar mit
+         * ausgeschriebener URL wäre unauffällig geblieben.
+         *
+         * Damit nichts doppelt zählt, werden vollständige Anker zuerst
+         * entfernt: Steht die Adresse als Beschriftung im Link, ist sie sonst
+         * zweimal drin.
          */
-        fun linkCountOf(contentHtml: String): Int =
-            ANCHOR.findAll(contentHtml).count()
+        fun linkCountOf(contentHtml: String): Int {
+            val anker = ANCHOR.findAll(contentHtml).count()
+            val ohneAnker = ANCHOR_ELEMENT.replace(contentHtml, " ")
+            return anker + BARE_URL.findAll(ohneAnker).count()
+        }
 
         /**
          * Markiert Kommentare, deren Text mehrfach vorkommt.
@@ -51,5 +59,23 @@ data class CommentSignals(
                 .mapTo(mutableSetOf()) { it.id }
 
         private val ANCHOR = Regex("""<a\s[^>]*href\s*=""", RegexOption.IGNORE_CASE)
+
+        /** Vollstaendiges Ankerelement samt Beschriftung. */
+        private val ANCHOR_ELEMENT = Regex(
+            """<a\b[^>]*>.*?</a\s*>""",
+            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        )
+
+        /**
+         * Adresse, die ohne Verlinkung im Text steht.
+         *
+         * Bewusst nur mit Schema oder fuehrendem www: Ein blosses
+         * "beispiel.de" mitzuzaehlen traefe zu oft Saetze, in denen nur ueber
+         * eine Seite gesprochen wird.
+         */
+        private val BARE_URL = Regex(
+            """(https?://|www\.)\S{2,}""",
+            RegexOption.IGNORE_CASE,
+        )
     }
 }
