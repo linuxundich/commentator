@@ -201,8 +201,11 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   markieren. Beides ist rücknehmbar, und die Schaltflächen auf der Karte
   bleiben erhalten – eine Geste ist nie der einzige Weg zu einer Aktion.
   Endgültiges Löschen ist bewusst nicht dabei. Unter der Karte wird ab der
-  ersten Bewegung farbig angezeigt, was die Geste auslösen würde – samt
-  Symbol und Beschriftung, damit vor dem Loslassen klar ist, was passiert.
+  ersten Bewegung farbig angezeigt, was die Geste auslösen würde. Symbol und
+  Beschriftung blenden auf, sobald sie vollständig neben die Karte passen –
+  ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
+  weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
+  Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
 - Adressen, die unverlinkt im Text stehen, zählen jetzt als Verweis mit.
   Zuvor wurde nur das Markup betrachtet – WordPress verlinkt aber nicht jede
   Adresse, und ein Kommentar mit ausgeschriebener URL blieb damit unauffällig.
