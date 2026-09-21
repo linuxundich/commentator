@@ -99,9 +99,15 @@ class FakeTeamRepository(
 ) : TeamRepository {
     var calls = 0
 
+    var invalidations = 0
+
     override suspend fun team(instanceId: String): Outcome<Team> {
         calls++
         return Outcome.Success(team)
+    }
+
+    override suspend fun invalidate() {
+        invalidations++
     }
 }
 
@@ -113,6 +119,7 @@ class FakeSettingsRepository(
         showAuthorEmail = false,
         notifyScope = NotifyScope.DEFAULT,
         teamRoles = Team.DEFAULT_ROLES,
+        hideTeamComments = false,
     ),
 ) : SettingsRepository {
 
@@ -137,6 +144,10 @@ class FakeSettingsRepository(
 
     override suspend fun setTeamRoles(roles: Set<String>) {
         state.value = state.value.copy(teamRoles = roles)
+    }
+
+    override suspend fun setHideTeamComments(hide: Boolean) {
+        state.value = state.value.copy(hideTeamComments = hide)
     }
 
     override suspend fun setShowAuthorEmail(show: Boolean) {

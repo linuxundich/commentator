@@ -29,6 +29,7 @@ class DefaultSettingsRepository @Inject constructor(
             showAuthorEmail = prefs[AUTHOR_EMAIL] ?: AppSettings.DEFAULT.showAuthorEmail,
             notifyScope = notifyScopeOf(prefs),
             teamRoles = prefs[TEAM_ROLES] ?: Team.DEFAULT_ROLES,
+            hideTeamComments = prefs[HIDE_TEAM] ?: false,
         )
     }
 
@@ -58,6 +59,10 @@ class DefaultSettingsRepository @Inject constructor(
         dataStore.edit { it[TEAM_ROLES] = roles }
     }
 
+    override suspend fun setHideTeamComments(hide: Boolean) {
+        dataStore.edit { it[HIDE_TEAM] = hide }
+    }
+
     /**
      * Liest den Umfang, mit Ruecksicht auf den frueheren Schalter.
      *
@@ -78,5 +83,6 @@ class DefaultSettingsRepository @Inject constructor(
         val ONLY_PENDING = booleanPreferencesKey("notify_only_pending")
         val NOTIFY_SCOPE = stringPreferencesKey("notify_scope")
         val TEAM_ROLES = stringSetPreferencesKey("team_roles")
+        val HIDE_TEAM = booleanPreferencesKey("hide_team_comments")
     }
 }

@@ -107,7 +107,14 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setTeamRoles(
                 if (slug in aktuell) aktuell - slug else aktuell + slug,
             )
+            // Der hinterlegte Stand gilt je Rollenauswahl; nach einer
+            // Aenderung muss er neu geholt werden.
+            teamRepository.invalidate()
         }
+    }
+
+    fun setHideTeamComments(hide: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideTeamComments(hide) }
     }
 
     fun setNotifyScope(scope: NotifyScope) {

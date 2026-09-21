@@ -98,6 +98,7 @@ fun SettingsScreen(
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
             onNotifyScope = viewModel::setNotifyScope,
             onToggleTeamRole = viewModel::toggleTeamRole,
+            onHideTeamComments = viewModel::setHideTeamComments,
             onSyncInterval = viewModel::setSyncInterval,
             onAppIcon = viewModel::setAppIcon,
             onShowAvatars = viewModel::setShowAvatars,
@@ -166,6 +167,7 @@ internal fun SettingsContent(
     onNotificationsEnabled: (Boolean) -> Unit,
     onNotifyScope: (NotifyScope) -> Unit,
     onToggleTeamRole: (String) -> Unit,
+    onHideTeamComments: (Boolean) -> Unit,
     onSyncInterval: (Int) -> Unit,
     onAppIcon: (AppIcon) -> Unit,
     onShowAvatars: (Boolean) -> Unit,
@@ -366,6 +368,13 @@ internal fun SettingsContent(
                 }
             }
         }
+
+        SwitchRow(
+            title = stringResource(R.string.settings_hide_team),
+            description = stringResource(R.string.settings_hide_team_description),
+            checked = state.settings.hideTeamComments,
+            onCheckedChange = onHideTeamComments,
+        )
 
         HorizontalDivider()
         SectionTitle(stringResource(R.string.templates_section))

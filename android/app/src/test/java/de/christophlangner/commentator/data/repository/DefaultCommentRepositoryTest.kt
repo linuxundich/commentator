@@ -9,9 +9,14 @@ import de.christophlangner.commentator.data.remote.ApiExecutor
 import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.domain.model.CommentFilter
+import org.junit.Assert.assertNull
+import de.christophlangner.commentator.domain.model.TeamRole
+import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.fake.FakeCommentDao
+import de.christophlangner.commentator.fake.FakeTeamRepository
+import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.testInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +60,8 @@ class DefaultCommentRepositoryTest {
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var instanceStore: InstanceStore
     private val dao = FakeCommentDao()
+    private val settings = FakeSettingsRepository()
+    private val teamRepo = FakeTeamRepository()
     private val instance = testInstance()
 
     private val json = Json {
@@ -90,6 +97,8 @@ class DefaultCommentRepositoryTest {
             clientFactory = WordPressApiProvider { _, _ -> api },
             instanceStore = instanceStore,
             executor = ApiExecutor(json),
+            settingsRepository = settings,
+            teamRepository = teamRepo,
         )
     }
 
@@ -448,6 +457,56 @@ class DefaultCommentRepositoryTest {
 
         assertTrue(outcome is Outcome.Failure)
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `ohne Ausblenden wird nichts ausgeschlossen`() = runTest {
+        server.enqueue(listResponse(comments(listOf(1L)), totalPages = 1))
+        enqueuePostTitleLookup()
+
+        repository.refresh(instance.id, CommentFilter.PENDING)
+
+        assertNull(server.takeRequest().url.queryParameter("author_exclude"))
+    }
+
+    @Test
+    fun `ausgeblendetes Team wird serverseitig ausgeschlossen`() = runTest {
+        // Serverseitig, nicht durch Filtern der geladenen Liste: Nur so
+        // stimmen Seitenaufteilung und Zahlen.
+        settings.state.value = settings.state.value.copy(hideTeamComments = true)
+        teamRepo.team = Team(
+            members = mapOf(
+                1L to TeamRole("administrator", "Administrator"),
+                2L to TeamRole("editor", "Redakteur"),
+            ),
+        )
+        server.enqueue(listResponse(comments(listOf(1L)), totalPages = 1))
+        enqueuePostTitleLookup()
+
+        repository.refresh(instance.id, CommentFilter.PENDING)
+
+        // Kommagetrennt, nicht als wiederholter Parameter: Davon wertet
+        // WordPress nur den letzten Wert aus - von zwei Konten waere also nur
+        // eines ausgeblendet.
+        assertEquals("1,2", server.takeRequest().url.queryParameter("author_exclude"))
+    }
+
+    @Test
+    fun `beim Ausblenden zaehlt die Kern-API statt des Plugins`() = runTest {
+        // Der Sammelendpunkt kennt keinen Ausschluss; seine Zahlen passten
+        // dann nicht zur Liste darunter.
+        instanceStore.upsert(instance.copy(hasBridgePlugin = true))
+        settings.state.value = settings.state.value.copy(hideTeamComments = true)
+        teamRepo.team = Team(members = mapOf(2L to TeamRole("editor", "Redakteur")))
+        repeat(5) { server.enqueue(countResponse(4)) }
+
+        val counts = (repository.countsByFilter(instance.id) as Outcome.Success).value
+
+        assertEquals(4, counts[CommentFilter.PENDING])
+        val request = server.takeRequest()
+        // Keine Anfrage an den Sammelendpunkt.
+        assertFalse(request.url.encodedPath.endsWith("/commentator/v1/summary"))
+        assertEquals("2", request.url.queryParameter("author_exclude"))
     }
 
     @Test

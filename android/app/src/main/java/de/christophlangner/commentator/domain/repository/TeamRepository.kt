@@ -13,4 +13,7 @@ import de.christophlangner.commentator.domain.model.Team
 interface TeamRepository {
 
     suspend fun team(instanceId: String): Outcome<Team>
+
+    /** Verwirft den hinterlegten Stand, etwa nach einer Aenderung der Rollen. */
+    suspend fun invalidate()
 }

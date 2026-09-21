@@ -38,6 +38,7 @@ import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.ui.common.CommentAvatar
 import de.christophlangner.commentator.ui.common.SignalChips
 import de.christophlangner.commentator.ui.common.StatusChip
@@ -52,7 +53,7 @@ import de.christophlangner.commentator.ui.common.StatusChip
 fun CommentCard(
     comment: Comment,
     signals: CommentSignals,
-    fromTeam: Boolean,
+    teamRole: TeamRole?,
     showAvatar: Boolean,
     actionsEnabled: Boolean,
     onOpen: () -> Unit,
@@ -70,10 +71,13 @@ fun CommentCard(
             // Beitraege des Teams heben sich durch den Grundton ab, nicht nur
             // durch eine Marke: In einer langen Liste erkennt man sie so schon
             // beim Ueberfliegen.
-            containerColor = if (fromTeam) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = when {
+                teamRole == null -> MaterialTheme.colorScheme.surfaceContainerLow
+                // Administratoren in Rot: Sie koennen alles aendern, eine
+                // Wortmeldung von dort wiegt schwerer als die eines
+                // Redakteurs.
+                teamRole.isAdministrator -> MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.secondaryContainer
             },
         ),
     ) {
@@ -103,8 +107,8 @@ fun CommentCard(
                     )
                 }
 
-                if (fromTeam) {
-                    TeamBadge()
+                teamRole?.let { rolle ->
+                    TeamBadge(rolle)
                     Spacer(Modifier.width(8.dp))
                 }
                 StatusChip(status = comment.status)
@@ -144,17 +148,32 @@ fun CommentCard(
     }
 }
 
-/** Kleine Marke fuer Beitraege aus dem eigenen Haus. */
+/**
+ * Marke mit der Rolle des Verfassers.
+ *
+ * Sie nennt die Rolle beim Namen statt nur "Team": Zwischen einem
+ * Administrator und einem Redakteur besteht ein Unterschied, den die Farbe
+ * allein nicht traegt - und fuer Bildschirmleser und bei Farbfehlsichtigkeit
+ * ist der Text die eigentliche Information.
+ */
 @Composable
-private fun TeamBadge() {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.secondary,
-    ) {
+private fun TeamBadge(role: TeamRole) {
+    val hintergrund = if (role.isAdministrator) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.secondary
+    }
+    val vordergrund = if (role.isAdministrator) {
+        MaterialTheme.colorScheme.onError
+    } else {
+        MaterialTheme.colorScheme.onSecondary
+    }
+
+    Surface(shape = MaterialTheme.shapes.small, color = hintergrund) {
         Text(
-            text = stringResource(R.string.comment_from_team),
+            text = role.name.ifBlank { stringResource(R.string.comment_from_team) },
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondary,
+            color = vordergrund,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
         )
     }

@@ -16,6 +16,13 @@ data class AppSettings(
     val notifyScope: NotifyScope,
     /** Rollen, deren Kommentare als Beitrag des Teams gekennzeichnet werden. */
     val teamRoles: Set<String>,
+    /**
+     * Kommentare des Teams aus den Uebersichten heraushalten.
+     *
+     * Sie muessen in aller Regel nicht moderiert werden. Standardmaessig aus:
+     * Kommentare ungefragt zu verbergen waere eine unangenehme Ueberraschung.
+     */
+    val hideTeamComments: Boolean,
 ) {
     companion object {
         /**
@@ -34,6 +41,7 @@ data class AppSettings(
             showAuthorEmail = false,
             notifyScope = NotifyScope.DEFAULT,
             teamRoles = Team.DEFAULT_ROLES,
+            hideTeamComments = false,
         )
     }
 }
@@ -46,4 +54,5 @@ interface SettingsRepository {
     suspend fun setShowAuthorEmail(show: Boolean)
     suspend fun setNotifyScope(scope: NotifyScope)
     suspend fun setTeamRoles(roles: Set<String>)
+    suspend fun setHideTeamComments(hide: Boolean)
 }

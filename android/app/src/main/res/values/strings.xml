@@ -182,6 +182,8 @@
     <string name="settings_team_description">Kommentare aus diesen Rollen werden in der Liste abgesetzt dargestellt. Das eigene Konto zählt immer dazu.</string>
     <string name="settings_team_needs_plugin">Ohne das Plugin commentator-bridge lässt sich nur das eigene Konto erkennen – WordPress gibt die Rollen anderer Nutzer nur Administratoren preis.</string>
     <string name="comment_from_team">Team</string>
+    <string name="settings_hide_team">Team-Kommentare ausblenden</string>
+    <string name="settings_hide_team_description">Blendet sie aus allen Übersichten aus, einschließlich der Zahlen an den Filtern. Sie müssen in der Regel nicht moderiert werden.</string>
     <string name="settings_scope">Benachrichtigen über</string>
     <string name="settings_scope_pending">Nur Moderation</string>
     <string name="settings_scope_new">Neue Kommentare</string>

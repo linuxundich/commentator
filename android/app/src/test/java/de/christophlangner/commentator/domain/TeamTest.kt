@@ -3,7 +3,10 @@ package de.christophlangner.commentator.domain
 import de.christophlangner.commentator.domain.model.Team
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import de.christophlangner.commentator.domain.model.TeamRole
 import org.junit.Test
+
+private fun rolle(slug: String) = TeamRole(slug, slug)
 
 class TeamTest {
 
@@ -11,7 +14,7 @@ class TeamTest {
     fun `Gaeste gehoeren nie zum Team`() {
         // WordPress traegt bei Gastkommentaren 0 ein. Waere 0 als Mitglied
         // moeglich, waere jeder Gast plötzlich Team.
-        val team = Team(memberIds = setOf(0L, 2L))
+        val team = Team(members = mapOf(0L to rolle("editor"), 2L to rolle("editor")))
 
         assertFalse(team.contains(0L))
         assertTrue(team.contains(2L))
@@ -19,7 +22,7 @@ class TeamTest {
 
     @Test
     fun `unbekannte Nutzer gehoeren nicht dazu`() {
-        assertFalse(Team(memberIds = setOf(1L, 2L)).contains(7L))
+        assertFalse(Team(members = mapOf(1L to rolle("editor"), 2L to rolle("editor"))).contains(7L))
     }
 
     @Test

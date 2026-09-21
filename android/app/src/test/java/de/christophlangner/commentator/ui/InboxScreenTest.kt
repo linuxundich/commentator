@@ -15,6 +15,7 @@ import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.Team
+import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
@@ -86,7 +87,7 @@ class InboxScreenTest {
     )
 
     @Test
-    fun `Kommentare des Teams tragen eine Marke`() {
+    fun `Kommentare des Teams tragen ihre Rolle als Marke`() {
         render(
             InboxUiState(
                 instance = testInstance(),
@@ -94,15 +95,39 @@ class InboxScreenTest {
                     testComment(1, authorId = 2),
                     testComment(2, authorId = 0),
                 ),
-                team = Team(memberIds = setOf(2L)),
+                team = Team(members = mapOf(2L to TeamRole("editor", "Redakteur"))),
             ),
         )
 
-        // Genau einmal: nur der Kommentar aus dem Team.
+        // Die Rolle beim Namen, nicht nur "Team": Der Unterschied zwischen
+        // Administrator und Redakteur darf nicht allein an der Farbe haengen.
+        composeRule.onNodeWithText("Redakteur").assertIsDisplayed()
         assertEquals(
             1,
-            composeRule.onAllNodesWithText("Team").fetchSemanticsNodes().size,
+            composeRule.onAllNodesWithText("Redakteur").fetchSemanticsNodes().size,
         )
+    }
+
+    @Test
+    fun `Administratoren sind eigens gekennzeichnet`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                comments = listOf(
+                    testComment(1, authorId = 1),
+                    testComment(2, authorId = 2),
+                ),
+                team = Team(
+                    members = mapOf(
+                        1L to TeamRole("administrator", "Administrator"),
+                        2L to TeamRole("editor", "Redakteur"),
+                    ),
+                ),
+            ),
+        )
+
+        composeRule.onNodeWithText("Administrator").assertIsDisplayed()
+        composeRule.onNodeWithText("Redakteur").assertIsDisplayed()
     }
 
     @Test
@@ -114,7 +139,7 @@ class InboxScreenTest {
             ),
         )
 
-        assertEquals(0, composeRule.onAllNodesWithText("Team").fetchSemanticsNodes().size)
+        assertEquals(0, composeRule.onAllNodesWithText("Redakteur").fetchSemanticsNodes().size)
     }
 
     @Test

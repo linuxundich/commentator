@@ -23,6 +23,8 @@ import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
 import de.christophlangner.commentator.domain.repository.CommentRepository
+import de.christophlangner.commentator.domain.repository.TeamRepository
+import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -44,9 +46,25 @@ class DefaultCommentRepository @Inject constructor(
     private val clientFactory: WordPressApiProvider,
     private val instanceStore: InstanceStore,
     private val executor: ApiExecutor,
+    private val settingsRepository: SettingsRepository,
+    private val teamRepository: TeamRepository,
 ) : CommentRepository {
 
     private data class PageState(val nextPage: Int, val totalPages: Int)
+
+    /**
+     * Verfasser, die auf Wunsch ausgeblendet werden.
+     *
+     * Serverseitig ueber `author_exclude`, nicht durch Filtern der geladenen
+     * Liste: Nur so stimmen auch die Zahlen an der Filterleiste und die
+     * Seitenaufteilung. Wuerde die App erst nachtraeglich aussortieren,
+     * stuende "Offen 3" ueber zwei Eintraegen.
+     */
+    private suspend fun hiddenAuthors(instanceId: String): String? {
+        if (!settingsRepository.settings.first().hideTeamComments) return null
+        val ids = teamRepository.team(instanceId).valueOrNull?.memberIds.orEmpty()
+        return ids.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(",")
+    }
 
     private val paging = ConcurrentHashMap<String, PageState>()
 
@@ -84,11 +102,13 @@ class DefaultCommentRepository @Inject constructor(
         val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
         syncing[instanceId] = true
         try {
+            val ausgeblendet = hiddenAuthors(instanceId)
             val result = executor.call {
                 api.listComments(
                     status = filter.queryValue,
                     page = 1,
                     perPage = PAGE_SIZE,
+                    authorExclude = ausgeblendet,
                 )
             }
 
@@ -118,12 +138,14 @@ class DefaultCommentRepository @Inject constructor(
         val key = pageKey(instanceId, filter)
         val state = paging[key] ?: PageState(nextPage = 2, totalPages = Int.MAX_VALUE)
         if (state.nextPage > state.totalPages) return Outcome.Success(false)
+        val ausgeblendet = hiddenAuthors(instanceId)
 
         val result = executor.call {
             api.listComments(
                 status = filter.queryValue,
                 page = state.nextPage,
                 perPage = PAGE_SIZE,
+                authorExclude = ausgeblendet,
             )
         }
 
@@ -187,7 +209,12 @@ class DefaultCommentRepository @Inject constructor(
         // Liste, die bei status=all nur Genehmigtes und Offenes zeigt. Welche
         // Fassung installiert ist, kann die App nicht wissen, deshalb wird
         // dieser eine Wert immer bei der Kern-API geholt.
-        if (instance?.hasBridgePlugin == true) {
+        val ausgeblendet = hiddenAuthors(instanceId)
+
+        // Der Sammelendpunkt des Plugins kennt keinen Ausschluss. Wer das Team
+        // ausblendet, bekommt deshalb die etwas teureren Einzelabfragen -
+        // lieber fuenf Anfragen als Zahlen, die nicht zur Liste passen.
+        if (instance?.hasBridgePlugin == true && ausgeblendet == null) {
             val summary = executor.call { api.bridgeSummary() }
             if (summary is Outcome.Success) {
                 CommentFilter.entries
@@ -203,7 +230,12 @@ class DefaultCommentRepository @Inject constructor(
         for (filter in CommentFilter.entries) {
             if (filter in counts) continue
             val result = executor.call {
-                api.listComments(status = filter.queryValue, page = 1, perPage = 1)
+                api.listComments(
+                    status = filter.queryValue,
+                    page = 1,
+                    perPage = 1,
+                    authorExclude = ausgeblendet,
+                )
             }
             // Nur die Kopfzeile zaehlt; ein einzelner Fehlschlag laesst die
             // uebrigen Zahlen unberuehrt.

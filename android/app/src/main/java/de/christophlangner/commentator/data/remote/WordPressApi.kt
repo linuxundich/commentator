@@ -48,6 +48,19 @@ interface WordPressApi {
         @Query("per_page") perPage: Int,
         @Query("search") search: String? = null,
         @Query("after") after: String? = null,
+        /**
+         * Verfasser, die ausgeblendet werden sollen, kommagetrennt.
+         *
+         * Bewusst eine Zeichenkette statt einer Liste: Retrofit schreibt eine
+         * Liste als wiederholten Parameter, und davon wertet WordPress nur den
+         * letzten Wert aus - von zwei ausgeschlossenen Konten waere also nur
+         * eines wirksam. Gegen den Testblog nachgemessen: 7 Eintraege, mit
+         * wiederholtem Parameter 6, kommagetrennt 5.
+         *
+         * Wirkt auch auf `X-WP-Total` und damit auf die Zahlen an der
+         * Filterleiste.
+         */
+        @Query("author_exclude") authorExclude: String? = null,
         @Query("context") context: String = "edit",
         @Query("orderby") orderBy: String = "date_gmt",
         @Query("order") order: String = "desc",

@@ -184,10 +184,16 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   mit dem Cache ginge der Ausgangszustand der Benachrichtigungen verloren, und
   beim nächsten Lauf käme ein Schwall über alle vorhandenen Kommentare.
 
-- Kommentare aus dem eigenen Team werden abgesetzt dargestellt: heller
-  Grundton und eine Marke „Team". Welche Rollen dazuzählen, ist in den
-  Einstellungen wählbar; voreingestellt sind Administrator und Redakteur. Das
-  eigene Konto zählt immer dazu.
+- Kommentare aus dem eigenen Team werden abgesetzt dargestellt, nach Rolle
+  unterschieden: Administratoren in Rot, übrige Rollen in einem eigenen Ton.
+  Die Marke nennt die Rolle beim Namen – der Unterschied hängt damit nicht
+  allein an der Farbe. Welche Rollen dazuzählen, ist in den Einstellungen
+  wählbar; voreingestellt sind Administrator und Redakteur. Das eigene Konto
+  zählt immer dazu.
+- Schalter, um Kommentare des Teams aus allen Übersichten auszublenden – sie
+  müssen in der Regel nicht moderiert werden. Der Ausschluss geschieht
+  serverseitig über `author_exclude` und wirkt deshalb auch auf die Zahlen an
+  den Filtern und auf das Nachladen weiterer Seiten.
 - Beim Erstaufbau der Liste liefen zwei Ladeanzeigen gleichzeitig: die des
   Herunterziehens und die der Liste. Statt eines Kreises im Leeren stehen
   jetzt Platzhalterkarten in der Form der späteren Inhalte; die Liste springt

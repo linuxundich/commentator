@@ -11,6 +11,7 @@ import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.repository.TeamRepository
 import kotlinx.coroutines.flow.first
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,30 +23,62 @@ class DefaultTeamRepository @Inject constructor(
     private val settingsRepository: SettingsRepository,
 ) : TeamRepository {
 
+    private companion object {
+        /** Ersatzrolle, wenn die tatsaechliche nicht ermittelbar ist. */
+        val EIGENES_KONTO = TeamRole(slug = "", name = "Team")
+    }
+
+    /**
+     * Zuletzt geholtes Team je Instanz und Rollenauswahl.
+     *
+     * Ohne das fragte jede Zaehlung und jede Seite erneut nach - beim
+     * Ausblenden des Teams waeren das ein halbes Dutzend zusaetzlicher
+     * Anfragen je Aktualisierung. Wer zum Team gehoert, aendert sich
+     * waehrenddessen nicht.
+     */
+    private val cache = ConcurrentHashMap<String, Team>()
+
+    override suspend fun invalidate() {
+        cache.clear()
+    }
+
     override suspend fun team(instanceId: String): Outcome<Team> {
         val instance = instanceStore.currentActive()?.takeIf { it.id == instanceId }
             ?: return Outcome.Failure(AppError.Unauthorized)
         val selected = settingsRepository.settings.first().teamRoles
+        val key = instanceId + "/" + selected.sorted().joinToString(",")
+        cache[key]?.let { return Outcome.Success(it) }
 
         if (!instance.hasBridgePlugin) {
             // Ohne Plugin bleibt nur das eigene Konto. Besser als nichts: Die
-            // eigenen Antworten sind der häufigste Fall überhaupt.
-            return Outcome.Success(Team(memberIds = setOf(instance.userId)))
+            // eigenen Antworten sind der häufigste Fall überhaupt. Die Rolle
+            // ist dabei unbekannt.
+            return Outcome.Success(
+                Team(members = mapOf(instance.userId to EIGENES_KONTO))
+                    .also { cache[key] = it },
+            )
         }
 
         val api = clientFactory.forInstance(instance.id, instance.siteUrl)
         return executor.call { api.bridgeTeam() }.map { response ->
             val body = response.body
+            val bekannteRollen = body.roles.associate { it.slug to TeamRole(it.slug, it.name) }
+
+            val members = body.members.mapNotNull { member ->
+                // Die erste passende Rolle bestimmt das Aussehen. Wer mehrere
+                // hat, wird nach der höchsten ausgezeichnet - die Reihenfolge
+                // des Plugins beginnt beim Administrator.
+                val rolle = member.roles.firstOrNull { it in selected }
+                    ?.let { bekannteRollen[it] }
+                rolle?.let { member.id to it }
+            }.toMap()
+
             Team(
-                memberIds = body.members
-                    .filter { member -> member.roles.any { it in selected } }
-                    .map { it.id }
-                    .toSet()
-                    // Das eigene Konto gehört immer dazu, auch wenn seine
-                    // Rolle gerade nicht ausgewählt ist.
-                    .plus(instance.userId),
-                availableRoles = body.roles.map { TeamRole(it.slug, it.name) },
-            )
+                // Das eigene Konto gehört immer dazu, auch wenn seine Rolle
+                // gerade nicht ausgewählt ist.
+                members = members + (instance.userId to (members[instance.userId] ?: EIGENES_KONTO)),
+                availableRoles = bekannteRollen.values.toList(),
+            ).also { cache[key] = it }
         }
     }
 }
