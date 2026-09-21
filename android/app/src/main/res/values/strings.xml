@@ -42,6 +42,13 @@
     <string name="filter_approved">Genehmigt</string>
     <string name="filter_spam">Spam</string>
     <string name="filter_trash">Papierkorb</string>
+    <!-- Fuer Bildschirmleser: Auf der Marke steht "Offen · 3"; der
+         Mittelpunkt wird vorgelesen oder verschluckt. Ausgeschrieben
+         ist die Zahl eindeutig. -->
+    <plurals name="cd_filter_with_count">
+        <item quantity="one">%1$s, %2$d Kommentar</item>
+        <item quantity="other">%1$s, %2$d Kommentare</item>
+    </plurals>
 
     <!-- Liste -->
     <string name="comment_author_unknown">Unbekannt</string>

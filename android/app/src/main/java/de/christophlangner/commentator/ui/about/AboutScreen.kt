@@ -3,6 +3,7 @@ package de.christophlangner.commentator.ui.about
 import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,11 +25,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import de.christophlangner.commentator.BuildConfig
 import de.christophlangner.commentator.R
+import de.christophlangner.commentator.ui.common.rememberLabelWidth
 
 /**
  * Angaben zur App: Version, Herkunft, Rechtliches.
@@ -96,15 +101,25 @@ internal fun AboutContent(
 
         HorizontalDivider()
 
-        AboutRow(stringResource(R.string.about_version), BuildConfig.VERSION_NAME)
-        AboutRow(stringResource(R.string.about_build), BuildConfig.VERSION_CODE.toString())
+        val stil = MaterialTheme.typography.bodyMedium
+        val beschriftungen = listOf(
+            stringResource(R.string.about_version),
+            stringResource(R.string.about_build),
+            stringResource(R.string.about_commit),
+        )
+        val spaltenbreite = rememberLabelWidth(beschriftungen, stil)
+
+        AboutRow(beschriftungen[0], BuildConfig.VERSION_NAME, spaltenbreite, stil)
+        AboutRow(beschriftungen[1], BuildConfig.VERSION_CODE.toString(), spaltenbreite, stil)
         AboutRow(
-            label = stringResource(R.string.about_commit),
+            label = beschriftungen[2],
             value = BuildConfig.GIT_COMMIT + if (BuildConfig.GIT_DIRTY) {
                 " " + stringResource(R.string.about_commit_dirty)
             } else {
                 ""
             },
+            labelWidth = spaltenbreite,
+            style = stil,
         )
 
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
@@ -141,17 +156,30 @@ internal fun AboutContent(
 }
 
 @Composable
-private fun AboutRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+private fun AboutRow(
+    label: String,
+    value: String,
+    labelWidth: Dp,
+    style: TextStyle,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            // Beschriftung und Wert gehoeren zusammen und werden zusammen
+            // vorgelesen.
+            .semantics(mergeDescendants = true) {},
+    ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = style,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(112.dp),
+            modifier = Modifier.width(labelWidth),
         )
+        Spacer(Modifier.width(12.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = style,
             overflow = TextOverflow.Ellipsis,
         )
     }

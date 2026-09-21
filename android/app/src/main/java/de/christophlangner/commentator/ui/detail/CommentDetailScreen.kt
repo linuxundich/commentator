@@ -67,8 +67,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.fromHtml
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,6 +88,7 @@ import de.christophlangner.commentator.ui.common.OfflineBanner
 import de.christophlangner.commentator.ui.common.CommentAvatar
 import de.christophlangner.commentator.ui.common.SignalChips
 import de.christophlangner.commentator.ui.common.StatusChip
+import de.christophlangner.commentator.ui.common.rememberLabelWidth
 
 /**
  * Detailansicht eines Kommentars.
@@ -357,36 +361,63 @@ private fun CommentHeader(comment: Comment, showEmail: Boolean, showAvatar: Bool
         StatusChip(status = comment.status)
     }
 
+    val stil = MaterialTheme.typography.bodySmall
+    // Alle drei Beschriftungen fliessen in die Breite ein, auch wenn gerade
+    // nur eine davon angezeigt wird: Sonst ruckte die Spalte, sobald eine
+    // Zeile dazukommt.
+    val beschriftungen = listOf(
+        stringResource(R.string.detail_post),
+        stringResource(R.string.detail_website),
+        stringResource(R.string.detail_email),
+    )
+    val spaltenbreite = rememberLabelWidth(beschriftungen, stil)
+
     Column(modifier = Modifier.padding(top = 12.dp)) {
         comment.postTitle?.let {
-            DetailRow(stringResource(R.string.detail_post), it)
+            DetailRow(beschriftungen[0], it, spaltenbreite, stil)
         }
         comment.authorUrl?.let {
-            DetailRow(stringResource(R.string.detail_website), it)
+            DetailRow(beschriftungen[1], it, spaltenbreite, stil)
         }
         // Die E-Mail-Adresse ist ein personenbezogenes Datum und wird nur
         // angezeigt, wenn sie ausdrücklich eingeschaltet wurde.
         if (showEmail) {
             comment.authorEmail?.let {
-                DetailRow(stringResource(R.string.detail_email), it)
+                DetailRow(beschriftungen[2], it, spaltenbreite, stil)
             }
         }
     }
 }
 
+/**
+ * Eine Zeile aus Beschriftung und Wert.
+ *
+ * Die Spaltenbreite kommt von aussen und ist gemessen, nicht gesetzt: Eine
+ * feste Breite brach bei grosser Schrift mitten im Wort um.
+ */
 @Composable
-private fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.padding(vertical = 2.dp)) {
+private fun DetailRow(
+    label: String,
+    value: String,
+    labelWidth: Dp,
+    style: TextStyle,
+) {
+    Row(
+        // Zusammengefasst, damit ein Bildschirmleser "Beitrag Hello world!"
+        // in einem Zug liest. Getrennt waeren es zwei Stationen, von denen
+        // die erste fuer sich genommen nichts aussagt.
+        modifier = Modifier
+            .padding(vertical = 2.dp)
+            .semantics(mergeDescendants = true) {},
+    ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = style,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            // Gerade breit genug für die längste Beschriftung („Website"),
-            // damit die Werte untereinander fluchten, ohne dass eine Lücke
-            // klafft. 96 dp waren rund doppelt so viel wie nötig.
-            modifier = Modifier.width(64.dp),
+            modifier = Modifier.width(labelWidth),
         )
-        Text(text = value, style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.width(12.dp))
+        Text(text = value, style = style)
     }
 }
 

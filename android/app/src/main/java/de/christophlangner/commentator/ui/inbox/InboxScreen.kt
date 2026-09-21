@@ -53,7 +53,10 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -388,16 +391,31 @@ private fun FilterRow(
         modifier = Modifier.fillMaxWidth(),
     ) {
         items(CommentFilter.entries.toList()) { filter ->
+            val name = stringResource(filter.labelRes())
+            val anzahl = counts[filter]
             FilterChip(
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
                 label = {
-                    val name = stringResource(filter.labelRes())
                     // Ist die Zahl nicht bekannt, steht dort nur der Name -
                     // eine erfundene Null waere schlechter als keine Angabe.
-                    Text(counts[filter]?.let { "$name · $it" } ?: name)
+                    Text(anzahl?.let { "$name · $it" } ?: name)
                 },
                 colors = FilterChipDefaults.filterChipColors(),
+                // Der Mittelpunkt trennt fuers Auge; vorgelesen ergibt er
+                // nichts. Fuer Bildschirmleser steht die Zahl deshalb
+                // ausgeschrieben da.
+                modifier = if (anzahl == null) {
+                    Modifier
+                } else {
+                    val gesprochen = pluralStringResource(
+                        R.plurals.cd_filter_with_count,
+                        anzahl,
+                        name,
+                        anzahl,
+                    )
+                    Modifier.semantics { contentDescription = gesprochen }
+                },
             )
         }
     }

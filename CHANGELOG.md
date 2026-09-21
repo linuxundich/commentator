@@ -206,6 +206,18 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
   weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
   Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
+- Beschriftungsspalten richten sich nach der gemessenen Textbreite statt nach
+  einer festen Angabe. Bei 200 % Systemschriftgröße wurde aus „Beitrag" zuvor
+  ein „Beitr / ag" – ein Umbruch mitten im Wort. Ein Test hält das für die
+  Detailansicht fest.
+- Beschriftung und Wert werden für Bildschirmleser zusammen vorgelesen
+  („Beitrag Hello world!") statt als zwei Stationen, von denen die erste für
+  sich nichts aussagt.
+- Die Filtermarken sagen Bildschirmlesern die Zahl ausgeschrieben an („Alle,
+  7 Kommentare"); auf dem Bildschirm steht weiterhin „Alle · 7". Der
+  Mittelpunkt trennt fürs Auge, vorgelesen ergibt er nichts.
+- Die Blog-Zeile in den Einstellungen steht wie die Zeilen darunter mit der
+  Beschriftung über dem Wert.
 - Adressen, die unverlinkt im Text stehen, zählen jetzt als Verweis mit.
   Zuvor wurde nur das Markup betrachtet – WordPress verlinkt aber nicht jede
   Adresse, und ein Kommentar mit ausgeschriebener URL blieb damit unauffällig.

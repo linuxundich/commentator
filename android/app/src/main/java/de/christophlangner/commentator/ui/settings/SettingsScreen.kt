@@ -187,15 +187,15 @@ internal fun SettingsContent(
     ) {
         SectionTitle(stringResource(R.string.settings_section_account))
         state.instance?.let { instance ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
+            // Beschriftung ueber dem Wert wie in den Zeilen darunter. Zuvor
+            // stand sie links in einer festen Spalte von 96 dp - bei grosser
+            // Schrift zu schmal, und zu den folgenden Zeilen passte es ohnehin
+            // nicht.
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                 Text(
                     text = stringResource(R.string.settings_blog),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(96.dp),
                 )
                 BlogTitle(
                     name = instance.displayName,

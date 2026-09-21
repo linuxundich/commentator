@@ -85,8 +85,22 @@ bleibt.
 
 ### Offen
 
-- [ ] **P1** Durchgang mit TalkBack und Korrektur der Vorlesereihenfolge
-- [ ] **P1** Prüfung bei sehr großer Systemschriftgröße
+- [x] **P1** Durchgang mit TalkBack und Korrektur der Vorlesereihenfolge
+      *Die Vorlesereihenfolge war in Ordnung: Ein Abzug mit `uiautomator`
+      legte zunächst nahe, die Kopfleiste komme zuletzt – der zeigt aber nur
+      die Baumstruktur. Compose teilt die Reihenfolge über `traversalBefore`
+      mit, und dort stand nichts: Dann sortiert der Bildschirmleser selbst
+      nach der Lage auf dem Bildschirm, und die Kopfleiste steht oben. Eine
+      vorschnell eingebaute `traversalIndex`-Korrektur wurde deshalb wieder
+      entfernt. Geblieben sind zwei echte Funde: Beschriftung und Wert wurden
+      getrennt vorgelesen, und die Filtermarken lasen den Mittelpunkt aus
+      „Offen · 3" mit. Ein Test prüft jetzt, dass jede bedienbare Stelle einen
+      Namen hat.*
+- [x] **P1** Prüfung bei sehr großer Systemschriftgröße
+      *Bei 200 % im Emulator durchgegangen. Ein Fund: Die Beschriftungsspalte
+      der Detailansicht lag fest bei 64 dp und brach „Beitrag" mitten im Wort
+      um. Breiten werden jetzt gemessen. Liste, Einstellungen und „Über diese
+      App" hielten stand.*
 - [x] **P2** Wischgesten für Genehmigen und Spam in der Liste
       *Die Aktion haengt am abgeschlossenen Wischen, nicht an
       `confirmValueChange` – das wird waehrend einer Geste mehrfach
@@ -209,7 +223,8 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
 - [ ] **P1** Kotlin auf 2.4 anheben, sobald KSP dafür vorliegt
       *Heute steht KSP nur bis zur 2.3-Linie zur Verfügung; Room und Hilt
       brauchen es. Siehe `docs/architecture.md`.*
-- [ ] **P1** Instrumentierungstests auf einem Gerät oder Emulator ausführen
+- [x] **P1** Instrumentierungstests auf einem Gerät oder Emulator ausführen
+      *Laufen auf einem Pixel-10-Emulator (API 37) und auf einem Gerät.*
 - [x] **P2** Room-Migrationen vorbereiten, sobald sich das Schema ändert
       *Mit der Nutzer-ID des Verfassers stand die erste an. Schema 2 ist
       exportiert, die Migration ist registriert und wird auf dem Gerät gegen

@@ -35,6 +35,10 @@
     <string name="filter_approved">Approved</string>
     <string name="filter_spam">Spam</string>
     <string name="filter_trash">Trash</string>
+    <plurals name="cd_filter_with_count">
+        <item quantity="one">%1$s, %2$d comment</item>
+        <item quantity="other">%1$s, %2$d comments</item>
+    </plurals>
 
     <string name="comment_author_unknown">Unknown</string>
     <string name="comment_on_post">Post: %1$s</string>
