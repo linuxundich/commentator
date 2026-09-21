@@ -2,6 +2,7 @@ package de.christophlangner.commentator.data.repository
 
 import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
+import de.christophlangner.commentator.core.net.SiteIcon
 import de.christophlangner.commentator.core.net.SiteUrl
 import de.christophlangner.commentator.data.account.ApplicationPassword
 import de.christophlangner.commentator.data.account.CredentialStore
@@ -10,6 +11,7 @@ import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.data.local.dao.CommentDao
 import de.christophlangner.commentator.data.remote.ApiExecutor
 import de.christophlangner.commentator.data.remote.SessionMonitor
+import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressClientFactory
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AuthRepository
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.ResponseBody
+import okio.Buffer
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -130,6 +134,8 @@ class DefaultAuthRepository @Inject constructor(
             hasBridgePlugin = index?.hasBridgePlugin == true,
             canManageOptions = user.canManageOptions,
             iconUrl = index?.iconUrl,
+            // Nur nachsehen, wenn der Blog kein Site-Icon gesetzt hat.
+            themeIconUrl = if (index?.iconUrl == null) themeIcon(api, normalized) else null,
         )
 
         credentialStore.save(instance.id, credentials)
@@ -156,13 +162,55 @@ class DefaultAuthRepository @Inject constructor(
             displayName = root.name.ifBlank { instance.displayName },
             canModerate = user?.canModerateComments ?: instance.canModerate,
             canManageOptions = user?.canManageOptions ?: instance.canManageOptions,
-            // Das Symbol kann im Blog entfernt worden sein - dann soll es auch
-            // hier verschwinden, nicht der alte Wert stehen bleiben.
+            // Das Site-Icon kann im Blog entfernt worden sein - dann soll es
+            // auch hier verschwinden, nicht der alte Wert stehen bleiben.
             iconUrl = root.iconUrl,
+            // Der Fund aus dem Seitenkopf bleibt stehen, sobald er einmal da
+            // ist: Dafuer jedes Mal die ganze Startseite zu holen waere ein
+            // hoher Preis fuer ein Symbol, das sich selten aendert.
+            themeIconUrl = when {
+                root.iconUrl != null -> instance.themeIconUrl
+                instance.themeIconUrl != null -> instance.themeIconUrl
+                else -> themeIcon(api, instance.siteUrl)
+            },
             hasBridgePlugin = root.hasBridgePlugin,
         )
         if (updated != instance) instanceStore.upsert(updated)
         return Outcome.Success(updated)
+    }
+
+    /**
+     * Das Symbol aus dem Seitenkopf, wenn kein Site-Icon gesetzt ist.
+     *
+     * Viele Blogs bringen ihr Symbol im Theme mit und tragen es nur als
+     * `<link rel="icon">` ein - fuer die REST-API ist es dann unsichtbar,
+     * obwohl es im Browser ueberall auftaucht.
+     *
+     * Scheitert der Abruf, gibt es eben kein Symbol. Ein Fehler hier darf
+     * weder die Anmeldung noch das Auffrischen zum Scheitern bringen.
+     */
+    private suspend fun themeIcon(api: WordPressApi, siteUrl: String): String? {
+        val antwort = executor.call { api.homePage(siteUrl) }.valueOrNull?.body ?: return null
+        val kopf = antwort.use { koerper ->
+            runCatching { koerper.kopfbereich(MAX_KOPF_BYTES) }.getOrNull()
+        } ?: return null
+        return SiteIcon.fromHtml(kopf, siteUrl)
+    }
+
+    /**
+     * Liest hoechstens [maxBytes] aus dem Koerper.
+     *
+     * Die Verweise auf das Symbol stehen am Ende des Kopfbereichs - auf einem
+     * echten Blog nachgemessen bei Byte 63.000, kurz vor `</head>` bei 64.758.
+     * Ein knapperes Limit haette sie um Haaresbreite verfehlt.
+     */
+    private fun ResponseBody.kopfbereich(maxBytes: Long): String {
+        val quelle = source()
+        val puffer = Buffer()
+        while (puffer.size < maxBytes) {
+            if (quelle.read(puffer, maxBytes - puffer.size) == -1L) break
+        }
+        return puffer.readUtf8()
     }
 
     override suspend fun signOut() {
@@ -192,5 +240,14 @@ class DefaultAuthRepository @Inject constructor(
 
         const val SUCCESS_URL = "commentator://auth-callback"
         const val REJECT_URL = "commentator://auth-rejected"
+
+        /**
+         * Wie viel von der Startseite hoechstens gelesen wird.
+         *
+         * Nur der Kopfbereich wird gebraucht. 256 KB lassen genug Luft: Auf
+         * einem echten Blog endete er bei Byte 64.758, und die Verweise auf
+         * das Symbol standen erst bei 63.000.
+         */
+        private const val MAX_KOPF_BYTES = 256L * 1024
     }
 }

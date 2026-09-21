@@ -14,6 +14,7 @@ import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
 import de.christophlangner.commentator.data.remote.dto.TeamDto
 import de.christophlangner.commentator.data.remote.dto.UserDto
 import kotlinx.serialization.json.JsonElement
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -21,6 +22,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 import retrofit2.http.Url
 
 /**
@@ -35,6 +37,20 @@ interface WordPressApi {
     /** Wurzel der REST-API. Nimmt eine vollständige URL, weil sie vor der Einrichtung aufgerufen wird. */
     @GET
     suspend fun index(@Url url: String): Response<ApiRootDto>
+
+    /**
+     * Die Startseite des Blogs als rohes HTML.
+     *
+     * Nur für einen Fall da: Hat der Blog kein WordPress-Site-Icon gesetzt,
+     * steht sein Symbol oft nur als `<link rel="icon">` im Seitenkopf. Über
+     * die REST-API ist es dann nicht zu finden.
+     *
+     * `@Streaming`, damit nicht die ganze Seite im Speicher landet – gelesen
+     * wird nur bis zum Ende des Kopfbereichs.
+     */
+    @Streaming
+    @GET
+    suspend fun homePage(@Url url: String): Response<ResponseBody>
 
     @GET("wp/v2/users/me")
     suspend fun currentUser(

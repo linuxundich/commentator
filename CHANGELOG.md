@@ -206,6 +206,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
   weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
   Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
+- Das Blog-Symbol wird auch dann angezeigt, wenn der Blog kein
+  WordPress-Site-Icon gesetzt hat. Viele Blogs bringen ihr Symbol im Theme
+  mit und tragen es nur als `<link rel="icon">` in den Seitenkopf ein – für
+  die REST-API ist es dann unsichtbar, obwohl es im Browser überall
+  auftaucht. Gesucht wird nur, wenn kein Site-Icon gesetzt ist, und genommen
+  wird nur ein Bild auf demselben Rechner wie der Blog: Ein Symbol von einem
+  Auslieferungsnetz wäre eine Verbindung zu einem Dritten. `.ico` und `.svg`
+  scheiden aus, weil Android sie nicht zeichnen kann.
 - Die Liste im Posteingang steht als Gesprächsfaden: Antworten stehen
   eingerückt unter dem Kommentar, auf den sie sich beziehen, und Fäden mit
   neuen Beiträgen stehen oben. Weil beim Filter „Offen" der Kommentar davor

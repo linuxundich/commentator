@@ -24,6 +24,7 @@ private data class StoredInstance(
     val hasBridgePlugin: Boolean,
     val canManageOptions: Boolean = false,
     val iconUrl: String? = null,
+    val themeIconUrl: String? = null,
 )
 
 @Serializable
@@ -113,6 +114,7 @@ class InstanceStore @Inject constructor(
         hasBridgePlugin = stored.hasBridgePlugin,
         canManageOptions = stored.canManageOptions,
         iconUrl = stored.iconUrl,
+        themeIconUrl = stored.themeIconUrl,
     )
 
     private fun toStored(instance: WordPressInstance) = StoredInstance(
@@ -125,5 +127,6 @@ class InstanceStore @Inject constructor(
         hasBridgePlugin = instance.hasBridgePlugin,
         canManageOptions = instance.canManageOptions,
         iconUrl = instance.iconUrl,
+        themeIconUrl = instance.themeIconUrl,
     )
 }

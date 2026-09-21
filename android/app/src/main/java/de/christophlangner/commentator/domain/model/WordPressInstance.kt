@@ -21,8 +21,25 @@ data class WordPressInstance(
     val hasBridgePlugin: Boolean,
     /** Ob das Konto seitenweite Optionen aendern darf, etwa die Sperrliste. */
     val canManageOptions: Boolean = false,
-    /** Symbol des Blogs, sofern dort eines hinterlegt ist. */
+    /** Das in WordPress gesetzte Site-Icon, sofern eines hinterlegt ist. */
     val iconUrl: String? = null,
+    /**
+     * Das Symbol aus dem Seitenkopf, für Blogs ohne gesetztes Site-Icon.
+     *
+     * Bewusst ein eigenes Feld: Würde es in [iconUrl] landen, ließe sich
+     * später nicht mehr unterscheiden, ob dort ein entferntes Site-Icon
+     * nachhallt oder ein Fund aus dem Theme steht – und ein im Blog
+     * gelöschtes Site-Icon bliebe für immer stehen.
+     */
+    val themeIconUrl: String? = null,
 ) {
     val restBaseUrl: String get() = "$siteUrl/wp-json/"
+
+    /**
+     * Das Symbol, das angezeigt wird.
+     *
+     * Das gesetzte Site-Icon hat Vorrang; es ist die ausdrückliche Wahl des
+     * Blogbetreibers. Der Fund aus dem Seitenkopf springt nur ein.
+     */
+    val displayIconUrl: String? get() = iconUrl ?: themeIconUrl
 }

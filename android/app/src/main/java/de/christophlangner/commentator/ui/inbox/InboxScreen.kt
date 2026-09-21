@@ -264,7 +264,7 @@ internal fun InboxScreenContent(
                         BlogTitle(
                             name = state.instance?.displayName
                                 ?: stringResource(R.string.app_name),
-                            iconUrl = state.instance?.iconUrl,
+                            iconUrl = state.instance?.displayIconUrl,
                         )
                     }
                 },

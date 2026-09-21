@@ -201,7 +201,7 @@ internal fun SettingsContent(
                 )
                 BlogTitle(
                     name = instance.displayName,
-                    iconUrl = instance.iconUrl,
+                    iconUrl = instance.displayIconUrl,
                     iconSize = 24.dp,
                 )
             }
