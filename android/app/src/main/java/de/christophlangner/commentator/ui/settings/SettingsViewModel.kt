@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.christophlangner.commentator.data.system.AppIconManager
 import de.christophlangner.commentator.domain.model.AppIcon
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
@@ -80,8 +81,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setNotificationsEnabled(enabled) }
     }
 
-    fun setNotifyOnlyPending(onlyPending: Boolean) {
-        viewModelScope.launch { settingsRepository.setNotifyOnlyPending(onlyPending) }
+    fun setNotifyScope(scope: NotifyScope) {
+        viewModelScope.launch { settingsRepository.setNotifyScope(scope) }
     }
 
     fun setSyncInterval(minutes: Int) {

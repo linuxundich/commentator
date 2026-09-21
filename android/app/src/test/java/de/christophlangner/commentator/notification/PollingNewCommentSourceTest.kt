@@ -6,6 +6,7 @@ import de.christophlangner.commentator.data.remote.ApiExecutor
 import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.fake.FakeCommentDao
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.testInstance
 import kotlinx.coroutines.test.runTest
@@ -164,13 +165,24 @@ class PollingNewCommentSourceTest {
     }
 
     @Test
-    fun `auf Wunsch nur was auf Moderation wartet`() = runTest {
-        settings.state.value = settings.state.value.copy(notifyOnlyPending = true)
-        server.enqueue(jsonResponse("[]"))
+    fun `jede Stufe fragt den passenden Status ab`() = runTest {
+        // "all" heisst bei WordPress genehmigt und offen - Spam und
+        // Papierkorb braucht "any". Die Benennung der API ist irrefuehrend,
+        // deshalb steht sie hier ausdruecklich fest.
+        val erwartet = mapOf(
+            NotifyScope.PENDING to "hold",
+            NotifyScope.NEW_COMMENTS to "all",
+            NotifyScope.EVERYTHING to "any",
+        )
 
-        source.fetchUnnotified(instance)
+        erwartet.forEach { (scope, status) ->
+            settings.state.value = settings.state.value.copy(notifyScope = scope)
+            server.enqueue(jsonResponse("[]"))
 
-        assertEquals("hold", server.takeRequest().url.queryParameter("status"))
+            source.fetchUnnotified(instance)
+
+            assertEquals("$scope", status, server.takeRequest().url.queryParameter("status"))
+        }
     }
 
     @Test

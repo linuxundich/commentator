@@ -1,6 +1,9 @@
 package de.christophlangner.commentator.data.repository
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.repository.AppSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +23,12 @@ class DefaultSettingsRepositoryTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    private fun repository() = DefaultSettingsRepository(
-        PreferenceDataStoreFactory.create(
-            scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-            produceFile = { File(temporaryFolder.root, "settings.preferences_pb") },
-        ),
+    private fun dataStore(name: String = "settings") = PreferenceDataStoreFactory.create(
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+        produceFile = { File(temporaryFolder.root, "$name.preferences_pb") },
     )
+
+    private fun repository() = DefaultSettingsRepository(dataStore())
 
     @Test
     fun `Voreinstellungen sind datensparsam`() = runTest {
@@ -65,5 +68,33 @@ class DefaultSettingsRepositoryTest {
             AppSettings.MIN_SYNC_INTERVAL_MINUTES,
             repository.settings.first().syncIntervalMinutes,
         )
+    }
+    @Test
+    fun `ein frueher gesetzter Schalter bleibt erhalten`() = runTest {
+        // Vor der dreistufigen Auswahl gab es nur "nur Moderation" ja/nein.
+        // Wer das eingeschaltet hatte, darf nicht stillschweigend auf die
+        // Voreinstellung zurueckfallen.
+        val store = dataStore("alt")
+        store.edit { it[booleanPreferencesKey("notify_only_pending")] = true }
+
+        val settings = DefaultSettingsRepository(store).settings.first()
+
+        assertEquals(NotifyScope.PENDING, settings.notifyScope)
+    }
+
+    @Test
+    fun `ohne gespeicherten Wert gilt die Voreinstellung`() = runTest {
+        assertEquals(NotifyScope.NEW_COMMENTS, repository().settings.first().notifyScope)
+    }
+
+    @Test
+    fun `die neue Auswahl sticht den alten Schalter`() = runTest {
+        val store = dataStore("vorrang")
+        store.edit { it[booleanPreferencesKey("notify_only_pending")] = true }
+        val repository = DefaultSettingsRepository(store)
+
+        repository.setNotifyScope(NotifyScope.EVERYTHING)
+
+        assertEquals(NotifyScope.EVERYTHING, repository.settings.first().notifyScope)
     }
 }

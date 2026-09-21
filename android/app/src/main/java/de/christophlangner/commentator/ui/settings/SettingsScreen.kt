@@ -52,6 +52,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.AppIcon
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.ui.common.BlogTitle
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 
@@ -95,7 +96,7 @@ fun SettingsScreen(
             state = state,
             intervalOptions = viewModel.intervalOptions,
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
-            onNotifyOnlyPending = viewModel::setNotifyOnlyPending,
+            onNotifyScope = viewModel::setNotifyScope,
             onSyncInterval = viewModel::setSyncInterval,
             onAppIcon = viewModel::setAppIcon,
             onShowAvatars = viewModel::setShowAvatars,
@@ -162,7 +163,7 @@ internal fun SettingsContent(
     state: SettingsUiState,
     intervalOptions: List<Int>,
     onNotificationsEnabled: (Boolean) -> Unit,
-    onNotifyOnlyPending: (Boolean) -> Unit,
+    onNotifyScope: (NotifyScope) -> Unit,
     onSyncInterval: (Int) -> Unit,
     onAppIcon: (AppIcon) -> Unit,
     onShowAvatars: (Boolean) -> Unit,
@@ -230,11 +231,32 @@ internal fun SettingsContent(
             onCheckedChange = onNotificationsEnabled,
         )
 
-        SwitchRow(
-            title = stringResource(R.string.settings_only_pending),
-            description = stringResource(R.string.settings_only_pending_description),
-            checked = state.settings.notifyOnlyPending,
-            onCheckedChange = onNotifyOnlyPending,
+        Text(
+            text = stringResource(R.string.settings_scope),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            NotifyScope.entries.forEach { scope ->
+                FilterChip(
+                    selected = state.settings.notifyScope == scope,
+                    onClick = { onNotifyScope(scope) },
+                    enabled = state.settings.notificationsEnabled,
+                    label = { Text(stringResource(scope.labelRes())) },
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.settings_scope_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
 
         Text(
@@ -461,6 +483,12 @@ private fun TemplateDialog(
             }
         },
     )
+}
+
+private fun NotifyScope.labelRes(): Int = when (this) {
+    NotifyScope.PENDING -> R.string.settings_scope_pending
+    NotifyScope.NEW_COMMENTS -> R.string.settings_scope_new
+    NotifyScope.EVERYTHING -> R.string.settings_scope_everything
 }
 
 private fun AppIcon.labelRes(): Int = when (this) {

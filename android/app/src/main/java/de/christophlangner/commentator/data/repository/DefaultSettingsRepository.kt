@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +25,7 @@ class DefaultSettingsRepository @Inject constructor(
             syncIntervalMinutes = prefs[INTERVAL] ?: AppSettings.DEFAULT_SYNC_INTERVAL_MINUTES,
             showAvatars = prefs[AVATARS] ?: AppSettings.DEFAULT.showAvatars,
             showAuthorEmail = prefs[AUTHOR_EMAIL] ?: AppSettings.DEFAULT.showAuthorEmail,
-            notifyOnlyPending = prefs[ONLY_PENDING] ?: AppSettings.DEFAULT.notifyOnlyPending,
+            notifyScope = notifyScopeOf(prefs),
         )
     }
 
@@ -45,8 +47,20 @@ class DefaultSettingsRepository @Inject constructor(
         dataStore.edit { it[AUTHOR_EMAIL] = show }
     }
 
-    override suspend fun setNotifyOnlyPending(onlyPending: Boolean) {
-        dataStore.edit { it[ONLY_PENDING] = onlyPending }
+    override suspend fun setNotifyScope(scope: NotifyScope) {
+        dataStore.edit { it[NOTIFY_SCOPE] = scope.name }
+    }
+
+    /**
+     * Liest den Umfang, mit Ruecksicht auf den frueheren Schalter.
+     *
+     * Vor der dreistufigen Auswahl gab es nur "nur Moderation" ja/nein. Wer
+     * das eingeschaltet hatte, soll es behalten, statt stillschweigend auf
+     * die Voreinstellung zurueckgesetzt zu werden.
+     */
+    private fun notifyScopeOf(prefs: Preferences): NotifyScope {
+        prefs[NOTIFY_SCOPE]?.let { return NotifyScope.fromStorage(it) }
+        return if (prefs[ONLY_PENDING] == true) NotifyScope.PENDING else NotifyScope.DEFAULT
     }
 
     private companion object {
@@ -55,5 +69,6 @@ class DefaultSettingsRepository @Inject constructor(
         val AVATARS = booleanPreferencesKey("show_avatars")
         val AUTHOR_EMAIL = booleanPreferencesKey("show_author_email")
         val ONLY_PENDING = booleanPreferencesKey("notify_only_pending")
+        val NOTIFY_SCOPE = stringPreferencesKey("notify_scope")
     }
 }

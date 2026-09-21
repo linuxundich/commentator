@@ -6,6 +6,7 @@ import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
@@ -97,7 +98,7 @@ class FakeSettingsRepository(
         syncIntervalMinutes = 15,
         showAvatars = false,
         showAuthorEmail = false,
-        notifyOnlyPending = false,
+        notifyScope = NotifyScope.DEFAULT,
     ),
 ) : SettingsRepository {
 
@@ -116,8 +117,8 @@ class FakeSettingsRepository(
         state.value = state.value.copy(showAvatars = show)
     }
 
-    override suspend fun setNotifyOnlyPending(onlyPending: Boolean) {
-        state.value = state.value.copy(notifyOnlyPending = onlyPending)
+    override suspend fun setNotifyScope(scope: NotifyScope) {
+        state.value = state.value.copy(notifyScope = scope)
     }
 
     override suspend fun setShowAuthorEmail(show: Boolean) {

@@ -1,5 +1,6 @@
 package de.christophlangner.commentator.domain.repository
 
+import de.christophlangner.commentator.domain.model.NotifyScope
 import kotlinx.coroutines.flow.Flow
 
 /** Vom Benutzer steuerbare Einstellungen. */
@@ -10,14 +11,8 @@ data class AppSettings(
     val showAvatars: Boolean,
     /** E-Mail-Adressen der Kommentatoren in der Detailansicht anzeigen. */
     val showAuthorEmail: Boolean,
-    /**
-     * Nur ueber Kommentare benachrichtigen, die auf Moderation warten.
-     *
-     * Standardmaessig aus: Blogs, die Kommentare automatisch freischalten,
-     * haetten sonst nie etwas zu melden - und gerade dort ist ein neuer
-     * Kommentar bereits oeffentlich und damit eher dringlicher.
-     */
-    val notifyOnlyPending: Boolean,
+    /** Worueber die Hintergrundpruefung benachrichtigt. */
+    val notifyScope: NotifyScope,
 ) {
     companion object {
         /**
@@ -34,7 +29,7 @@ data class AppSettings(
             syncIntervalMinutes = DEFAULT_SYNC_INTERVAL_MINUTES,
             showAvatars = false,
             showAuthorEmail = false,
-            notifyOnlyPending = false,
+            notifyScope = NotifyScope.DEFAULT,
         )
     }
 }
@@ -45,5 +40,5 @@ interface SettingsRepository {
     suspend fun setSyncIntervalMinutes(minutes: Int)
     suspend fun setShowAvatars(show: Boolean)
     suspend fun setShowAuthorEmail(show: Boolean)
-    suspend fun setNotifyOnlyPending(onlyPending: Boolean)
+    suspend fun setNotifyScope(scope: NotifyScope)
 }

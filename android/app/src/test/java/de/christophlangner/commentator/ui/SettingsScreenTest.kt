@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.fake.testInstance
@@ -47,12 +48,12 @@ class SettingsScreenTest {
                             syncIntervalMinutes = 15,
                             showAvatars = false,
                             showAuthorEmail = false,
-                            notifyOnlyPending = false,
+                            notifyScope = NotifyScope.DEFAULT,
                         ),
                     ),
                     intervalOptions = intervalOptions,
                     onNotificationsEnabled = {},
-                    onNotifyOnlyPending = {},
+                    onNotifyScope = {},
                     onSyncInterval = {},
                     onAppIcon = {},
                     onShowAvatars = {},

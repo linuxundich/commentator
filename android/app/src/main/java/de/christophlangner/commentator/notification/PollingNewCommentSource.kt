@@ -11,6 +11,7 @@ import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.data.remote.mapper.CommentMapper
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentStatus
+import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
@@ -42,7 +43,7 @@ class PollingNewCommentSource @Inject constructor(
         // Auf Blogs, die automatisch freischalten, gibt es nie etwas mit
         // Status "offen". Dort waere eine Pruefung, die nur darauf sieht,
         // dauerhaft wirkungslos.
-        val onlyPending = settingsRepository.settings.first().notifyOnlyPending
+        val scope = settingsRepository.settings.first().notifyScope
         val state = dao.syncState(instance.id)
         val lastNotifiedId = state?.lastNotifiedCommentId ?: 0L
         val lastNotifiedAt = state?.lastNotifiedDateEpochMillis ?: 0L
@@ -55,7 +56,7 @@ class PollingNewCommentSource @Inject constructor(
                     // Aeltere Plugin-Fassungen kennen das zweite Feld nicht
                     // und melden 0; dann entfaellt die Abkuerzung und es
                     // wird regulaer abgefragt.
-                    val latest = if (onlyPending) {
+                    val latest = if (scope == NotifyScope.PENDING) {
                         body.latestCommentId
                     } else {
                         body.latestAnyCommentId
@@ -76,11 +77,7 @@ class PollingNewCommentSource @Inject constructor(
 
         val result = executor.call {
             api.listComments(
-                status = if (onlyPending) {
-                    CommentStatus.PENDING.queryValue
-                } else {
-                    ANY_STATUS
-                },
+                status = scope.queryValue,
                 page = 1,
                 perPage = MAX_PER_RUN,
                 after = after,
@@ -152,8 +149,6 @@ class PollingNewCommentSource @Inject constructor(
     }
 
     private companion object {
-        /** Sonderwert der WordPress-API fuer "genehmigt und offen". */
-        const val ANY_STATUS = "all"
 
         const val MAX_PER_RUN = 20
         val RETENTION_MILLIS = 30L * 24 * 60 * 60 * 1000
