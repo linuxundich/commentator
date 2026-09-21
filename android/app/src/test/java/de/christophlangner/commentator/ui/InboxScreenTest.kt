@@ -10,6 +10,9 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.performTouchInput
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
@@ -85,6 +88,63 @@ class InboxScreenTest {
         sessionInvalid = sessionInvalid,
         error = error,
     )
+
+    @Test
+    fun `nach rechts wischen genehmigt`() {
+        render(stateWith(listOf(testComment(1, status = CommentStatus.PENDING))))
+
+        composeRule.onNodeWithText("Ein Kommentar").performTouchInput { swipeRight() }
+        composeRule.waitForIdle()
+
+        assertEquals(ModerationAction.Approve, moderations.single().second)
+    }
+
+    @Test
+    fun `nach links wischen markiert als Spam`() {
+        render(stateWith(listOf(testComment(1, status = CommentStatus.PENDING))))
+
+        composeRule.onNodeWithText("Ein Kommentar").performTouchInput { swipeLeft() }
+        composeRule.waitForIdle()
+
+        assertEquals(ModerationAction.MarkAsSpam, moderations.single().second)
+    }
+
+    @Test
+    fun `ohne Moderationsrecht wischt gar nichts`() {
+        // Offline oder ohne Berechtigung: Die Geste darf nicht ins Leere
+        // laufen und eine Aktion vortaeuschen.
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                comments = listOf(testComment(1, status = CommentStatus.PENDING)),
+                isOffline = true,
+            ),
+        )
+
+        composeRule.onNodeWithText("Ein Kommentar").performTouchInput { swipeRight() }
+        composeRule.waitForIdle()
+
+        assertTrue(moderations.isEmpty())
+    }
+
+    @Test
+    fun `ein genehmigter Kommentar laesst sich nicht nochmal genehmigen`() {
+        render(stateWith(listOf(testComment(1, status = CommentStatus.APPROVED))))
+
+        composeRule.onNodeWithText("Ein Kommentar").performTouchInput { swipeRight() }
+        composeRule.waitForIdle()
+
+        assertTrue(moderations.isEmpty())
+    }
+
+    @Test
+    fun `die Schaltflaechen bleiben neben der Geste erhalten`() {
+        // Eine Geste darf nie der einzige Weg zu einer Aktion sein.
+        render(stateWith(listOf(testComment(1, status = CommentStatus.PENDING))))
+
+        composeRule.onNodeWithText("Genehmigen").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Spam").assertIsDisplayed()
+    }
 
     @Test
     fun `Kommentare des Teams tragen ihre Rolle als Marke`() {

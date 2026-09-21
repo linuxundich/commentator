@@ -87,7 +87,10 @@ bleibt.
 
 - [ ] **P1** Durchgang mit TalkBack und Korrektur der Vorlesereihenfolge
 - [ ] **P1** Prüfung bei sehr großer Systemschriftgröße
-- [ ] **P2** Wischgesten für Genehmigen und Spam in der Liste
+- [x] **P2** Wischgesten für Genehmigen und Spam in der Liste
+      *Die Aktion haengt am abgeschlossenen Wischen, nicht an
+      `confirmValueChange` – das wird waehrend einer Geste mehrfach
+      aufgerufen und loeste die Moderation doppelt aus.*
 - [ ] **P2** Anpassung an große Bildschirme (Liste und Detail nebeneinander)
 - [ ] **P3** Haptische Rückmeldung bei Moderationsaktionen
 

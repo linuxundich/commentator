@@ -347,7 +347,7 @@ private fun InboxContent(
             modifier = Modifier.fillMaxSize(),
         ) {
             items(state.comments, key = { it.id }) { comment ->
-                CommentCard(
+                SwipeableCommentCard(
                     comment = comment,
                     signals = state.signals[comment.id] ?: CommentSignals(),
                     teamRole = state.team.roleOf(comment.authorId),

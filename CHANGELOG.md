@@ -179,6 +179,9 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Rollenmarke und Statuskennzeichen stehen nebeneinander auf einer Linie,
+  mit gleicher Höhe und Form. Zuvor saßen sie versetzt übereinander und waren
+  unterschiedlich hoch.
 - Die Rollenmarke steht jetzt unter dem Namen statt daneben. Neben Marke und
   Statuskennzeichen blieben für den Namen kaum 80 dp – „Christoph Langner"
   wurde zu „Christop…".
@@ -194,6 +197,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   allein an der Farbe. Welche Rollen dazuzählen, ist in den Einstellungen
   wählbar; voreingestellt sind Administrator und Redakteur. Das eigene Konto
   zählt immer dazu.
+- Wischgesten in der Liste: nach rechts genehmigen, nach links als Spam
+  markieren. Beides ist rücknehmbar, und die Schaltflächen auf der Karte
+  bleiben erhalten – eine Geste ist nie der einzige Weg zu einer Aktion.
+  Endgültiges Löschen ist bewusst nicht dabei.
 - Adressen, die unverlinkt im Text stehen, zählen jetzt als Verweis mit.
   Zuvor wurde nur das Markup betrachtet – WordPress verlinkt aber nicht jede
   Adresse, und ein Kommentar mit ausgeschriebener URL blieb damit unauffällig.

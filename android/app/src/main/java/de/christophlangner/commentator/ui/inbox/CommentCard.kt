@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
@@ -97,10 +98,16 @@ fun CommentCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    // Rolle unter dem Namen statt daneben: Neben Marke und
-                    // Statuschip blieben fuer den Namen kaum 80 dp, und
-                    // "Christoph Langner" wurde zu "Christop...".
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Zweite Zeile: links das Datum, rechts die Marken. Der
+                    // Name bekommt dadurch die volle Breite, und Rolle und
+                    // Status stehen nebeneinander auf einer Linie statt
+                    // versetzt uebereinander.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    ) {
                         Text(
                             text = RelativeTime.relative(
                                 comment.date,
@@ -112,14 +119,16 @@ fun CommentCard(
                                 contentDescription = RelativeTime.absolute(comment.date)
                             },
                         )
+
+                        Spacer(Modifier.weight(1f))
+
                         teamRole?.let { rolle ->
-                            Spacer(Modifier.width(8.dp))
                             TeamBadge(rolle)
+                            Spacer(Modifier.width(6.dp))
                         }
+                        StatusChip(status = comment.status)
                     }
                 }
-
-                StatusChip(status = comment.status)
             }
 
             Text(
@@ -177,12 +186,14 @@ private fun TeamBadge(role: TeamRole) {
         MaterialTheme.colorScheme.onSecondary
     }
 
-    Surface(shape = MaterialTheme.shapes.small, color = hintergrund) {
+    // Gleiche Form und Innenabstaende wie das Statuskennzeichen daneben -
+    // sonst stehen zwei verschieden hohe Marken nebeneinander.
+    Surface(shape = RoundedCornerShape(8.dp), color = hintergrund) {
         Text(
             text = role.name.ifBlank { stringResource(R.string.comment_from_team) },
             style = MaterialTheme.typography.labelSmall,
             color = vordergrund,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }
 }
