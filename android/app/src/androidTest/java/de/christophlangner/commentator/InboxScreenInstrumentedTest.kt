@@ -5,6 +5,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
@@ -92,8 +95,46 @@ class InboxScreenInstrumentedTest {
         composeRule.onNodeWithText("Max Mustermann").assertIsDisplayed()
         composeRule.onNodeWithText("Sehr interessanter Artikel").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Genehmigen").performClick()
+        composeRule.onNodeWithText(text(R.string.action_approve)).performClick()
 
         assertEquals(ModerationAction.Approve, moderations.single())
+    }
+
+    @Test
+    fun wischenNachRechtsGenehmigt() {
+        // Auf echter Laufzeit, nicht nur in Robolectric: Wischgesten haengen
+        // an Beruehrungsverarbeitung und Animation - genau das bildet eine
+        // JVM-Umgebung nur nach.
+        render()
+
+        composeRule.onNodeWithText("Sehr interessanter Artikel")
+            .performTouchInput { swipeRight() }
+        composeRule.waitForIdle()
+
+        assertEquals(listOf(ModerationAction.Approve), moderations)
+    }
+
+    @Test
+    fun wischenNachLinksMarkiertAlsSpam() {
+        render()
+
+        composeRule.onNodeWithText("Sehr interessanter Artikel")
+            .performTouchInput { swipeLeft() }
+        composeRule.waitForIdle()
+
+        assertEquals(listOf(ModerationAction.MarkAsSpam), moderations)
+    }
+
+    @Test
+    fun einWischenLoestGenauEineAktionAus() {
+        // confirmValueChange wird waehrend einer Geste mehrfach aufgerufen;
+        // haengt die Aktion dort, moderiert ein Wischen doppelt.
+        render()
+
+        composeRule.onNodeWithText("Sehr interessanter Artikel")
+            .performTouchInput { swipeRight() }
+        composeRule.waitForIdle()
+
+        assertEquals(1, moderations.size)
     }
 }

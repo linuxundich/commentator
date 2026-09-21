@@ -89,7 +89,7 @@ class CommentDetailInstrumentedTest {
         composeRule.onNodeWithText("Wie sieht es mit der Akkulaufzeit aus?", substring = true)
             .assertIsDisplayed()
 
-        composeRule.onNodeWithText("Antworten").assertIsDisplayed()
+        composeRule.onNodeWithText(text(R.string.detail_replies)).assertIsDisplayed()
         composeRule.onNodeWithText("Test-Moderatorin").assertIsDisplayed()
         composeRule.onNodeWithText("Rund zwölf Stunden.").assertIsDisplayed()
     }
@@ -108,7 +108,7 @@ class CommentDetailInstrumentedTest {
     fun moderationsaktionWirdGemeldet() {
         render(emptyList())
 
-        composeRule.onNodeWithText("Genehmigen").performClick()
+        composeRule.onNodeWithText(text(R.string.action_approve)).performClick()
 
         assertEquals(ModerationAction.Approve, moderations.single())
     }

@@ -84,7 +84,12 @@ fun SwipeableCommentCard(
         state = state,
         enableDismissFromStartToEnd = kannGenehmigen,
         enableDismissFromEndToStart = kannSpam,
-        backgroundContent = { SwipeBackground(state.targetValue) },
+        // dismissDirection statt targetValue: targetValue bleibt Settled,
+        // solange die Wischschwelle nicht ueberschritten ist. Der Hintergrund
+        // waere damit erst aufgetaucht, wenn die Aktion ohnehin feststeht -
+        // sichtbar geworden ist beim Nachstellen im Emulator, wo unter der
+        // halb weggeschobenen Karte nur eine leere Flaeche lag.
+        backgroundContent = { SwipeBackground(state.dismissDirection) },
         modifier = modifier,
     ) {
         CommentCard(
@@ -102,8 +107,8 @@ fun SwipeableCommentCard(
 
 /** Was unter der Karte sichtbar wird, während gewischt wird. */
 @Composable
-private fun SwipeBackground(target: SwipeToDismissBoxValue) {
-    val aussehen = when (target) {
+private fun SwipeBackground(richtung: SwipeToDismissBoxValue) {
+    val aussehen = when (richtung) {
         SwipeToDismissBoxValue.StartToEnd -> SwipeAussehen(
             MaterialTheme.colorScheme.primaryContainer,
             Icons.Default.CheckCircle,
