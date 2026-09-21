@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -51,6 +52,7 @@ import de.christophlangner.commentator.ui.common.StatusChip
 fun CommentCard(
     comment: Comment,
     signals: CommentSignals,
+    fromTeam: Boolean,
     showAvatar: Boolean,
     actionsEnabled: Boolean,
     onOpen: () -> Unit,
@@ -65,7 +67,14 @@ fun CommentCard(
             .fillMaxWidth()
             .clickable(onClickLabel = openLabel, onClick = onOpen),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            // Beitraege des Teams heben sich durch den Grundton ab, nicht nur
+            // durch eine Marke: In einer langen Liste erkennt man sie so schon
+            // beim Ueberfliegen.
+            containerColor = if (fromTeam) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            },
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -94,6 +103,10 @@ fun CommentCard(
                     )
                 }
 
+                if (fromTeam) {
+                    TeamBadge()
+                    Spacer(Modifier.width(8.dp))
+                }
                 StatusChip(status = comment.status)
             }
 
@@ -128,6 +141,22 @@ fun CommentCard(
                 onReply = onReply,
             )
         }
+    }
+}
+
+/** Kleine Marke fuer Beitraege aus dem eigenen Haus. */
+@Composable
+private fun TeamBadge() {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.secondary,
+    ) {
+        Text(
+            text = stringResource(R.string.comment_from_team),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondary,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
     }
 }
 

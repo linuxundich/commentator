@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/christophlangner/commentator
  * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
- * Version:           1.3.0
+ * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -35,11 +35,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.3.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.4.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
 const COMMENTATOR_BRIDGE_EMPTY_BATCH = 200;
+
+/** Hoechstzahl der Teammitglieder, die /team zurueckgibt. */
+const COMMENTATOR_BRIDGE_TEAM_LIMIT = 200;
 
 add_action( 'rest_api_init', 'commentator_bridge_register_routes' );
 
@@ -60,6 +63,16 @@ function commentator_bridge_register_routes(): void {
 		array(
 			'methods'             => WP_REST_Server::READABLE,
 			'callback'            => 'commentator_bridge_summary',
+			'permission_callback' => 'commentator_bridge_can_moderate',
+		)
+	);
+
+	register_rest_route(
+		COMMENTATOR_BRIDGE_NAMESPACE,
+		'/team',
+		array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => 'commentator_bridge_team',
 			'permission_callback' => 'commentator_bridge_can_moderate',
 		)
 	);
@@ -225,6 +238,65 @@ function commentator_bridge_summary(): WP_REST_Response {
 				// als keine.
 				'all'     => (int) $counts->approved + (int) $counts->moderated,
 			),
+		)
+	);
+
+	$response->header( 'Cache-Control', 'no-store, private' );
+
+	return $response;
+}
+
+/**
+ * Wer zum Team gehört, und welche Rollen dafür überhaupt in Frage kommen.
+ *
+ * Die App kann das nicht selbst ermitteln: `wp/v2/users` mit `context=edit`
+ * verlangt `list_users`, und das hat ein Redakteur nicht - also genau das
+ * Konto, mit dem moderiert wird. Ohne diesen Endpunkt bliebe der App nur, das
+ * eigene Konto zu erkennen.
+ *
+ * Geliefert werden nur Rollen, die Beiträge schreiben dürfen. Abonnenten
+ * gehören nicht zum Team, und auf großen Blogs wären es Tausende.
+ */
+function commentator_bridge_team(): WP_REST_Response {
+	$roles = array();
+
+	foreach ( wp_roles()->roles as $slug => $role ) {
+		$caps = isset( $role['capabilities'] ) ? $role['capabilities'] : array();
+		$gehoert_dazu = ! empty( $caps['edit_posts'] ) || ! empty( $caps['moderate_comments'] );
+
+		if ( $gehoert_dazu ) {
+			$roles[] = array(
+				'slug' => (string) $slug,
+				'name' => translate_user_role( $role['name'] ),
+			);
+		}
+	}
+
+	$members = array();
+
+	if ( ! empty( $roles ) ) {
+		$users = get_users(
+			array(
+				'role__in' => wp_list_pluck( $roles, 'slug' ),
+				'number'   => COMMENTATOR_BRIDGE_TEAM_LIMIT,
+				'orderby'  => 'ID',
+				'fields'   => array( 'ID' ),
+			)
+		);
+
+		foreach ( $users as $user ) {
+			$data      = get_userdata( $user->ID );
+			$members[] = array(
+				'id'    => (int) $user->ID,
+				'roles' => array_values( (array) $data->roles ),
+			);
+		}
+	}
+
+	$response = new WP_REST_Response(
+		array(
+			'roles'   => $roles,
+			'members' => $members,
 		)
 	);
 

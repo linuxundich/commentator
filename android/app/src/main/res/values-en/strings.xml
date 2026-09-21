@@ -162,6 +162,10 @@
     <string name="settings_no_moderation_rights">This account cannot moderate comments. Moderation actions are disabled.</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_description">Check for new comments in the background</string>
+    <string name="settings_team">Mark as team</string>
+    <string name="settings_team_description">Comments from these roles are set apart in the list. Your own account always counts.</string>
+    <string name="settings_team_needs_plugin">Without the commentator-bridge plugin only your own account can be recognised – WordPress reveals other users\' roles to administrators only.</string>
+    <string name="comment_from_team">Team</string>
     <string name="settings_scope">Notify about</string>
     <string name="settings_scope_pending">Moderation only</string>
     <string name="settings_scope_new">New comments</string>

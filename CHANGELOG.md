@@ -153,6 +153,11 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **WordPress-Plugin**
 
+- Version 1.4.0: `commentator/v1/team` nennt die Rollen des Blogs und ihre
+  Mitglieder. Ohne diesen Endpunkt kann die App das Team nicht erkennen –
+  `wp/v2/users` mit `context=edit` verlangt `list_users`, und das hat ein
+  Redakteur nicht. Geliefert werden nur Rollen, die Beiträge schreiben oder
+  moderieren dürfen; Abonnenten gehören nicht dazu.
 - Version 1.3.0: `commentator/v1/status` meldet zusätzlich den neuesten
   Kommentar unabhängig vom Status. Ohne dieses Feld könnte die App auf Blogs
   mit automatischer Freischaltung nicht abkürzen. Ältere Fassungen sind
@@ -174,6 +179,15 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Erste Datenbankmigration des Projekts: Die Kommentartabelle bekommt die
+  Nutzer-ID des Verfassers. Bewusst eine Migration statt eines Neuaufbaus –
+  mit dem Cache ginge der Ausgangszustand der Benachrichtigungen verloren, und
+  beim nächsten Lauf käme ein Schwall über alle vorhandenen Kommentare.
+
+- Kommentare aus dem eigenen Team werden abgesetzt dargestellt: heller
+  Grundton und eine Marke „Team". Welche Rollen dazuzählen, ist in den
+  Einstellungen wählbar; voreingestellt sind Administrator und Redakteur. Das
+  eigene Konto zählt immer dazu.
 - Beim Erstaufbau der Liste liefen zwei Ladeanzeigen gleichzeitig: die des
   Herunterziehens und die der Liste. Statt eines Kreises im Leeren stehen
   jetzt Platzhalterkarten in der Form der späteren Inhalte; die Liste springt

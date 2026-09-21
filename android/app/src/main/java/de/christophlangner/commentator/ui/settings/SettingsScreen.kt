@@ -97,6 +97,7 @@ fun SettingsScreen(
             intervalOptions = viewModel.intervalOptions,
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
             onNotifyScope = viewModel::setNotifyScope,
+            onToggleTeamRole = viewModel::toggleTeamRole,
             onSyncInterval = viewModel::setSyncInterval,
             onAppIcon = viewModel::setAppIcon,
             onShowAvatars = viewModel::setShowAvatars,
@@ -164,6 +165,7 @@ internal fun SettingsContent(
     intervalOptions: List<Int>,
     onNotificationsEnabled: (Boolean) -> Unit,
     onNotifyScope: (NotifyScope) -> Unit,
+    onToggleTeamRole: (String) -> Unit,
     onSyncInterval: (Int) -> Unit,
     onAppIcon: (AppIcon) -> Unit,
     onShowAvatars: (Boolean) -> Unit,
@@ -329,6 +331,41 @@ internal fun SettingsContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
         )
+
+        HorizontalDivider()
+        SectionTitle(stringResource(R.string.settings_team))
+
+        Text(
+            text = stringResource(R.string.settings_team_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+
+        if (state.availableRoles.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_team_needs_plugin),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                state.availableRoles.forEach { role ->
+                    FilterChip(
+                        selected = role.slug in state.settings.teamRoles,
+                        onClick = { onToggleTeamRole(role.slug) },
+                        label = { Text(role.name) },
+                    )
+                }
+            }
+        }
 
         HorizontalDivider()
         SectionTitle(stringResource(R.string.templates_section))

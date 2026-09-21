@@ -163,6 +163,7 @@ class FakeCommentRepository : CommentRepository {
 
 fun testComment(
     id: Long,
+    authorId: Long = 0,
     instanceId: String = "instance-1",
     status: CommentStatus = CommentStatus.PENDING,
     author: String = "Max Mustermann",
@@ -175,6 +176,7 @@ fun testComment(
     instanceId = instanceId,
     postId = postId,
     parentId = parentId,
+    authorId = authorId,
     authorName = author,
     authorEmail = "max@example.test",
     authorUrl = null,

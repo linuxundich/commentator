@@ -178,6 +178,10 @@
     <string name="settings_no_moderation_rights">Dieses Konto besitzt kein Recht zum Moderieren von Kommentaren. Moderationsaktionen sind deaktiviert.</string>
     <string name="settings_notifications">Benachrichtigungen</string>
     <string name="settings_notifications_description">Im Hintergrund auf neue Kommentare prüfen</string>
+    <string name="settings_team">Als Team kennzeichnen</string>
+    <string name="settings_team_description">Kommentare aus diesen Rollen werden in der Liste abgesetzt dargestellt. Das eigene Konto zählt immer dazu.</string>
+    <string name="settings_team_needs_plugin">Ohne das Plugin commentator-bridge lässt sich nur das eigene Konto erkennen – WordPress gibt die Rollen anderer Nutzer nur Administratoren preis.</string>
+    <string name="comment_from_team">Team</string>
     <string name="settings_scope">Benachrichtigen über</string>
     <string name="settings_scope_pending">Nur Moderation</string>
     <string name="settings_scope_new">Neue Kommentare</string>

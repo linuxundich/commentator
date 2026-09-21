@@ -117,3 +117,22 @@ data class EmptyResultDto(
 data class BlocklistDto(
     val entries: List<String> = emptyList(),
 )
+
+/** Antwort des Plugins auf `commentator/v1/team`. */
+@Serializable
+data class TeamDto(
+    val roles: List<TeamRoleDto> = emptyList(),
+    val members: List<TeamMemberDto> = emptyList(),
+)
+
+@Serializable
+data class TeamRoleDto(
+    val slug: String = "",
+    val name: String = "",
+)
+
+@Serializable
+data class TeamMemberDto(
+    val id: Long = 0,
+    val roles: List<String> = emptyList(),
+)

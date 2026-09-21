@@ -11,6 +11,7 @@ import de.christophlangner.commentator.data.remote.dto.EmptyRequest
 import de.christophlangner.commentator.data.remote.dto.EmptyResultDto
 import de.christophlangner.commentator.data.remote.dto.PostDto
 import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
+import de.christophlangner.commentator.data.remote.dto.TeamDto
 import de.christophlangner.commentator.data.remote.dto.UserDto
 import kotlinx.serialization.json.JsonElement
 import retrofit2.Response
@@ -125,6 +126,9 @@ interface WordPressApi {
     /** Leert Spam oder Papierkorb in Stapeln; die Antwort nennt den Rest. */
     @POST("commentator/v1/empty")
     suspend fun bridgeEmpty(@Body body: EmptyRequest): Response<EmptyResultDto>
+
+    @GET("commentator/v1/team")
+    suspend fun bridgeTeam(): Response<TeamDto>
 
     @POST("commentator/v1/blocklist")
     suspend fun bridgeBlock(@Body body: BlocklistRequest): Response<BlocklistDto>

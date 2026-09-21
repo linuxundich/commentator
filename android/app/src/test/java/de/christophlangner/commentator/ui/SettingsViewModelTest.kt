@@ -6,6 +6,7 @@ import de.christophlangner.commentator.data.system.AppIconManager
 import de.christophlangner.commentator.fake.FakeAuthRepository
 import de.christophlangner.commentator.fake.FakeReplyTemplateRepository
 import de.christophlangner.commentator.fake.FakeSettingsRepository
+import de.christophlangner.commentator.fake.FakeTeamRepository
 import de.christophlangner.commentator.fake.MainDispatcherRule
 import de.christophlangner.commentator.fake.testInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
@@ -37,6 +38,7 @@ class SettingsViewModelTest {
         settings,
         AppIconManager(ApplicationProvider.getApplicationContext()),
         replyTemplates,
+        FakeTeamRepository(),
     )
 
     @Test
@@ -49,6 +51,7 @@ class SettingsViewModelTest {
             settings,
             AppIconManager(ApplicationProvider.getApplicationContext()),
             replyTemplates,
+        FakeTeamRepository(),
         )
         model.state.test {
             advanceUntilIdle()

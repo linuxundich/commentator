@@ -1,6 +1,7 @@
 package de.christophlangner.commentator.domain.repository
 
 import de.christophlangner.commentator.domain.model.NotifyScope
+import de.christophlangner.commentator.domain.model.Team
 import kotlinx.coroutines.flow.Flow
 
 /** Vom Benutzer steuerbare Einstellungen. */
@@ -13,6 +14,8 @@ data class AppSettings(
     val showAuthorEmail: Boolean,
     /** Worueber die Hintergrundpruefung benachrichtigt. */
     val notifyScope: NotifyScope,
+    /** Rollen, deren Kommentare als Beitrag des Teams gekennzeichnet werden. */
+    val teamRoles: Set<String>,
 ) {
     companion object {
         /**
@@ -30,6 +33,7 @@ data class AppSettings(
             showAvatars = false,
             showAuthorEmail = false,
             notifyScope = NotifyScope.DEFAULT,
+            teamRoles = Team.DEFAULT_ROLES,
         )
     }
 }
@@ -41,4 +45,5 @@ interface SettingsRepository {
     suspend fun setShowAvatars(show: Boolean)
     suspend fun setShowAuthorEmail(show: Boolean)
     suspend fun setNotifyScope(scope: NotifyScope)
+    suspend fun setTeamRoles(roles: Set<String>)
 }

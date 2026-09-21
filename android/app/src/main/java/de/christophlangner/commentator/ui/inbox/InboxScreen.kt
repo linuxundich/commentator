@@ -350,6 +350,7 @@ private fun InboxContent(
                 CommentCard(
                     comment = comment,
                     signals = state.signals[comment.id] ?: CommentSignals(),
+                    fromTeam = state.team.contains(comment.authorId),
                     showAvatar = state.showAvatars,
                     actionsEnabled = state.moderationEnabled,
                     onOpen = { onOpenComment(comment) },

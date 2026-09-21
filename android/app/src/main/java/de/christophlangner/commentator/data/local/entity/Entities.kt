@@ -25,6 +25,8 @@ data class CommentEntity(
     val id: Long,
     val postId: Long,
     val parentId: Long,
+    /** Nutzer-ID des Verfassers, 0 bei Gaesten. Erkennt Beitraege des Teams. */
+    val authorId: Long,
     val authorName: String,
     val authorEmail: String?,
     val authorUrl: String?,

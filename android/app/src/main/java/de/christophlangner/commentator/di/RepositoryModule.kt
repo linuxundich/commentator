@@ -12,10 +12,12 @@ import de.christophlangner.commentator.data.repository.DefaultAuthRepository
 import de.christophlangner.commentator.data.repository.DefaultCommentRepository
 import de.christophlangner.commentator.data.repository.DefaultReplyTemplateRepository
 import de.christophlangner.commentator.data.repository.DefaultSettingsRepository
+import de.christophlangner.commentator.data.repository.DefaultTeamRepository
 import de.christophlangner.commentator.domain.repository.AuthRepository
 import de.christophlangner.commentator.domain.repository.CommentRepository
 import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
+import de.christophlangner.commentator.domain.repository.TeamRepository
 import de.christophlangner.commentator.notification.NewCommentSource
 import de.christophlangner.commentator.notification.PollingNewCommentSource
 import javax.inject.Singleton
@@ -41,6 +43,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(impl: DefaultSettingsRepository): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTeamRepository(impl: DefaultTeamRepository): TeamRepository
 
     @Binds
     @Singleton

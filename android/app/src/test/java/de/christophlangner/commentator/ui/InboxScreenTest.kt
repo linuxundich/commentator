@@ -14,6 +14,7 @@ import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentStatus
+import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
@@ -83,6 +84,38 @@ class InboxScreenTest {
         sessionInvalid = sessionInvalid,
         error = error,
     )
+
+    @Test
+    fun `Kommentare des Teams tragen eine Marke`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                comments = listOf(
+                    testComment(1, authorId = 2),
+                    testComment(2, authorId = 0),
+                ),
+                team = Team(memberIds = setOf(2L)),
+            ),
+        )
+
+        // Genau einmal: nur der Kommentar aus dem Team.
+        assertEquals(
+            1,
+            composeRule.onAllNodesWithText("Team").fetchSemanticsNodes().size,
+        )
+    }
+
+    @Test
+    fun `ohne ermitteltes Team bleibt die Liste unmarkiert`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                comments = listOf(testComment(1, authorId = 2)),
+            ),
+        )
+
+        assertEquals(0, composeRule.onAllNodesWithText("Team").fetchSemanticsNodes().size)
+    }
 
     @Test
     fun `beim Erstaufbau erscheint nur eine Ladeanzeige`() {

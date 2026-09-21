@@ -6,7 +6,9 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import de.christophlangner.commentator.domain.model.NotifyScope
+import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +28,7 @@ class DefaultSettingsRepository @Inject constructor(
             showAvatars = prefs[AVATARS] ?: AppSettings.DEFAULT.showAvatars,
             showAuthorEmail = prefs[AUTHOR_EMAIL] ?: AppSettings.DEFAULT.showAuthorEmail,
             notifyScope = notifyScopeOf(prefs),
+            teamRoles = prefs[TEAM_ROLES] ?: Team.DEFAULT_ROLES,
         )
     }
 
@@ -51,6 +54,10 @@ class DefaultSettingsRepository @Inject constructor(
         dataStore.edit { it[NOTIFY_SCOPE] = scope.name }
     }
 
+    override suspend fun setTeamRoles(roles: Set<String>) {
+        dataStore.edit { it[TEAM_ROLES] = roles }
+    }
+
     /**
      * Liest den Umfang, mit Ruecksicht auf den frueheren Schalter.
      *
@@ -70,5 +77,6 @@ class DefaultSettingsRepository @Inject constructor(
         val AUTHOR_EMAIL = booleanPreferencesKey("show_author_email")
         val ONLY_PENDING = booleanPreferencesKey("notify_only_pending")
         val NOTIFY_SCOPE = stringPreferencesKey("notify_scope")
+        val TEAM_ROLES = stringSetPreferencesKey("team_roles")
     }
 }

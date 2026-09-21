@@ -6,6 +6,8 @@ import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
+import de.christophlangner.commentator.domain.model.Team
+import de.christophlangner.commentator.domain.repository.TeamRepository
 import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
@@ -92,6 +94,17 @@ class FakeReplyTemplateRepository(
     }
 }
 
+class FakeTeamRepository(
+    var team: Team = Team(),
+) : TeamRepository {
+    var calls = 0
+
+    override suspend fun team(instanceId: String): Outcome<Team> {
+        calls++
+        return Outcome.Success(team)
+    }
+}
+
 class FakeSettingsRepository(
     initial: AppSettings = AppSettings(
         notificationsEnabled = true,
@@ -99,6 +112,7 @@ class FakeSettingsRepository(
         showAvatars = false,
         showAuthorEmail = false,
         notifyScope = NotifyScope.DEFAULT,
+        teamRoles = Team.DEFAULT_ROLES,
     ),
 ) : SettingsRepository {
 
@@ -119,6 +133,10 @@ class FakeSettingsRepository(
 
     override suspend fun setNotifyScope(scope: NotifyScope) {
         state.value = state.value.copy(notifyScope = scope)
+    }
+
+    override suspend fun setTeamRoles(roles: Set<String>) {
+        state.value = state.value.copy(teamRoles = roles)
     }
 
     override suspend fun setShowAuthorEmail(show: Boolean) {

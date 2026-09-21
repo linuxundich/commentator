@@ -12,6 +12,7 @@ import de.christophlangner.commentator.fake.FakeAuthRepository
 import de.christophlangner.commentator.fake.FakeCommentRepository
 import de.christophlangner.commentator.fake.FakeConnectivityObserver
 import de.christophlangner.commentator.fake.FakeSettingsRepository
+import de.christophlangner.commentator.fake.FakeTeamRepository
 import de.christophlangner.commentator.fake.MainDispatcherRule
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
@@ -35,12 +36,14 @@ class InboxViewModelTest {
     private val auth = FakeAuthRepository()
     private val settings = FakeSettingsRepository()
     private val connectivity = FakeConnectivityObserver()
+    private val teamRepo = FakeTeamRepository()
 
     private fun viewModel() = InboxViewModel(
         authRepository = auth,
         commentRepository = comments,
         moderateComment = ModerateCommentUseCase(comments, connectivity),
         undoModeration = UndoModerationUseCase(comments, connectivity),
+        teamRepository = teamRepo,
         settingsRepository = settings,
         connectivity = connectivity,
     )

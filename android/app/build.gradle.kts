@@ -130,6 +130,14 @@ android {
         buildConfig = true
     }
 
+    sourceSets {
+        // Die exportierten Schemas als Assets der Instrumentierungstests:
+        // Nur so findet MigrationTestHelper die Fassung, gegen die er pruefen
+        // soll. Bewusst nicht in den Haupt-Assets - im APK haben sie nichts
+        // zu suchen.
+        getByName("androidTest") { assets.srcDir("$projectDir/schemas") }
+    }
+
     androidResources {
         // Erzeugt locales_config.xml aus den vorhandenen values-Ordnern.
         // Damit taucht die App in den Systemeinstellungen unter „Sprachen der
@@ -225,7 +233,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.junit)
-    testImplementation(libs.room.testing)
+    androidTestImplementation(libs.room.testing)
     testImplementation(libs.work.testing)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)

@@ -207,8 +207,11 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
       *Heute steht KSP nur bis zur 2.3-Linie zur Verfügung; Room und Hilt
       brauchen es. Siehe `docs/architecture.md`.*
 - [ ] **P1** Instrumentierungstests auf einem Gerät oder Emulator ausführen
-- [ ] **P2** Room-Migrationen vorbereiten, sobald sich das Schema ändert
-      *Version 1 legt die Datenbank neu an; eine Migration gab es noch nicht.*
+- [x] **P2** Room-Migrationen vorbereiten, sobald sich das Schema ändert
+      *Mit der Nutzer-ID des Verfassers stand die erste an. Schema 2 ist
+      exportiert, die Migration ist registriert und wird auf dem Gerät gegen
+      das Schema geprüft – die exportierten JSON-Dateien liegen dafür als
+      Assets der Instrumentierungstests bereit, nicht im APK.*
 - [ ] **P2** `material-icons-core` ablösen, sobald es einen gepflegten
       Nachfolger gibt
       *Das Paket ist auf 1.7.8 eingefroren.*

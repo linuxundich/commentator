@@ -47,6 +47,7 @@ class CommentDetailInstrumentedTest {
         parentId = parentId,
         authorName = author,
         authorEmail = "wer@example.test",
+        authorId = 0,
         authorUrl = null,
         avatarUrl = null,
         contentHtml = "<p>$text</p>",

@@ -8,6 +8,8 @@ import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.Team
+import de.christophlangner.commentator.domain.repository.TeamRepository
 import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
@@ -59,6 +61,8 @@ data class InboxUiState(
     val signals: Map<Long, CommentSignals> = emptyMap(),
     /** Anzahl je Filter. Fehlt ein Eintrag, zeigt die Leiste dort keine Zahl. */
     val counts: Map<CommentFilter, Int> = emptyMap(),
+    /** Nutzer-IDs des Teams; deren Kommentare werden abgesetzt dargestellt. */
+    val team: Team = Team(),
 ) {
     /** Ohne Verbindung, ohne Berechtigung oder mit ungültiger Sitzung wird nicht moderiert. */
     val moderationEnabled: Boolean
@@ -70,6 +74,7 @@ class InboxViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val commentRepository: CommentRepository,
     private val moderateComment: ModerateCommentUseCase,
+    private val teamRepository: TeamRepository,
     private val undoModeration: UndoModerationUseCase,
     settingsRepository: SettingsRepository,
     connectivity: ConnectivityObserver,
@@ -95,6 +100,7 @@ class InboxViewModel @Inject constructor(
         val error: AppError? = null,
         /** Anzahl je Filter, leer solange nicht ermittelt. */
         val counts: Map<CommentFilter, Int> = emptyMap(),
+        val team: Team = Team(),
     )
 
     private val filter = MutableStateFlow(CommentFilter.PENDING)
@@ -173,6 +179,7 @@ class InboxViewModel @Inject constructor(
             showAvatars = environment.showAvatars,
             signals = signalsFor(comments),
             counts = transient.counts,
+            team = transient.team,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -251,6 +258,7 @@ class InboxViewModel @Inject constructor(
             }
 
             if (withSiteData || transient.value.counts.isEmpty()) loadCounts()
+            if (withSiteData || transient.value.team.memberIds.isEmpty()) loadTeam()
         }
     }
 
@@ -285,6 +293,21 @@ class InboxViewModel @Inject constructor(
          * veralteten Stand sitzt, ohne es zu merken.
          */
         val FILTER_CACHE_LIFETIME: Duration = Duration.ofMinutes(2)
+    }
+
+    /**
+     * Holt die Teamzugehoerigkeit.
+     *
+     * Wie die Zaehlungen: nach dem Aktualisieren, und beim blossen
+     * Filterwechsel gar nicht - wer zum Team gehoert, aendert sich nicht beim
+     * Umschalten.
+     */
+    private suspend fun loadTeam() {
+        val instanceId = instance.value?.id ?: return
+        val outcome = teamRepository.team(instanceId)
+        if (outcome is Outcome.Success) {
+            transient.update { it.copy(team = outcome.value) }
+        }
     }
 
     private fun signalsFor(comments: List<Comment>): Map<Long, CommentSignals> {
