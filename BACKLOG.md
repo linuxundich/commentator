@@ -225,8 +225,17 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
 ## Technische Schulden und Pflege
 
 - [ ] **P1** Kotlin auf 2.4 anheben, sobald KSP dafür vorliegt
-      *Heute steht KSP nur bis zur 2.3-Linie zur Verfügung; Room und Hilt
-      brauchen es. Siehe `docs/architecture.md`.*
+      *Nachgesehen am 21.09.2026: Kotlin steht bei 2.4.20, KSP bei 2.3.12 –
+      und dessen POM hängt an `kotlin-stdlib` 2.3.20. Eine offizielle Paarung
+      für die 2.4-Linie gibt es also weiterhin nicht. Room und Hilt brauchen
+      KSP.*
+      *Probeweise trotzdem umgestellt: Der Build läuft durch, KSP erzeugt
+      Hilt- und Room-Code, 267 Unit-Tests, 8 Gerätetests und der
+      Release-Build sind grün. Die Umstellung wurde dennoch zurückgenommen –
+      KSP würde die Quellen mit einem Compiler der 2.3-Linie analysieren,
+      während übersetzt wird mit 2.4. Heute fällt das nicht auf; ein
+      Sprachmerkmal aus 2.4 in einer annotierten Klasse könnte still danebengehen.
+      Sobald KSP nachzieht, ist es eine Zeile in `libs.versions.toml`.*
 - [x] **P1** Instrumentierungstests auf einem Gerät oder Emulator ausführen
       *Laufen auf einem Pixel-10-Emulator (API 37) und auf einem Gerät.*
 - [x] **P2** Room-Migrationen vorbereiten, sobald sich das Schema ändert

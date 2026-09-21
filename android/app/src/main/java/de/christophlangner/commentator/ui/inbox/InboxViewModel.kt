@@ -20,6 +20,7 @@ import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.usecase.ModerateCommentUseCase
 import de.christophlangner.commentator.domain.usecase.UndoModerationUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -248,6 +249,7 @@ class InboxViewModel @Inject constructor(
 
         // Gesucht wird erst, wenn die Eingabe einen Moment steht. Jeder
         // Tastendruck waere eine eigene Anfrage an den Blog.
+        @OptIn(FlowPreview::class)
         viewModelScope.launch {
             combine(suche.map { it.text.trim() }.distinctUntilChanged(), filter, ::Pair)
                 .debounce(SUCHVERZOEGERUNG)
