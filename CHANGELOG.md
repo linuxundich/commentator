@@ -206,6 +206,10 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
   weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
   Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
+- Blog-Symbol und Blogname sitzen jetzt auf einer Linie. Zentriert wurde
+  zuvor nicht die Schrift, sondern ihr Kasten – und der enthält den
+  Zeilenabstand und Platz für Unterlängen, die ein Blogname oft gar nicht
+  hat. Am Gerät nachgemessen: aus 2 px Versatz wurde 1 px.
 - Das Blog-Symbol wird auch dann angezeigt, wenn der Blog kein
   WordPress-Site-Icon gesetzt hat. Viele Blogs bringen ihr Symbol im Theme
   mit und tragen es nur als `<link rel="icon">` in den Seitenkopf ein – für

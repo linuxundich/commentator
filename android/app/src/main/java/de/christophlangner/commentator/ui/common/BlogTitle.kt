@@ -5,11 +5,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -48,6 +51,19 @@ fun BlogTitle(
             text = name,
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
+            // Ohne das sitzt der Name ein wenig zu hoch: Mitzentriert wird
+            // nicht die Schrift, sondern ihr Kasten - und der reserviert
+            // unter der Grundlinie Platz für Unterlängen, die ein Blogname
+            // oft gar nicht hat, sowie den Zeilenabstand darüber und
+            // darunter. Abgeschnitten deckt sich die Mitte des Kastens fast
+            // genau mit der Mitte der Versalien.
+            style = LocalTextStyle.current.merge(
+                lineHeightStyle = LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both,
+                ),
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+            ),
         )
     }
 }
