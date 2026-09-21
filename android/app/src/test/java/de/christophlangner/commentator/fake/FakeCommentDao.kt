@@ -52,6 +52,9 @@ class FakeCommentDao : CommentDao {
             list.filter { it.instanceId == instanceId && it.parentId == parentId }.map(::withTitle)
         }
 
+    override suspend fun knownCommentIds(instanceId: String, ids: List<Long>): List<Long> =
+        stored.value.filter { it.instanceId == instanceId && it.id in ids }.map { it.id }
+
     override suspend fun upsertComments(comments: List<CommentEntity>) {
         val keys = comments.map { it.instanceId to it.id }.toSet()
         stored.value = stored.value.filterNot { (it.instanceId to it.id) in keys } + comments

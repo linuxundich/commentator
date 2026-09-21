@@ -362,10 +362,10 @@ private fun InboxContent(
     val listState = rememberLazyListState()
 
     // Nachladen, sobald das Ende der Liste in Sicht kommt.
-    val shouldLoadMore by remember(state.comments.size, state.canLoadMore) {
+    val shouldLoadMore by remember(state.entries.size, state.canLoadMore) {
         derivedStateOf {
             val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            state.canLoadMore && lastVisible >= state.comments.size - 3
+            state.canLoadMore && lastVisible >= state.entries.size - 3
         }
     }
 
@@ -411,9 +411,10 @@ private fun InboxContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            items(state.comments, key = { it.id }) { comment ->
-                SwipeableCommentCard(
-                    comment = comment,
+            items(state.entries, key = { it.comment.id }) { entry ->
+                val comment = entry.comment
+                ThreadItem(
+                    entry = entry,
                     signals = state.signals[comment.id] ?: CommentSignals(),
                     teamRole = state.team.roleOf(comment.authorId),
                     showAvatar = state.showAvatars,

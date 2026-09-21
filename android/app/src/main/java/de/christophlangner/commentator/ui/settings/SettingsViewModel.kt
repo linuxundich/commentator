@@ -117,6 +117,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setHideTeamComments(hide) }
     }
 
+    fun setThreadedInbox(threaded: Boolean) {
+        viewModelScope.launch { settingsRepository.setThreadedInbox(threaded) }
+    }
+
     fun setNotifyScope(scope: NotifyScope) {
         viewModelScope.launch { settingsRepository.setNotifyScope(scope) }
     }

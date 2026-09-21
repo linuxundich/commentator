@@ -162,6 +162,8 @@
     <string name="settings_app_icon_green">Green</string>
     <string name="settings_app_icon_blue">Blue</string>
     <string name="settings_app_icon_hint">Switching makes the launcher recreate the entry. On some devices this takes a moment, and an icon you placed yourself has to be added again.</string>
+    <string name="settings_threaded">Threaded view</string>
+    <string name="settings_threaded_description">Replies appear indented below the comment they answer, and threads with recent activity come first. Turned off, the list stays purely chronological.</string>
     <string name="settings_section_privacy">Privacy</string>
     <string name="settings_blog">Blog</string>
     <string name="settings_url">Address</string>

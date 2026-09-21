@@ -80,6 +80,10 @@ interface CommentDao {
     @Query("UPDATE comments SET status = :status WHERE instanceId = :instanceId AND id = :commentId")
     suspend fun updateStatus(instanceId: String, commentId: Long, status: String)
 
+    /** Welche der genannten IDs schon im Zwischenspeicher liegen. */
+    @Query("SELECT id FROM comments WHERE instanceId = :instanceId AND id IN (:ids)")
+    suspend fun knownCommentIds(instanceId: String, ids: List<Long>): List<Long>
+
     @Query("SELECT postId FROM comments WHERE instanceId = :instanceId GROUP BY postId")
     suspend fun distinctPostIds(instanceId: String): List<Long>
 

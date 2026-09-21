@@ -11,6 +11,8 @@ import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.repository.TeamRepository
 import de.christophlangner.commentator.domain.model.CommentSignals
+import de.christophlangner.commentator.domain.model.CommentThreads
+import de.christophlangner.commentator.domain.model.ThreadEntry
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.WordPressInstance
@@ -65,6 +67,14 @@ data class InboxUiState(
     val counts: Map<CommentFilter, Int> = emptyMap(),
     /** Nutzer-IDs des Teams; deren Kommentare werden abgesetzt dargestellt. */
     val team: Team = Team(),
+    /**
+     * Die Liste als Gespraechsfaden.
+     *
+     * Bei abgeschalteter Faedelung und waehrend der Suche steht hier
+     * dasselbe wie in [comments], nur ohne Einrueckung. Angezeigt wird
+     * [entries], nicht dieses Feld.
+     */
+    val threadEntries: List<ThreadEntry> = emptyList(),
     /** Ob das Suchfeld offen ist. Die Liste zeigt dann Treffer statt des Filters. */
     val searchActive: Boolean = false,
     val searchQuery: String = "",
@@ -75,6 +85,16 @@ data class InboxUiState(
     /** Ohne Verbindung, ohne Berechtigung oder mit ungültiger Sitzung wird nicht moderiert. */
     val moderationEnabled: Boolean
         get() = !isOffline && !sessionInvalid && instance?.canModerate == true
+
+    /**
+     * Was die Liste anzeigt.
+     *
+     * Ohne Fadenstruktur die flache Liste. Das ist zugleich der Rückfall für
+     * den entarteten Fall, dass sich aus den Bezügen kein Faden bauen lässt –
+     * dann steht lieber die chronologische Liste da als eine leere Fläche.
+     */
+    val entries: List<ThreadEntry>
+        get() = threadEntries.ifEmpty { comments.map { ThreadEntry(comment = it, depth = 0) } }
 }
 
 @HiltViewModel
@@ -173,13 +193,18 @@ class InboxViewModel @Inject constructor(
         if (instance == null) flowOf(null) else commentRepository.observeSyncState(instance.id)
     }
 
+    private val threaded = settingsRepository.settings
+        .map { it.threadedInbox }
+        .distinctUntilChanged()
+
     private val environment = combine(
         connectivity.isOnline,
         authRepository.observeSessionInvalid(),
         settingsRepository.settings.map { it.showAvatars }.distinctUntilChanged(),
         syncState,
-    ) { isOnline, sessionInvalid, showAvatars, sync ->
-        Environment(isOnline, sessionInvalid, showAvatars, sync?.lastSuccessfulSync)
+        threaded,
+    ) { isOnline, sessionInvalid, showAvatars, sync, threaded ->
+        Environment(isOnline, sessionInvalid, showAvatars, sync?.lastSuccessfulSync, threaded)
     }
 
     private data class Environment(
@@ -187,7 +212,34 @@ class InboxViewModel @Inject constructor(
         val sessionInvalid: Boolean,
         val showAvatars: Boolean,
         val lastSync: Instant?,
+        val threaded: Boolean,
     )
+
+    /**
+     * Die Kommentare, auf die sich die geladenen Antworten beziehen.
+     *
+     * Sie gehoeren nicht zum Filter - beim Filter "Offen" ist der Kommentar
+     * davor meist laengst genehmigt. Das Repository holt sie beim
+     * Aktualisieren nach; hier werden sie nur aus dem Zwischenspeicher
+     * gelesen.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val threadContext = combine(
+        instance,
+        comments.map { liste ->
+            val eigene = liste.mapTo(mutableSetOf()) { it.id }
+            liste.mapNotNull { it.parentId.takeIf { id -> id != 0L && id !in eigene } }
+                .distinct()
+                .sorted()
+        }.distinctUntilChanged(),
+        ::Pair,
+    ).flatMapLatest { (instance, bezuege) ->
+        if (instance == null || bezuege.isEmpty()) {
+            flowOf(emptyList())
+        } else {
+            commentRepository.observeCommentsByIds(instance.id, bezuege)
+        }
+    }
 
     private data class Zwischenstand(
         val instance: WordPressInstance?,
@@ -200,7 +252,8 @@ class InboxViewModel @Inject constructor(
     val state: StateFlow<InboxUiState> = combine(
         combine(instance, filter, comments, transient, environment, ::Zwischenstand),
         suche,
-    ) { stand, suche ->
+        threadContext,
+    ) { stand, suche, bezuege ->
         val instance = stand.instance
         val filter = stand.filter
         val comments = stand.comments
@@ -224,6 +277,14 @@ class InboxViewModel @Inject constructor(
             lastSync = environment.lastSync,
             error = transient.error,
             showAvatars = environment.showAvatars,
+            threadEntries = eintraege(
+                comments = comments,
+                context = bezuege,
+                // Waehrend der Suche nicht: Eine Trefferliste ist die Antwort
+                // auf eine Frage. Fremde Kommentare als Zusammenhang
+                // dazwischenzuschieben stuende gegen das Gesuchte.
+                threaded = environment.threaded && !suche.aktiv,
+            ),
             signals = signalsFor(comments),
             counts = transient.counts,
             team = transient.team,
@@ -428,6 +489,22 @@ class InboxViewModel @Inject constructor(
         if (outcome is Outcome.Success) {
             transient.update { it.copy(team = outcome.value) }
         }
+    }
+
+    /**
+     * Die Liste, wie sie angezeigt wird.
+     *
+     * Ohne Faedelung bleibt es bei der chronologischen Reihenfolge, nur in
+     * derselben Form - so muss die Oberflaeche nicht zwei Faelle kennen.
+     */
+    private fun eintraege(
+        comments: List<Comment>,
+        context: List<Comment>,
+        threaded: Boolean,
+    ): List<ThreadEntry> = if (threaded) {
+        CommentThreads.build(comments, context)
+    } else {
+        comments.map { ThreadEntry(comment = it, depth = 0) }
     }
 
     private fun signalsFor(comments: List<Comment>): Map<Long, CommentSignals> {

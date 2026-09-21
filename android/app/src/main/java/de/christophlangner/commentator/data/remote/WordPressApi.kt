@@ -61,6 +61,15 @@ interface WordPressApi {
          * Filterleiste.
          */
         @Query("author_exclude") authorExclude: String? = null,
+        /**
+         * Nur diese IDs, kommagetrennt - wie bei `author_exclude` und aus
+         * demselben Grund keine Liste.
+         *
+         * Wird gebraucht, um die Kommentare nachzuholen, auf die geantwortet
+         * wurde: Sie haben oft einen anderen Status als der gewaehlte Filter
+         * und fehlen deshalb in der Liste.
+         */
+        @Query("include") include: String? = null,
         @Query("context") context: String = "edit",
         @Query("orderby") orderBy: String = "date_gmt",
         @Query("order") order: String = "desc",

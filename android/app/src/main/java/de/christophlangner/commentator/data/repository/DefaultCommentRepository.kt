@@ -132,6 +132,7 @@ class DefaultCommentRepository @Inject constructor(
                     paging[pageKey(instanceId, filter)] =
                         PageState(nextPage = 2, totalPages = result.value.totalPages)
                     resolvePostTitles(instanceId, api, entities)
+                    resolveThreadParents(instanceId, api, entities)
                     lastRefresh[pageKey(instanceId, filter)] = Instant.now()
                     recordSuccessfulSync(instanceId)
                     Outcome.Success(Unit)
@@ -198,6 +199,7 @@ class DefaultCommentRepository @Inject constructor(
                 val entities = result.value.body.map { CommentMapper.toEntity(it, instanceId) }
                 dao.upsertComments(entities)
                 resolvePostTitles(instanceId, api, entities)
+                resolveThreadParents(instanceId, api, entities)
                 val totalPages = result.value.totalPages
                 paging[key] = PageState(nextPage = state.nextPage + 1, totalPages = totalPages)
                 Outcome.Success(state.nextPage < totalPages)
@@ -495,6 +497,48 @@ class DefaultCommentRepository @Inject constructor(
         }
 
         if (found.isNotEmpty()) dao.upsertPostTitles(found)
+    }
+
+    /**
+     * Holt die Kommentare nach, auf die geantwortet wurde.
+     *
+     * Ohne sie bliebe der Gespraechsfaden im Filter "Offen" fast immer leer:
+     * Dort stehen die Antworten, waehrend der Kommentar davor meist laengst
+     * genehmigt ist und deshalb nicht in der Liste auftaucht.
+     *
+     * Eine Anfrage mit `status=any`, und nur fuer das, was noch fehlt. Nur
+     * eine Stufe weit - der unmittelbare Bezug. Wer den ganzen Faden sehen
+     * will, oeffnet den Kommentar.
+     */
+    private suspend fun resolveThreadParents(
+        instanceId: String,
+        api: WordPressApi,
+        entities: List<CommentEntity>,
+    ) {
+        val bezuege = entities.map { it.parentId }.toSet() - 0L - entities.map { it.id }.toSet()
+        if (bezuege.isEmpty()) return
+
+        val fehlend = bezuege - dao.knownCommentIds(instanceId, bezuege.toList()).toSet()
+        if (fehlend.isEmpty()) return
+
+        val ergebnis = executor.call {
+            api.listComments(
+                status = "any",
+                page = 1,
+                perPage = fehlend.size,
+                include = fehlend.joinToString(","),
+            )
+        }
+
+        val gefunden = ergebnis.valueOrNull?.body
+            ?.map { CommentMapper.toEntity(it, instanceId) }
+            .orEmpty()
+        if (gefunden.isEmpty()) return
+
+        // Nur einfuegen: Diese Kommentare gehoeren nicht zum Filter und
+        // duerfen dessen Liste nicht veraendern.
+        dao.upsertComments(gefunden)
+        resolvePostTitles(instanceId, api, gefunden)
     }
 
     private suspend fun postTitleOf(instanceId: String, postId: Long): String? =

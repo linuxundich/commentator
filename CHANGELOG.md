@@ -206,6 +206,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
   weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
   Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
+- Die Liste im Posteingang steht als Gesprächsfaden: Antworten stehen
+  eingerückt unter dem Kommentar, auf den sie sich beziehen, und Fäden mit
+  neuen Beiträgen stehen oben. Weil beim Filter „Offen" der Kommentar davor
+  meist längst genehmigt ist und dort gar nicht auftauchen würde, wird er
+  eigens nachgeholt und gedämpft als Zusammenhang gezeigt – ohne
+  Schaltflächen, denn er gehört nicht zum Filter. Abschaltbar in den
+  Einstellungen; dann bleibt es bei der rein chronologischen Liste. Die
+  Trefferliste einer Suche bleibt immer flach.
 - Kommentarsuche über die Kopfleiste. Gesucht wird auf dem Server über den
   `search`-Parameter der WordPress-API und innerhalb des gewählten Filters –
   die Filterleiste behält damit ihre Bedeutung. Lokal zu suchen wäre

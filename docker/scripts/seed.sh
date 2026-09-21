@@ -105,6 +105,7 @@ if [[ "$existing" -gt 2 ]]; then
 else
     create_comment() {
         local post_id="$1" author="$2" email="$3" status="$4" content="$5" date="$6"
+        local parent="${7:-0}"
         wp comment create \
             --comment_post_ID="$post_id" \
             --comment_author="$author" \
@@ -112,6 +113,7 @@ else
             --comment_content="$content" \
             --comment_date="$date" \
             --comment_approved="$status" \
+            --comment_parent="$parent" \
             --porcelain
     }
 
@@ -122,9 +124,15 @@ else
     create_comment "${POST_IDS[0]}" "Erika Beispiel" "erika@example.test" 0 \
         "Ich habe dazu noch eine Frage: Welche Distribution nutzt du inzwischen?" \
         "2026-09-19 09:42:00"
-    create_comment "${POST_IDS[1]}" "Jana Leser" "jana@example.test" 1 \
+    jana=$(create_comment "${POST_IDS[1]}" "Jana Leser" "jana@example.test" 1 \
         "Danke für den Beitrag, das deckt sich mit meinen Erfahrungen." \
-        "2026-09-18 17:05:00"
+        "2026-09-18 17:05:00")
+    # Eine offene Antwort auf einen bereits genehmigten Kommentar - der Fall,
+    # um den es beim Gespraechsfaden geht: In der Liste "Offen" steht die
+    # Antwort, der Kommentar davor fehlt dort und muss nachgeholt werden.
+    create_comment "${POST_IDS[1]}" "Pia Nachfrage" "pia@example.test" 0 \
+        "Wie meinst du das mit den Erfahrungen genau?" \
+        "2026-09-19 14:20:00" "$jana"
     create_comment "${POST_IDS[1]}" "Billiger Kredit" "spam@example.test" spam \
         "Guenstige Kredite ohne Schufa, jetzt hier klicken!" \
         "2026-09-18 03:11:00"

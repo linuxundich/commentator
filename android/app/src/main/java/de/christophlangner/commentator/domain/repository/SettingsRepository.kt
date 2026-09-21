@@ -23,6 +23,13 @@ data class AppSettings(
      * Kommentare ungefragt zu verbergen waere eine unangenehme Ueberraschung.
      */
     val hideTeamComments: Boolean,
+    /**
+     * Die Liste als Gespraechsfaden statt rein chronologisch.
+     *
+     * Voreingestellt an: Eine Antwort ohne die Frage darueber ist schwerer zu
+     * beurteilen als eine Frage ohne Antwort.
+     */
+    val threadedInbox: Boolean,
 ) {
     companion object {
         /**
@@ -42,6 +49,7 @@ data class AppSettings(
             notifyScope = NotifyScope.DEFAULT,
             teamRoles = Team.DEFAULT_ROLES,
             hideTeamComments = false,
+            threadedInbox = true,
         )
     }
 }
@@ -55,4 +63,5 @@ interface SettingsRepository {
     suspend fun setNotifyScope(scope: NotifyScope)
     suspend fun setTeamRoles(roles: Set<String>)
     suspend fun setHideTeamComments(hide: Boolean)
+    suspend fun setThreadedInbox(threaded: Boolean)
 }

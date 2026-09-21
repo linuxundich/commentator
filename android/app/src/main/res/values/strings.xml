@@ -181,6 +181,8 @@
     <string name="settings_app_icon_green">Grün</string>
     <string name="settings_app_icon_blue">Blau</string>
     <string name="settings_app_icon_hint">Beim Umschalten legt der Startbildschirm den Eintrag neu an. Auf manchen Geräten dauert das einen Moment, und ein selbst platziertes Symbol muss neu abgelegt werden.</string>
+    <string name="settings_threaded">Kommentarfaden</string>
+    <string name="settings_threaded_description">Antworten stehen eingerückt unter dem Kommentar, auf den sie sich beziehen. Fäden mit neuen Beiträgen stehen oben. Abgeschaltet bleibt es bei einer rein chronologischen Liste.</string>
     <string name="settings_section_privacy">Datenschutz</string>
     <string name="settings_blog">Blog</string>
     <string name="settings_url">Adresse</string>

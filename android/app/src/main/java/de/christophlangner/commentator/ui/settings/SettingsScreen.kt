@@ -99,6 +99,7 @@ fun SettingsScreen(
             onNotifyScope = viewModel::setNotifyScope,
             onToggleTeamRole = viewModel::toggleTeamRole,
             onHideTeamComments = viewModel::setHideTeamComments,
+            onThreadedInbox = viewModel::setThreadedInbox,
             onSyncInterval = viewModel::setSyncInterval,
             onAppIcon = viewModel::setAppIcon,
             onShowAvatars = viewModel::setShowAvatars,
@@ -168,6 +169,7 @@ internal fun SettingsContent(
     onNotifyScope: (NotifyScope) -> Unit,
     onToggleTeamRole: (String) -> Unit,
     onHideTeamComments: (Boolean) -> Unit,
+    onThreadedInbox: (Boolean) -> Unit,
     onSyncInterval: (Int) -> Unit,
     onAppIcon: (AppIcon) -> Unit,
     onShowAvatars: (Boolean) -> Unit,
@@ -332,6 +334,13 @@ internal fun SettingsContent(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+        )
+
+        SwitchRow(
+            title = stringResource(R.string.settings_threaded),
+            description = stringResource(R.string.settings_threaded_description),
+            checked = state.settings.threadedInbox,
+            onCheckedChange = onThreadedInbox,
         )
 
         HorizontalDivider()

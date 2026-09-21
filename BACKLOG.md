@@ -210,6 +210,12 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
 
 ## Weiteres
 
+- [x] **P2** Kommentarfaden statt rein chronologischer Liste
+      *Der Aufbau ist eine reine Funktion über `parentId`; die Kommentare,
+      auf die geantwortet wurde, holt das Repository mit einer Anfrage
+      (`include`, `status=any`) nach – ohne sie bliebe der Faden im Filter
+      „Offen" fast immer leer. Nur eine Stufe weit: der unmittelbare Bezug.
+      Wer den ganzen Faden sehen will, öffnet den Kommentar.*
 - [ ] **P2** Sammelmoderation mit Mehrfachauswahl
 - [x] **P1** Kommentarzahlen je Filter anzeigen - „Offen · 3" statt „Offen"
       *Anders als hier ursprünglich vermerkt hängt das nicht am Plugin: Vier

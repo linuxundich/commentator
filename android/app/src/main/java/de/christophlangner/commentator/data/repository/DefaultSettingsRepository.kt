@@ -30,6 +30,7 @@ class DefaultSettingsRepository @Inject constructor(
             notifyScope = notifyScopeOf(prefs),
             teamRoles = prefs[TEAM_ROLES] ?: Team.DEFAULT_ROLES,
             hideTeamComments = prefs[HIDE_TEAM] ?: false,
+            threadedInbox = prefs[THREADED] ?: AppSettings.DEFAULT.threadedInbox,
         )
     }
 
@@ -63,6 +64,10 @@ class DefaultSettingsRepository @Inject constructor(
         dataStore.edit { it[HIDE_TEAM] = hide }
     }
 
+    override suspend fun setThreadedInbox(threaded: Boolean) {
+        dataStore.edit { it[THREADED] = threaded }
+    }
+
     /**
      * Liest den Umfang, mit Ruecksicht auf den frueheren Schalter.
      *
@@ -84,5 +89,6 @@ class DefaultSettingsRepository @Inject constructor(
         val NOTIFY_SCOPE = stringPreferencesKey("notify_scope")
         val TEAM_ROLES = stringSetPreferencesKey("team_roles")
         val HIDE_TEAM = booleanPreferencesKey("hide_team_comments")
+        val THREADED = booleanPreferencesKey("threaded_inbox")
     }
 }

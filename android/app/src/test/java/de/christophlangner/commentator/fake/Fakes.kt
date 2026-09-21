@@ -120,6 +120,7 @@ class FakeSettingsRepository(
         notifyScope = NotifyScope.DEFAULT,
         teamRoles = Team.DEFAULT_ROLES,
         hideTeamComments = false,
+        threadedInbox = true,
     ),
 ) : SettingsRepository {
 
@@ -144,6 +145,10 @@ class FakeSettingsRepository(
 
     override suspend fun setTeamRoles(roles: Set<String>) {
         state.value = state.value.copy(teamRoles = roles)
+    }
+
+    override suspend fun setThreadedInbox(threaded: Boolean) {
+        state.value = state.value.copy(threadedInbox = threaded)
     }
 
     override suspend fun setHideTeamComments(hide: Boolean) {
