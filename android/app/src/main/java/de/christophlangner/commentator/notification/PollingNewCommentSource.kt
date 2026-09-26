@@ -12,8 +12,10 @@ import de.christophlangner.commentator.data.remote.mapper.CommentMapper
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.NotifyScope
+import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.SettingsRepository
+import de.christophlangner.commentator.domain.repository.TeamRepository
 import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.time.ZoneOffset
@@ -36,14 +38,16 @@ class PollingNewCommentSource @Inject constructor(
     private val executor: ApiExecutor,
     private val dao: CommentDao,
     private val settingsRepository: SettingsRepository,
+    private val teamRepository: TeamRepository,
 ) : NewCommentSource {
 
-    override suspend fun fetchUnnotified(instance: WordPressInstance): Outcome<List<Comment>> {
+    override suspend fun fetchUnnotified(instance: WordPressInstance): Outcome<NewComments> {
         val api = clientFactory.forInstance(instance.id, instance.siteUrl)
         // Auf Blogs, die automatisch freischalten, gibt es nie etwas mit
         // Status "offen". Dort waere eine Pruefung, die nur darauf sieht,
         // dauerhaft wirkungslos.
-        val scope = settingsRepository.settings.first().notifyScope
+        val einstellungen = settingsRepository.siteSettings(instance.id).first()
+        val scope = einstellungen.notifyScope
         val state = dao.syncState(instance.id)
         val lastNotifiedId = state?.lastNotifiedCommentId ?: 0L
         val lastNotifiedAt = state?.lastNotifiedDateEpochMillis ?: 0L
@@ -62,7 +66,7 @@ class PollingNewCommentSource @Inject constructor(
                         body.latestAnyCommentId
                     }
                     if (latest != 0L && latest <= lastNotifiedId) {
-                        return Outcome.Success(emptyList())
+                        return Outcome.Success(NewComments.NONE)
                     }
                 }
                 // Das Plugin ist optional. Fällt es aus, wird einfach die
@@ -91,7 +95,7 @@ class PollingNewCommentSource @Inject constructor(
                     .map { CommentMapper.toEntity(it, instance.id) }
                     .filter { it.id > lastNotifiedId }
 
-                if (entities.isEmpty()) return Outcome.Success(emptyList())
+                if (entities.isEmpty()) return Outcome.Success(NewComments.NONE)
 
                 // Der Cache wird mitgefüllt, damit die App nach dem Antippen
                 // der Benachrichtigung sofort etwas anzeigen kann.
@@ -103,7 +107,21 @@ class PollingNewCommentSource @Inject constructor(
                     .sortedBy { it.dateEpochMillis }
                     .map { CommentMapper.toDomain(it, null) }
 
-                Outcome.Success(fresh)
+                // Die Rollen werden erst geholt, wenn es überhaupt etwas zu
+                // beurteilen gibt: Ein Lauf ohne neue Kommentare soll keine
+                // zusätzliche Anfrage kosten.
+                val team = if (fresh.isEmpty()) {
+                    Team()
+                } else {
+                    teamRepository.team(instance.id).valueOrNull ?: Team()
+                }
+
+                val (stumm, melden) = fresh.partition { comment ->
+                    val rolle = team.roleOf(comment.authorId) ?: return@partition false
+                    !einstellungen.roleStyles.notifies(rolle.slug)
+                }
+
+                Outcome.Success(NewComments(toReport = melden, muted = stumm))
             }
         }
     }

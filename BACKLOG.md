@@ -112,21 +112,40 @@ bleibt.
 
 ## Multi-Blog
 
-Die Datenhaltung ist bereits vorbereitet: Jede Zeile trägt eine `instanceId`,
-Zugangsdaten liegen pro Instanz, und der HTTP-Client wird pro Instanz erzeugt.
-Was fehlt, ist die Oberfläche.
+Die Datenhaltung war von Anfang an darauf angelegt: Jede Zeile trägt eine
+`instanceId`, Zugangsdaten liegen pro Instanz, und der HTTP-Client wird pro
+Instanz erzeugt. Die Oberfläche ist nachgezogen.
 
-- [ ] **P2** Liste der eingerichteten Instanzen und Hinzufügen weiterer
-- [ ] **P2** Umschalter zwischen Blogs in der Kopfleiste
-- [ ] **P2** Eigene Zugangsdaten je Instanz in den Einstellungen sichtbar
-- [ ] **P2** Benachrichtigungen je Blog getrennt steuerbar
-      *Technische Frage: Je Instanz eine eigene WorkManager-Arbeit oder eine
-      gemeinsame, die alle Instanzen durchläuft. Letzteres ist sparsamer,
-      macht aber die Fehlerbehandlung je Instanz aufwendiger.*
+- [x] **P2** Liste der eingerichteten Instanzen und Hinzufügen weiterer
+- [x] **P2** Umschalter zwischen Blogs in der Kopfleiste
+      *Erscheint erst ab dem zweiten Blog. Hinzufügen liegt deshalb auch in
+      den Einstellungen, damit es mit nur einem Blog erreichbar bleibt.*
+- [x] **P2** Eigene Zugangsdaten je Instanz in den Einstellungen sichtbar
+      *Als eigener Bildschirm je Blog. Zusammen mit dem Blogunabhängigen auf
+      einem Bildschirm wäre bei jeder Zeile offen geblieben, für welchen Blog
+      sie gilt.*
+- [x] **P2** Benachrichtigungen je Blog getrennt steuerbar
+      *Entschieden für eine gemeinsame Arbeit, die alle Instanzen durchläuft:
+      Das Gerät wacht einmal auf statt n-mal. Die Fehlerbehandlung geschieht
+      dafür von Hand je Instanz – ein Blog mit abgelehnten Zugangsdaten oder
+      ohne Verbindung hält die übrigen nicht auf, und wiederholt wird der
+      Durchgang erst, nachdem alle abgearbeitet sind.*
+
+### Offen
+
 - [ ] **P3** Kombinierter Posteingang über alle Blogs
       *Technische Frage: Die Sortierung über Instanzgrenzen hinweg erfordert
       eine gemeinsame Abfrage; Paginierung je Instanz und globale Sortierung
       vertragen sich nicht ohne Weiteres.*
+- [ ] **P3** Anzahl offener Kommentare im Umschalter auch für Blogs, die noch
+      nie geladen wurden
+      *Die Zahl kommt heute aus dem Zwischenspeicher; ein ungeladener Blog
+      zeigt deshalb keine. Sie vom Server zu holen wäre eine Anfrage je Blog
+      beim Öffnen des Umschalters – mit Plugin über den Statusendpunkt
+      vertretbar, ohne Plugin nicht.*
+- [ ] **P3** Blogs in der Liste umsortieren
+      *Heute stehen sie in der Reihenfolge ihrer Einrichtung. Ab etwa vier
+      Blogs dürfte das Sortieren nach Wichtigkeit spürbar fehlen.*
 
 ---
 

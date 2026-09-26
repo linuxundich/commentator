@@ -1,15 +1,13 @@
 package de.christophlangner.commentator.ui
 
-import app.cash.turbine.test
 import androidx.test.core.app.ApplicationProvider
+import app.cash.turbine.test
 import de.christophlangner.commentator.data.system.AppIconManager
+import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.fake.FakeAuthRepository
-import de.christophlangner.commentator.fake.FakeReplyTemplateRepository
 import de.christophlangner.commentator.fake.FakeSettingsRepository
-import de.christophlangner.commentator.fake.FakeTeamRepository
 import de.christophlangner.commentator.fake.MainDispatcherRule
 import de.christophlangner.commentator.fake.testInstance
-import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.ui.settings.SettingsViewModel
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -21,6 +19,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+/**
+ * Die Einstellungen, die fuer alle Blogs gelten.
+ *
+ * Was je Blog gilt, prueft [SiteSettingsViewModelTest].
+ */
 @RunWith(RobolectricTestRunner::class)
 class SettingsViewModelTest {
 
@@ -29,7 +32,6 @@ class SettingsViewModelTest {
 
     private val auth = FakeAuthRepository(testInstance(hasBridgePlugin = true))
     private val settings = FakeSettingsRepository()
-    private val replyTemplates = FakeReplyTemplateRepository()
 
     // Der AppIconManager greift auf den PackageManager zu, deshalb Robolectric
     // statt eines Doppelgängers: Sein eigenes Verhalten prüft AppIconManagerTest.
@@ -37,29 +39,7 @@ class SettingsViewModelTest {
         auth,
         settings,
         AppIconManager(ApplicationProvider.getApplicationContext()),
-        replyTemplates,
-        FakeTeamRepository(),
     )
-
-    @Test
-    fun `nachtraeglich installiertes Bridge-Plugin wird bemerkt`() = runTest {
-        val auth = FakeAuthRepository(testInstance(hasBridgePlugin = false))
-        auth.refreshedInstance = testInstance(hasBridgePlugin = true)
-
-        val model = SettingsViewModel(
-            auth,
-            settings,
-            AppIconManager(ApplicationProvider.getApplicationContext()),
-            replyTemplates,
-        FakeTeamRepository(),
-        )
-        model.state.test {
-            advanceUntilIdle()
-            assertTrue(expectMostRecentItem().instance?.hasBridgePlugin == true)
-            cancelAndIgnoreRemainingEvents()
-        }
-        assertEquals(1, auth.capabilitiesRefreshes)
-    }
 
     @Test
     fun `Avatare sind standardmaessig aus`() {
@@ -90,27 +70,49 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `Abmelden entfernt die Instanz`() = runTest {
-        val model = viewModel()
-
-        // Der Zustand muss beobachtet werden: stateIn liefert ohne Abonnenten
-        // nur den Anfangswert - in der App sorgt die Oberfläche dafür.
-        model.state.test {
-            skipItems(1)
-            model.signOut()
-            advanceUntilIdle()
-
-            assertTrue(auth.signedOut)
-            assertTrue(expectMostRecentItem().isSignedOut)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
     fun `angebotene Intervalle beginnen bei der Untergrenze`() {
         assertEquals(
             AppSettings.MIN_SYNC_INTERVAL_MINUTES,
             viewModel().intervalOptions.first(),
         )
+    }
+
+    @Test
+    fun `alle eingerichteten Blogs stehen im Zustand, der angezeigte gekennzeichnet`() = runTest {
+        val zweiter = testInstance(id = "instance-2")
+        val auth = FakeAuthRepository(
+            instance = testInstance(id = "instance-1"),
+            instances = listOf(testInstance(id = "instance-1"), zweiter),
+        )
+        val model = SettingsViewModel(
+            auth,
+            settings,
+            AppIconManager(ApplicationProvider.getApplicationContext()),
+        )
+
+        model.state.test {
+            advanceUntilIdle()
+            val stand = expectMostRecentItem()
+            assertEquals(
+                listOf("instance-1", "instance-2"),
+                stand.instances.map { it.id },
+            )
+            assertEquals("instance-1", stand.activeInstanceId)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `dieser Bildschirm frischt keine Rechte auf`() = runTest {
+        // Das gehoert zum jeweiligen Blog und geschieht in seinen eigenen
+        // Einstellungen. Hier waere unklar, welcher Blog gemeint ist.
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(0, auth.capabilitiesRefreshes)
     }
 }

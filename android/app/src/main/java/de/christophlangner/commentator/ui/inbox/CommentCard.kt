@@ -39,10 +39,12 @@ import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.model.RoleStyle
 import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.ui.common.CommentAvatar
 import de.christophlangner.commentator.ui.common.SignalChips
 import de.christophlangner.commentator.ui.common.StatusChip
+import de.christophlangner.commentator.ui.theme.roleColors
 
 /**
  * Ein Kommentar in der Liste.
@@ -55,6 +57,7 @@ fun CommentCard(
     comment: Comment,
     signals: CommentSignals,
     teamRole: TeamRole?,
+    roleStyle: RoleStyle,
     showAvatar: Boolean,
     actionsEnabled: Boolean,
     onOpen: () -> Unit,
@@ -63,6 +66,11 @@ fun CommentCard(
     modifier: Modifier = Modifier,
 ) {
     val openLabel = stringResource(R.string.cd_open_comment, comment.authorName)
+    // Der Grundton nur, wenn die Rolle bekannt ist und ihre Farbe
+    // eingeschaltet: Sonst sieht die Karte aus wie jede andere, und die
+    // Rolle steht allein in der Marke.
+    val eingefaerbt = teamRole != null && roleStyle.colorEnabled
+    val rollenfarben = roleColors(roleStyle.accent)
 
     Card(
         modifier = modifier
@@ -72,13 +80,10 @@ fun CommentCard(
             // Beitraege des Teams heben sich durch den Grundton ab, nicht nur
             // durch eine Marke: In einer langen Liste erkennt man sie so schon
             // beim Ueberfliegen.
-            containerColor = when {
-                teamRole == null -> MaterialTheme.colorScheme.surfaceContainerLow
-                // Administratoren in Rot: Sie koennen alles aendern, eine
-                // Wortmeldung von dort wiegt schwerer als die eines
-                // Redakteurs.
-                teamRole.isAdministrator -> MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.secondaryContainer
+            containerColor = if (eingefaerbt) {
+                rollenfarben.container
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
             },
         ),
     ) {
@@ -108,6 +113,13 @@ fun CommentCard(
                             .fillMaxWidth()
                             .padding(top = 4.dp),
                     ) {
+                        // Das Gewicht liegt auf dem Datum, nicht auf einem
+                        // Zwischenraum: Sonst behaelt der Text seine volle
+                        // Breite und draengt die Marken zusammen, bis
+                        // "Genehmigt" mitten im Wort umbricht. Eingerueckt in
+                        // einem Faden und neben einer Rollenmarke ist genau
+                        // das passiert. `fill = false` laesst dem Datum
+                        // seine natuerliche Breite, solange sie reicht.
                         Text(
                             text = RelativeTime.relative(
                                 comment.date,
@@ -115,15 +127,19 @@ fun CommentCard(
                             ).toString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.semantics {
-                                contentDescription = RelativeTime.absolute(comment.date)
-                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .semantics {
+                                    contentDescription = RelativeTime.absolute(comment.date)
+                                },
                         )
 
-                        Spacer(Modifier.weight(1f))
+                        Spacer(Modifier.width(6.dp))
 
                         teamRole?.let { rolle ->
-                            TeamBadge(rolle)
+                            TeamBadge(role = rolle, style = roleStyle)
                             Spacer(Modifier.width(6.dp))
                         }
                         StatusChip(status = comment.status)
@@ -174,16 +190,19 @@ fun CommentCard(
  * ist der Text die eigentliche Information.
  */
 @Composable
-private fun TeamBadge(role: TeamRole) {
-    val hintergrund = if (role.isAdministrator) {
-        MaterialTheme.colorScheme.error
+private fun TeamBadge(role: TeamRole, style: RoleStyle) {
+    val farben = roleColors(style.accent)
+    // Ohne Farbe bleibt die Marke, nur in den Tonen der Oberflaeche: Dass ein
+    // Kommentar aus dem Team kommt, ist eine Angabe und keine Verzierung.
+    val hintergrund = if (style.colorEnabled) {
+        farben.badge
     } else {
-        MaterialTheme.colorScheme.secondary
+        MaterialTheme.colorScheme.surfaceVariant
     }
-    val vordergrund = if (role.isAdministrator) {
-        MaterialTheme.colorScheme.onError
+    val vordergrund = if (style.colorEnabled) {
+        farben.onRole
     } else {
-        MaterialTheme.colorScheme.onSecondary
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     // Gleiche Form und Innenabstaende wie das Statuskennzeichen daneben -
@@ -193,6 +212,8 @@ private fun TeamBadge(role: TeamRole) {
             text = role.name.ifBlank { stringResource(R.string.comment_from_team) },
             style = MaterialTheme.typography.labelSmall,
             color = vordergrund,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,65 +17,59 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.AppIcon
-import de.christophlangner.commentator.domain.model.NotifyScope
-import de.christophlangner.commentator.ui.common.BlogTitle
-import de.christophlangner.commentator.domain.repository.ReplyTemplate
+import de.christophlangner.commentator.domain.model.WordPressInstance
 
+/**
+ * Einstellungen, die für alle Blogs gelten.
+ *
+ * Was an einem einzelnen Blog hängt - seine Rollen, seine Vorlagen, ob er
+ * meldet - steht im [SiteSettingsScreen] dahinter. Zusammen auf einem
+ * Bildschirm wäre bei jeder Zeile zu klären, für welchen Blog sie gilt; mit
+ * drei Blogs wäre das eine Liste, in der man sucht statt einstellt.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateUp: () -> Unit,
-    onSignedOut: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenSite: (String) -> Unit,
+    onAddSite: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var showSignOutDialog by rememberSaveable { mutableStateOf(false) }
-    // null = kein Dialog offen, "" = neuer Baustein, sonst die Kennung des
-    // zu bearbeitenden.
-    var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(state.isSignedOut) {
-        if (state.isSignedOut) onSignedOut()
-    }
 
     Scaffold(
         modifier = modifier,
@@ -96,9 +91,6 @@ fun SettingsScreen(
             state = state,
             intervalOptions = viewModel.intervalOptions,
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
-            onNotifyScope = viewModel::setNotifyScope,
-            onToggleTeamRole = viewModel::toggleTeamRole,
-            onHideTeamComments = viewModel::setHideTeamComments,
             onThreadedInbox = viewModel::setThreadedInbox,
             onSyncInterval = viewModel::setSyncInterval,
             onAppIcon = viewModel::setAppIcon,
@@ -110,49 +102,10 @@ fun SettingsScreen(
                         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
                 )
             },
-            onSignOutRequest = { showSignOutDialog = true },
+            onOpenSite = onOpenSite,
+            onAddSite = onAddSite,
             onOpenAbout = onOpenAbout,
-            onAddTemplate = { editingTemplateId = "" },
-            onEditTemplate = { editingTemplateId = it.id },
-            onDeleteTemplate = viewModel::removeTemplate,
             modifier = Modifier.padding(innerPadding),
-        )
-    }
-
-    editingTemplateId?.let { id ->
-        val existing = state.templates.firstOrNull { it.id == id }
-        TemplateDialog(
-            initialText = existing?.text.orEmpty(),
-            onDismiss = { editingTemplateId = null },
-            onConfirm = { text ->
-                if (existing == null) {
-                    viewModel.addTemplate(text)
-                } else {
-                    viewModel.updateTemplate(existing.id, text)
-                }
-                editingTemplateId = null
-            },
-        )
-    }
-
-    if (showSignOutDialog) {
-        AlertDialog(
-            onDismissRequest = { showSignOutDialog = false },
-            title = { Text(stringResource(R.string.dialog_sign_out_title)) },
-            text = { Text(stringResource(R.string.dialog_sign_out_message)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showSignOutDialog = false
-                    viewModel.signOut()
-                }) {
-                    Text(stringResource(R.string.action_sign_out))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSignOutDialog = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
         )
     }
 }
@@ -166,20 +119,15 @@ internal fun SettingsContent(
     state: SettingsUiState,
     intervalOptions: List<Int>,
     onNotificationsEnabled: (Boolean) -> Unit,
-    onNotifyScope: (NotifyScope) -> Unit,
-    onToggleTeamRole: (String) -> Unit,
-    onHideTeamComments: (Boolean) -> Unit,
     onThreadedInbox: (Boolean) -> Unit,
     onSyncInterval: (Int) -> Unit,
     onAppIcon: (AppIcon) -> Unit,
     onShowAvatars: (Boolean) -> Unit,
     onShowAuthorEmail: (Boolean) -> Unit,
     onOpenSystemNotifications: () -> Unit,
-    onSignOutRequest: () -> Unit,
+    onOpenSite: (String) -> Unit,
+    onAddSite: () -> Unit,
     onOpenAbout: () -> Unit,
-    onAddTemplate: () -> Unit,
-    onEditTemplate: (ReplyTemplate) -> Unit,
-    onDeleteTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -187,44 +135,29 @@ internal fun SettingsContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        SectionTitle(stringResource(R.string.settings_section_account))
-        state.instance?.let { instance ->
-            // Beschriftung ueber dem Wert wie in den Zeilen darunter. Zuvor
-            // stand sie links in einer festen Spalte von 96 dp - bei grosser
-            // Schrift zu schmal, und zu den folgenden Zeilen passte es ohnehin
-            // nicht.
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_blog),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                BlogTitle(
-                    name = instance.displayName,
-                    iconUrl = instance.displayIconUrl,
-                    iconSize = 24.dp,
-                )
-            }
-            InfoRow(stringResource(R.string.settings_url), instance.siteUrl)
-            InfoRow(stringResource(R.string.settings_user), instance.username)
-            InfoRow(
-                stringResource(R.string.settings_plugin),
-                stringResource(
-                    if (instance.hasBridgePlugin) {
-                        R.string.settings_plugin_detected
-                    } else {
-                        R.string.settings_plugin_missing
-                    },
-                ),
+        SectionTitle(stringResource(R.string.settings_section_sites))
+
+        state.instances.forEach { instance ->
+            SiteEntry(
+                instance = instance,
+                isActive = instance.id == state.activeInstanceId,
+                onClick = { onOpenSite(instance.id) },
             )
-            if (!instance.canModerate) {
-                Text(
-                    text = stringResource(R.string.settings_no_moderation_rights),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onAddSite)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text = stringResource(R.string.sites_add),
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
 
         HorizontalDivider()
@@ -237,32 +170,13 @@ internal fun SettingsContent(
             onCheckedChange = onNotificationsEnabled,
         )
 
+        // Dass der Umfang je Blog eingestellt wird, muss hier stehen: Sonst
+        // sucht man ihn unter dem Hauptschalter, wo er früher war.
         Text(
-            text = stringResource(R.string.settings_scope),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            NotifyScope.entries.forEach { scope ->
-                FilterChip(
-                    selected = state.settings.notifyScope == scope,
-                    onClick = { onNotifyScope(scope) },
-                    enabled = state.settings.notificationsEnabled,
-                    label = { Text(stringResource(scope.labelRes())) },
-                )
-            }
-        }
-        Text(
-            text = stringResource(R.string.settings_scope_description),
+            text = stringResource(R.string.settings_notifications_per_site_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
         Text(
@@ -290,6 +204,13 @@ internal fun SettingsContent(
                 )
             }
         }
+        // Der Takt gilt für den Durchgang über alle Blogs, nicht je Blog.
+        Text(
+            text = stringResource(R.string.settings_interval_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
 
         TextButton(
             onClick = onOpenSystemNotifications,
@@ -344,90 +265,6 @@ internal fun SettingsContent(
         )
 
         HorizontalDivider()
-        SectionTitle(stringResource(R.string.settings_team))
-
-        Text(
-            text = stringResource(R.string.settings_team_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-
-        if (state.availableRoles.isEmpty()) {
-            Text(
-                text = stringResource(R.string.settings_team_needs_plugin),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
-        } else {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                state.availableRoles.forEach { role ->
-                    FilterChip(
-                        selected = role.slug in state.settings.teamRoles,
-                        onClick = { onToggleTeamRole(role.slug) },
-                        label = { Text(role.name) },
-                    )
-                }
-            }
-        }
-
-        SwitchRow(
-            title = stringResource(R.string.settings_hide_team),
-            description = stringResource(R.string.settings_hide_team_description),
-            checked = state.settings.hideTeamComments,
-            onCheckedChange = onHideTeamComments,
-        )
-
-        HorizontalDivider()
-        SectionTitle(stringResource(R.string.templates_section))
-
-        Text(
-            text = stringResource(R.string.templates_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-
-        if (state.templates.isEmpty()) {
-            Text(
-                text = stringResource(R.string.templates_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
-        } else {
-            state.templates.forEach { template ->
-                TemplateRow(
-                    template = template,
-                    onEdit = { onEditTemplate(template) },
-                    onDelete = { onDeleteTemplate(template.id) },
-                )
-            }
-        }
-
-        TextButton(
-            onClick = onAddTemplate,
-            enabled = state.canAddTemplate,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(stringResource(R.string.templates_add))
-        }
-        if (!state.canAddTemplate) {
-            Text(
-                text = stringResource(R.string.templates_full, ReplyTemplate.MAX_TEMPLATES),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-        }
-
-        HorizontalDivider()
         SectionTitle(stringResource(R.string.settings_section_privacy))
 
         SwitchRow(
@@ -450,100 +287,81 @@ internal fun SettingsContent(
         ) {
             Text(stringResource(R.string.about_open))
         }
-
-        TextButton(
-            onClick = onSignOutRequest,
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.action_sign_out),
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
     }
 }
 
+/**
+ * Ein Blog in der Liste.
+ *
+ * Name, Adresse und - beim angezeigten Blog - ein Hinweis darauf. Die Adresse
+ * gehört dazu: Zwei Blogs können denselben Namen tragen.
+ */
 @Composable
-private fun TemplateRow(
-    template: ReplyTemplate,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
+private fun SiteEntry(
+    instance: WordPressInstance,
+    isActive: Boolean,
+    onClick: () -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onEdit)
-            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Text(
-            text = template.text,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onDelete) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = stringResource(R.string.templates_delete),
+        if (instance.displayIconUrl != null) {
+            AsyncImage(
+                model = instance.displayIconUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(6.dp)),
             )
+        } else {
+            Spacer(Modifier.size(28.dp))
         }
-    }
-}
+        Spacer(Modifier.width(16.dp))
 
-/**
- * Dialog zum Anlegen und Bearbeiten.
- *
- * Derselbe Dialog fuer beides: Der Unterschied ist allein, ob ein Text
- * vorbelegt ist.
- */
-@Composable
-private fun TemplateDialog(
-    initialText: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    var text by rememberSaveable { mutableStateOf(initialText) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                stringResource(
-                    if (initialText.isEmpty()) R.string.templates_add else R.string.templates_edit,
-                ),
+                text = instance.displayName,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-        },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text(stringResource(R.string.templates_text_label)) },
-                minLines = 3,
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = instance.siteUrl.removePrefix("https://"),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(text) },
-                enabled = text.isNotBlank(),
-            ) {
-                Text(stringResource(R.string.action_save))
+            // Nur beim angezeigten Blog, und nur wenn ihm etwas fehlt: Der
+            // Hinweis auf fehlende Moderationsrechte gehört zu jedem Blog und
+            // steht deshalb auch in seinen eigenen Einstellungen.
+            if (!instance.canModerate) {
+                Text(
+                    text = stringResource(R.string.settings_no_moderation_rights_short),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    )
-}
+        }
 
-private fun NotifyScope.labelRes(): Int = when (this) {
-    NotifyScope.PENDING -> R.string.settings_scope_pending
-    NotifyScope.NEW_COMMENTS -> R.string.settings_scope_new
-    NotifyScope.EVERYTHING -> R.string.settings_scope_everything
+        if (isActive) {
+            Text(
+                text = stringResource(R.string.sites_active),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 private fun AppIcon.labelRes(): Int = when (this) {
@@ -555,53 +373,4 @@ private fun AppIcon.labelRes(): Int = when (this) {
 private fun AppIcon.swatch(): Color = when (this) {
     AppIcon.Green -> Color(0xFF3DDC84)
     AppIcon.Blue -> Color(0xFF3858E9)
-}
-
-@Composable
-private fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-    )
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(text = value, style = MaterialTheme.typography.bodyLarge)
-    }
-}
-
-@Composable
-private fun SwitchRow(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            // Die ganze Zeile schaltet, damit das Berührungsziel groß genug ist.
-            .clickable(role = Role.Switch) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(checked = checked, onCheckedChange = null)
-    }
 }

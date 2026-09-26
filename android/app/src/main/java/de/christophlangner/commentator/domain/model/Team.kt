@@ -35,16 +35,39 @@ data class Team(
 
         /** Rollenkürzel der Administratoren; sie werden eigens hervorgehoben. */
         const val ADMINISTRATOR = "administrator"
+        const val EDITOR = "editor"
+        const val AUTHOR = "author"
+        const val CONTRIBUTOR = "contributor"
+
+        /**
+         * Die Rollen, die jede WordPress-Installation mitbringt.
+         *
+         * Die tatsächlich vorhandenen meldet das Plugin. Ohne Plugin wäre die
+         * Rollenauswahl sonst leer, und es ließe sich nichts einstellen –
+         * dabei sind es auf den allermeisten Blogs genau diese vier.
+         */
+        val STANDARD_ROLES = listOf(ADMINISTRATOR, EDITOR, AUTHOR, CONTRIBUTOR)
+
+        /**
+         * Ersatzkürzel für das eigene Konto.
+         *
+         * Das eigene Konto zählt immer zum Team, seine Rolle kennt die App
+         * aber nur mit Plugin – ohne bleibt es sogar das einzige erkannte
+         * Mitglied. Ohne ein eigenes Kürzel gäbe es für die eigenen
+         * Kommentare nichts einzustellen, und gerade sie sind die häufigsten
+         * Beiträge des Teams überhaupt.
+         *
+         * Die zwei Unterstriche halten es von jedem echten Rollenkürzel fern.
+         */
+        const val SELF = "__self"
     }
 }
 
-data class TeamRole(val slug: String, val name: String) {
-    /**
-     * Ob diese Rolle die volle Verfügungsgewalt hat.
-     *
-     * Ein Kommentar aus dieser Rolle wird kräftiger ausgezeichnet: Wer
-     * moderiert, soll auf einen Blick sehen, ob eine Wortmeldung aus der
-     * Leitung kommt oder von einem Redakteur.
-     */
-    val isAdministrator: Boolean get() = slug == Team.ADMINISTRATOR
-}
+/**
+ * Eine Rolle des Blogs.
+ *
+ * Wie ein Kommentar aus ihr aussieht und ob er meldet, steht nicht hier,
+ * sondern in [RoleStyle] – das ist eine Einstellung des Benutzers und keine
+ * Eigenschaft der Rolle.
+ */
+data class TeamRole(val slug: String, val name: String)

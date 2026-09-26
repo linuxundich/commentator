@@ -9,13 +9,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,11 +45,18 @@ import de.christophlangner.commentator.ui.common.asMessage
  * Der Regelweg führt über den Autorisierungs-Flow von WordPress: Das
  * Kontokennwort wird ausschließlich im Browser eingegeben, die App erhält nur
  * ein einzeln widerrufbares Application Password.
+ *
+ * Derselbe Bildschirm richtet den ersten Blog ein und fügt einen weiteren
+ * hinzu. Unterschied ist allein [canNavigateUp]: Beim ersten gibt es kein
+ * Zurück, weil dahinter nichts liegt.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupScreen(
     onSetupComplete: () -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateUp: () -> Unit = {},
+    canNavigateUp: Boolean = false,
     viewModel: SetupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -58,7 +71,26 @@ fun SetupScreen(
         if (state.isDone) onSetupComplete()
     }
 
-    Scaffold(modifier = modifier) { innerPadding ->
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            // Nur beim Hinzufügen: Sonst stünde über der Erstinrichtung eine
+            // leere Leiste, die nichts anbietet.
+            if (canNavigateUp) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.setup_add_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateUp) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back),
+                            )
+                        }
+                    },
+                )
+            }
+        },
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -67,10 +99,13 @@ fun SetupScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = stringResource(R.string.setup_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
+            // Beim Hinzufügen steht der Titel schon in der Kopfleiste.
+            if (!canNavigateUp) {
+                Text(
+                    text = stringResource(R.string.setup_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+            }
 
             when (state.step) {
                 SetupStep.EnterUrl -> UrlStep(

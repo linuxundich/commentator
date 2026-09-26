@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -18,7 +19,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class RootViewModel @Inject constructor(
-    authRepository: AuthRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     val hasInstance: StateFlow<Boolean?> = authRepository.observeActiveInstance()
@@ -28,4 +29,15 @@ class RootViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = null,
         )
+
+    /**
+     * Wechselt zum Blog, den eine angetippte Benachrichtigung betrifft.
+     *
+     * Hier und nicht im Posteingang: Der Wechsel muss geschehen, bevor
+     * irgendein Bildschirm aufgebaut wird, sonst zeigt er kurz den vorher
+     * gewählten Blog.
+     */
+    fun setActiveInstance(instanceId: String) {
+        viewModelScope.launch { authRepository.setActiveInstance(instanceId) }
+    }
 }

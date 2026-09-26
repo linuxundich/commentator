@@ -25,19 +25,23 @@ data class ReplyTemplate(
 }
 
 /**
- * Wiederverwendbare Antworttexte.
+ * Wiederverwendbare Antworttexte, je Blog.
  *
  * Rein lokal: Diese Texte gehen WordPress nichts an, solange sie nicht
  * abgeschickt werden.
+ *
+ * Je Blog und nicht gemeinsam: Der Ton auf einem Fachblog ist ein anderer als
+ * auf einem Kundenprojekt, und eine Liste aus allen Bausteinen aller Blogs
+ * waere gerade dort im Weg, wo es schnell gehen soll.
  */
 interface ReplyTemplateRepository {
 
-    val templates: Flow<List<ReplyTemplate>>
+    fun templates(instanceId: String): Flow<List<ReplyTemplate>>
 
     /** Legt einen Baustein an und gibt ihn zurück, oder `null` bei leerem Text. */
-    suspend fun add(text: String): ReplyTemplate?
+    suspend fun add(instanceId: String, text: String): ReplyTemplate?
 
-    suspend fun update(id: String, text: String)
+    suspend fun update(instanceId: String, id: String, text: String)
 
-    suspend fun remove(id: String)
+    suspend fun remove(instanceId: String, id: String)
 }

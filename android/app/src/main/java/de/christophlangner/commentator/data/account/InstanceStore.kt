@@ -36,9 +36,8 @@ private data class StoredInstances(
 /**
  * Verwaltet die eingerichteten WordPress-Instanzen.
  *
- * Gespeichert wird bereits jetzt eine Liste, auch wenn Version 1 nur einen
- * Eintrag zulässt. Die Erweiterung auf mehrere Blogs ist damit eine reine
- * Oberflächenaufgabe und erfordert keine Datenmigration.
+ * Gespeichert wird eine Liste samt Kennung des angezeigten Blogs. Weil das
+ * von Anfang an so war, kam der Mehrfachbetrieb ohne Datenmigration aus.
  *
  * Hier stehen ausschließlich unkritische Metadaten - das Application Password
  * liegt verschlüsselt im [CredentialStore].
@@ -62,6 +61,20 @@ class InstanceStore @Inject constructor(
     }
 
     suspend fun currentActive(): WordPressInstance? = activeInstance.first()
+
+    suspend fun all(): List<WordPressInstance> = instances.first()
+
+    suspend fun byId(instanceId: String): WordPressInstance? =
+        all().firstOrNull { it.id == instanceId }
+
+    /**
+     * Der Blog unter dieser Adresse, falls er schon eingerichtet ist.
+     *
+     * Braucht die Anmeldung, um einen zweiten Eintrag für denselben Blog zu
+     * vermeiden.
+     */
+    suspend fun byUrl(siteUrl: String): WordPressInstance? =
+        all().firstOrNull { it.siteUrl.equals(siteUrl, ignoreCase = true) }
 
     suspend fun upsert(instance: WordPressInstance, makeActive: Boolean = true) {
         dataStore.edit { prefs ->

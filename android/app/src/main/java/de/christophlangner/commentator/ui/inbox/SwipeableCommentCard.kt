@@ -43,6 +43,7 @@ import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.model.RoleStyle
 import de.christophlangner.commentator.domain.model.TeamRole
 import kotlin.math.abs
 
@@ -64,6 +65,7 @@ fun SwipeableCommentCard(
     comment: Comment,
     signals: CommentSignals,
     teamRole: TeamRole?,
+    roleStyle: RoleStyle,
     showAvatar: Boolean,
     actionsEnabled: Boolean,
     onOpen: () -> Unit,
@@ -103,6 +105,7 @@ fun SwipeableCommentCard(
             comment = comment,
             signals = signals,
             teamRole = teamRole,
+            roleStyle = roleStyle,
             showAvatar = showAvatar,
             actionsEnabled = actionsEnabled,
             onOpen = onOpen,

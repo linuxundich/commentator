@@ -126,7 +126,11 @@ class CommentDetailViewModel @Inject constructor(
         combine(
             connectivity.isOnline,
             authRepository.observeSessionInvalid(),
-            authRepository.observeActiveInstance().map { instance ->
+            // Der Blog aus der Route, nicht der angezeigte: Ein Kommentar
+            // wird immer im Zusammenhang seines eigenen Blogs beurteilt, und
+            // dessen Rechte sind hier maßgeblich.
+            authRepository.observeInstances().map { liste ->
+                val instance = liste.firstOrNull { it.id == instanceId }
                 Permissions(
                     canModerate = instance?.canModerate == true,
                     // Sperren braucht beides: den Endpunkt aus dem Plugin und
@@ -136,7 +140,7 @@ class CommentDetailViewModel @Inject constructor(
                 )
             },
             authorHistory,
-            replyTemplateRepository.templates,
+            replyTemplateRepository.templates(instanceId),
             ::Environment,
         ),
     ) { comment, replies, busy, settings, environment ->

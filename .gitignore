@@ -38,6 +38,11 @@ docker/certs/*
 *.ap_
 *.dex
 
+# Lokale Notizen und Merkzettel. Sie gehoeren zum Arbeiten an einem Stand,
+# nicht zum Stand selbst - was bleiben soll, steht in BACKLOG.md.
+todo-*.md
+notes-*.md
+
 # OS / Editor
 .DS_Store
 *.swp

@@ -7,11 +7,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -21,10 +26,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -50,6 +60,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,8 +84,9 @@ import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentSignals
+import de.christophlangner.commentator.domain.model.ThreadEntry
+import de.christophlangner.commentator.domain.model.TimelineRow
 import de.christophlangner.commentator.domain.model.ModerationAction
-import de.christophlangner.commentator.ui.common.BlogTitle
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.EmptyState
 import de.christophlangner.commentator.ui.common.ErrorState
@@ -93,6 +105,7 @@ import de.christophlangner.commentator.ui.common.SessionInvalidBanner
 fun InboxScreen(
     onOpenComment: (Comment) -> Unit,
     onOpenSettings: () -> Unit,
+    onAddSite: () -> Unit,
     onReauthenticate: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InboxViewModel = hiltViewModel(),
@@ -199,6 +212,8 @@ fun InboxScreen(
         onModerate = viewModel::moderate,
         onLoadMore = viewModel::loadMore,
         onOpenSettings = onOpenSettings,
+        onSwitchSite = viewModel::switchTo,
+        onAddSite = onAddSite,
         onReauthenticate = onReauthenticate,
         onOpenSearch = viewModel::openSearch,
         onCloseSearch = viewModel::closeSearch,
@@ -226,6 +241,8 @@ internal fun InboxScreenContent(
     onLoadMore: () -> Unit,
     onOpenSettings: () -> Unit,
     onReauthenticate: () -> Unit,
+    onSwitchSite: (String) -> Unit = {},
+    onAddSite: () -> Unit = {},
     onOpenSearch: () -> Unit = {},
     onCloseSearch: () -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
@@ -235,6 +252,25 @@ internal fun InboxScreenContent(
     // Zurueckscrollen sofort wieder - auf einer langen Liste gewinnt das eine
     // ganze Kartenhoehe an sichtbarem Inhalt.
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    var showSiteSwitcher by rememberSaveable { mutableStateOf(false) }
+
+    if (showSiteSwitcher) {
+        SiteSwitcherSheet(
+            instances = state.instances,
+            activeId = state.instance?.id,
+            pendingPerInstance = state.pendingPerInstance,
+            onSelect = { instanceId ->
+                showSiteSwitcher = false
+                onSwitchSite(instanceId)
+            },
+            onAddSite = {
+                showSiteSwitcher = false
+                onAddSite()
+            },
+            onDismiss = { showSiteSwitcher = false },
+        )
+    }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -261,10 +297,10 @@ internal fun InboxScreenContent(
                             onQueryChange = onSearchQueryChange,
                         )
                     } else {
-                        BlogTitle(
-                            name = state.instance?.displayName
-                                ?: stringResource(R.string.app_name),
-                            iconUrl = state.instance?.displayIconUrl,
+                        BlogTitleSwitcher(
+                            instance = state.instance,
+                            instanceCount = state.instances.size,
+                            onClick = { showSiteSwitcher = true },
                         )
                     }
                 },
@@ -360,12 +396,22 @@ private fun InboxContent(
     onRetry: () -> Unit,
 ) {
     val listState = rememberLazyListState()
+    // Welche zusammengefassten Gruppen aufgeklappt sind. Ueber den
+    // Zustandswechsel hinweg gemerkt, damit ein Drehen des Geraets das
+    // Aufgeklappte nicht wieder zuklappt.
+    var expandedGroups by rememberSaveable(
+        stateSaver = listSaver(
+            save = { it.toList() },
+            restore = { it.toSet() },
+        ),
+    ) { mutableStateOf(emptySet<String>()) }
 
     // Nachladen, sobald das Ende der Liste in Sicht kommt.
-    val shouldLoadMore by remember(state.entries.size, state.canLoadMore) {
+    val rows = state.rows
+    val shouldLoadMore by remember(rows.size, state.canLoadMore) {
         derivedStateOf {
             val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            state.canLoadMore && lastVisible >= state.entries.size - 3
+            state.canLoadMore && lastVisible >= rows.size - 3
         }
     }
 
@@ -411,18 +457,30 @@ private fun InboxContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            items(state.entries, key = { it.comment.id }) { entry ->
-                val comment = entry.comment
-                ThreadItem(
-                    entry = entry,
-                    signals = state.signals[comment.id] ?: CommentSignals(),
-                    teamRole = state.team.roleOf(comment.authorId),
-                    showAvatar = state.showAvatars,
-                    actionsEnabled = state.moderationEnabled,
-                    onOpen = { onOpenComment(comment) },
-                    onModerate = { action -> onModerate(comment, action) },
-                    onReply = { onOpenComment(comment) },
-                )
+            items(rows, key = { it.key }) { row ->
+                when (row) {
+                    is TimelineRow.Single -> InboxEntry(
+                        entry = row.entry,
+                        state = state,
+                        onOpenComment = onOpenComment,
+                        onModerate = onModerate,
+                    )
+
+                    is TimelineRow.TeamGroup -> TeamGroupRow(
+                        group = row,
+                        expanded = row.key in expandedGroups,
+                        onToggle = {
+                            expandedGroups = if (row.key in expandedGroups) {
+                                expandedGroups - row.key
+                            } else {
+                                expandedGroups + row.key
+                            }
+                        },
+                        state = state,
+                        onOpenComment = onOpenComment,
+                        onModerate = onModerate,
+                    )
+                }
             }
 
             if (state.isLoadingMore) {
@@ -436,6 +494,133 @@ private fun InboxContent(
                         CircularProgressIndicator()
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Ein Kommentar an seinem Platz im Faden.
+ *
+ * Eigene Funktion, weil dieselbe Zeile an zwei Stellen steht: einzeln und
+ * aufgeklappt innerhalb einer zusammengefassten Gruppe.
+ */
+@Composable
+private fun InboxEntry(
+    entry: ThreadEntry,
+    state: InboxUiState,
+    onOpenComment: (Comment) -> Unit,
+    onModerate: (Comment, ModerationAction) -> Unit,
+) {
+    val comment = entry.comment
+    val rolle = state.team.roleOf(comment.authorId)
+    ThreadItem(
+        entry = entry,
+        signals = state.signals[comment.id] ?: CommentSignals(),
+        teamRole = rolle,
+        roleStyle = state.roleStyles.of(rolle?.slug.orEmpty()),
+        showAvatar = state.showAvatars,
+        actionsEnabled = state.moderationEnabled,
+        onOpen = { onOpenComment(comment) },
+        onModerate = { action -> onModerate(comment, action) },
+        onReply = { onOpenComment(comment) },
+    )
+}
+
+/**
+ * Zusammengefasste Beitraege des Teams.
+ *
+ * Zugeklappt steht dort eine schmale Zeile mit Anzahl und Rollen - die
+ * Kommentare sind nicht weg, sie nehmen nur keinen Platz weg. Aufgeklappt
+ * stehen die Karten darunter wie sonst auch.
+ */
+@Composable
+private fun TeamGroupRow(
+    group: TimelineRow.TeamGroup,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    state: InboxUiState,
+    onOpenComment: (Comment) -> Unit,
+    onModerate: (Comment, ModerationAction) -> Unit,
+) {
+    // Das eigene Konto traegt keinen Rollennamen - es waere sonst ein
+    // Komma ohne Wort dahinter.
+    val rollen = group.roles.map { it.name }.filter { it.isNotBlank() }.joinToString(", ")
+        .ifBlank { stringResource(R.string.comment_from_team) }
+    val beschriftung = pluralStringResource(
+        R.plurals.inbox_team_group,
+        group.count,
+        group.count,
+        rollen,
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp * group.depth),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    onClickLabel = stringResource(
+                        if (expanded) {
+                            R.string.inbox_team_group_collapse
+                        } else {
+                            R.string.inbox_team_group_expand
+                        },
+                    ),
+                    onClick = onToggle,
+                ),
+        ) {
+            // 14 dp senkrecht: Mit dem 20-dp-Zeichen wird die Zeile damit
+            // 48 dp hoch und bleibt bequem zu treffen.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = beschriftung,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                // Ohne Beschriftung: Was das Antippen tut, sagt bereits die
+                // Zeile selbst - sie ist die Schaltflaeche, das Zeichen nur
+                // ihr Zeiger. Zweimal vorgelesen waere es nur im Weg.
+                Icon(
+                    imageVector = if (expanded) {
+                        Icons.Default.KeyboardArrowUp
+                    } else {
+                        Icons.Default.KeyboardArrowDown
+                    },
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        if (expanded) {
+            group.entries.forEach { entry ->
+                InboxEntry(
+                    entry = entry,
+                    state = state,
+                    onOpenComment = onOpenComment,
+                    onModerate = onModerate,
+                )
             }
         }
     }

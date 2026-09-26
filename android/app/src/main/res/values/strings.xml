@@ -3,7 +3,7 @@
   Standardsprache der App ist Deutsch; unter values-en liegt die englische
   Fassung. Alle für Benutzer sichtbaren Texte stehen hier und nicht im Code.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Commentator</string>
 
     <!-- Aktionen -->
@@ -150,7 +150,18 @@
     <string name="dialog_delete_message">Der Kommentar wird unwiderruflich entfernt und lässt sich nicht wiederherstellen.</string>
     <string name="dialog_edit_title">Kommentar bearbeiten</string>
     <string name="dialog_sign_out_title">Abmelden?</string>
-    <string name="dialog_sign_out_message">Die gespeicherten Zugangsdaten und der lokale Zwischenspeicher werden gelöscht. Das Application Password bleibt in WordPress bestehen, bis du es dort widerrufst.</string>
+    <string name="dialog_sign_out_message_site">%1$s wird aus Commentator entfernt: Zugangsdaten und lokaler Zwischenspeicher werden gelöscht. Das Application Password bleibt in WordPress bestehen, bis du es dort widerrufst. Die übrigen Blogs bleiben unberührt.</string>
+
+    <!-- Mehrere Blogs -->
+    <string name="sites_title">Blogs</string>
+    <string name="sites_add">Weiteren Blog hinzufügen</string>
+    <string name="sites_switch">Blog wechseln</string>
+    <string name="sites_active">Angezeigt</string>
+    <plurals name="sites_pending">
+        <item quantity="one">%1$d offen</item>
+        <item quantity="other">%1$d offen</item>
+    </plurals>
+    <string name="action_remove_site">Diesen Blog entfernen</string>
 
     <!-- Rückmeldungen -->
     <string name="snackbar_approved">Kommentar genehmigt</string>
@@ -163,11 +174,12 @@
 
     <!-- Einrichtung -->
     <string name="setup_title">WordPress verbinden</string>
+    <string name="setup_add_title">Blog hinzufügen</string>
     <string name="setup_url_explanation">Gib die Adresse deines Blogs ein. Commentator prüft, ob dort eine WordPress-REST-API erreichbar ist.</string>
     <string name="setup_url_label">Blog-Adresse</string>
     <string name="setup_url_https_hint">Nur HTTPS. Unverschlüsselte Verbindungen werden abgelehnt.</string>
     <string name="setup_authorize_explanation">Du wirst zu %1$s weitergeleitet und meldest dich dort in deinem Browser an. Commentator erhält danach ausschließlich ein Application Password, das du in WordPress jederzeit einzeln widerrufen kannst. Dein Kontokennwort sieht die App nie.</string>
-    <string name="setup_manual_explanation">Erzeuge in WordPress unter „Benutzer → Profil → Application Passwords" ein Passwort und trage es hier ein.</string>
+    <string name="setup_manual_explanation">Erzeuge in WordPress unter „Benutzer → Profil → Application Passwords“ ein Passwort und trage es hier ein.</string>
     <string name="setup_username_label">Benutzername</string>
     <string name="setup_app_password_label">Application Password</string>
     <string name="setup_app_password_hint">Leerzeichen dürfen enthalten sein, sie werden entfernt.</string>
@@ -175,6 +187,7 @@
     <!-- Einstellungen -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_section_account">Verbindung</string>
+    <string name="settings_section_sites">Blogs</string>
     <string name="settings_section_notifications">Benachrichtigungen</string>
     <string name="settings_section_appearance">Erscheinungsbild</string>
     <string name="settings_app_icon">App-Symbol</string>
@@ -184,7 +197,6 @@
     <string name="settings_threaded">Kommentarfaden</string>
     <string name="settings_threaded_description">Antworten stehen eingerückt unter dem Kommentar, auf den sie sich beziehen. Fäden mit neuen Beiträgen stehen oben. Abgeschaltet bleibt es bei einer rein chronologischen Liste.</string>
     <string name="settings_section_privacy">Datenschutz</string>
-    <string name="settings_blog">Blog</string>
     <string name="settings_url">Adresse</string>
     <string name="settings_user">Benutzer</string>
     <string name="settings_plugin">Plugin commentator-bridge</string>
@@ -192,18 +204,55 @@
     <string name="settings_plugin_missing">Nicht installiert – es wird die Kern-API verwendet</string>
     <string name="settings_no_moderation_rights">Dieses Konto besitzt kein Recht zum Moderieren von Kommentaren. Moderationsaktionen sind deaktiviert.</string>
     <string name="settings_notifications">Benachrichtigungen</string>
-    <string name="settings_notifications_description">Im Hintergrund auf neue Kommentare prüfen</string>
+    <string name="settings_notifications_description">Im Hintergrund auf neue Kommentare prüfen. Ausgeschaltet meldet sich kein Blog.</string>
+    <string name="settings_notifications_per_site_hint">Ob ein einzelner Blog meldet und worüber, steht in seinen Einstellungen oben unter „Blogs“.</string>
+    <string name="settings_interval_description">Gilt für den Durchgang über alle Blogs gemeinsam. Sie werden in einem Lauf geprüft, damit das Gerät nur einmal aufwacht.</string>
+    <string name="settings_site_notifications">Dieser Blog meldet</string>
+    <string name="settings_site_notifications_description">Ausgeschaltet bleibt dieser Blog still, die übrigen melden weiter.</string>
+    <string name="settings_no_moderation_rights_short">Darf nicht moderieren</string>
     <string name="settings_team">Als Team kennzeichnen</string>
-    <string name="settings_team_description">Kommentare aus diesen Rollen werden in der Liste abgesetzt dargestellt. Das eigene Konto zählt immer dazu.</string>
+    <string name="settings_team_description">Für jede Rolle einstellbar: ob sie als Team gilt, in welcher Farbe, ob ihre Kommentare in der Liste stehen und ob sie benachrichtigen. Das eigene Konto zählt immer zum Team.</string>
     <string name="settings_team_needs_plugin">Ohne das Plugin commentator-bridge lässt sich nur das eigene Konto erkennen – WordPress gibt die Rollen anderer Nutzer nur Administratoren preis.</string>
     <string name="comment_from_team">Team</string>
-    <string name="settings_hide_team">Team-Kommentare ausblenden</string>
-    <string name="settings_hide_team_description">Blendet sie aus allen Übersichten aus, einschließlich der Zahlen an den Filtern. Sie müssen in der Regel nicht moderiert werden.</string>
+    <string name="action_done">Fertig</string>
+    <string name="role_self">Eigenes Konto</string>
+    <string name="role_self_always_team">Das eigene Konto zählt immer zum Team.</string>
+    <string name="role_administrator">Administrator</string>
+    <string name="role_editor">Redakteur</string>
+    <!-- Lint liest die Vorgabesprache als Englisch; "Autor" ist deutsch. -->
+    <string name="role_author" tools:ignore="Typos">Autor</string>
+    <string name="role_contributor">Mitarbeiter</string>
+    <string name="role_summary_not_team">Gehört nicht zum Team</string>
+    <string name="role_summary_visible">In der Liste</string>
+    <string name="role_summary_collapsed">Eingeklappt</string>
+    <string name="role_summary_no_color">ohne Farbe</string>
+    <string name="role_summary_muted">ohne Benachrichtigung</string>
+    <string name="role_is_team">Als Team führen</string>
+    <string name="role_is_team_description">Kommentare aus dieser Rolle werden als Beitrag des Teams gekennzeichnet.</string>
+    <string name="role_color">Eigene Farbe</string>
+    <string name="role_color_description">Färbt die Karte im Grundton der Rolle ein. Aus bleibt die Marke mit dem Rollennamen.</string>
+    <string name="role_timeline">In der Liste anzeigen</string>
+    <string name="role_timeline_description">Aus werden aufeinanderfolgende Beiträge zu einer Zeile zusammengefasst, die sich aufklappen lässt. Ausgeblendet wird nichts.</string>
+    <string name="role_notify">Benachrichtigen</string>
+    <string name="role_notify_description">Neue Kommentare aus dieser Rolle melden sich auf dem Gerät.</string>
+    <string name="accent_schiefer">Schiefer</string>
+    <string name="accent_indigo">Indigo</string>
+    <string name="accent_teal">Petrol</string>
+    <string name="accent_moos">Moos</string>
+    <string name="accent_ocker">Ocker</string>
+    <string name="accent_terrakotta">Terrakotta</string>
+    <string name="accent_pflaume">Pflaume</string>
+    <plurals name="inbox_team_group">
+        <item quantity="one">%1$d Beitrag aus dem Team · %2$s</item>
+        <item quantity="other">%1$d Beiträge aus dem Team · %2$s</item>
+    </plurals>
+    <string name="inbox_team_group_expand">Beiträge des Teams aufklappen</string>
+    <string name="inbox_team_group_collapse">Beiträge des Teams einklappen</string>
     <string name="settings_scope">Benachrichtigen über</string>
     <string name="settings_scope_pending">Nur Moderation</string>
     <string name="settings_scope_new">Neue Kommentare</string>
     <string name="settings_scope_everything">Auch Spam</string>
-    <string name="settings_scope_description">„Neue Kommentare" lässt aus, was ein Spamfilter bereits aussortiert hat. Mit „Auch Spam" bemerkst du Fehleinstufungen früh – dafür meldet sich die App deutlich häufiger.</string>
+    <string name="settings_scope_description">„Neue Kommentare“ lässt aus, was ein Spamfilter bereits aussortiert hat. Mit „Auch Spam“ bemerkst du Fehleinstufungen früh – dafür meldet sich die App deutlich häufiger.</string>
     <string name="settings_interval">Prüfintervall</string>
     <string name="settings_minutes">%1$d min</string>
     <string name="settings_open_system_notifications">Systemeinstellungen für Benachrichtigungen öffnen</string>

@@ -192,11 +192,27 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   beim nächsten Lauf käme ein Schwall über alle vorhandenen Kommentare.
 
 - Kommentare aus dem eigenen Team werden abgesetzt dargestellt, nach Rolle
-  unterschieden: Administratoren in Rot, übrige Rollen in einem eigenen Ton.
-  Die Marke nennt die Rolle beim Namen – der Unterschied hängt damit nicht
-  allein an der Farbe. Welche Rollen dazuzählen, ist in den Einstellungen
-  wählbar; voreingestellt sind Administrator und Redakteur. Das eigene Konto
-  zählt immer dazu.
+  unterschieden. Jede Rolle hat einen eigenen Farbton aus einer abgestimmten
+  Auswahl – alle bewusst blass, damit eine Wortmeldung der eigenen Redaktion
+  nicht nach Warnung aussieht. Die Marke nennt die Rolle beim Namen, der
+  Unterschied hängt damit nicht allein an der Farbe. Welche Rollen als Team
+  zählen, ist in den Einstellungen wählbar; voreingestellt sind Administrator
+  und Redakteur. Das eigene Konto zählt immer dazu.
+- Ein Einstellungsdialog je Rolle: ob sie als Team gilt, welchen Farbton sie
+  bekommt und ob sie überhaupt eingefärbt wird, ob ihre Kommentare einzeln in
+  der Liste stehen und ob sie auf dem Gerät benachrichtigen. Die vier
+  Standardrollen – Administrator, Redakteur, Autor, Mitarbeiter – stehen auch
+  ohne das Bridge-Plugin zur Auswahl.
+- Rollen, die nicht einzeln in der Liste stehen sollen, werden dort
+  eingeklappt statt ausgeblendet: Aufeinanderfolgende Beiträge stehen als eine
+  Zeile da, die Anzahl und Rollen nennt und sich antippen lässt. Dass es
+  Wortmeldungen aus dem Team gab, bleibt damit sichtbar – ganz zu verschwinden
+  wäre schlechter als jede Filterung, man wüsste nicht einmal, dass etwas
+  fehlt. Der Kommentar, auf den eine Antwort sich bezieht, bleibt immer
+  sichtbar; eingeklappt fehlte genau der Bezug, dessentwegen er geladen wurde.
+- Benachrichtigungen je Rolle abschaltbar. Stummgeschaltete Kommentare werden
+  trotzdem vermerkt, sonst holte sie der Hintergrunddienst bei jedem Lauf
+  erneut vom Blog.
 - Wischgesten in der Liste: nach rechts genehmigen, nach links als Spam
   markieren. Beides ist rücknehmbar, und die Schaltflächen auf der Karte
   bleiben erhalten – eine Geste ist nie der einzige Weg zu einer Aktion.
@@ -234,6 +250,47 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   wäre jeder Tastendruck eine eigene Anfrage. Die Treffer kommen wie die
   Liste aus dem Zwischenspeicher, deshalb wirkt eine Moderation auch in der
   Trefferliste sofort.
+- Mehrere Blogs in einer App. Die Datenhaltung war darauf von Anfang an
+  angelegt – jede Zeile trägt eine `instanceId`, Zugangsdaten liegen je Blog,
+  der HTTP-Client wird je Blog erzeugt –, deshalb kam die Erweiterung ohne
+  Datenmigration aus.
+  - Umschalter in der Kopfleiste des Posteingangs. Er erscheint erst ab dem
+    zweiten Blog; bei einem wäre ein Pfeil über einer Liste mit einem Eintrag
+    ein Versprechen ohne Inhalt. Das Blatt nennt zu jedem Blog Symbol, Name
+    und Adresse – zwei Blogs können denselben Namen tragen, die Adresse
+    unterscheidet sie immer – und die Anzahl offener Kommentare aus dem
+    Zwischenspeicher. Ein Blog, der noch nie geladen wurde, zeigt keine Zahl
+    statt einer falschen Null.
+  - Liste aller eingerichteten Blogs in den Einstellungen, mit Weg zum
+    Hinzufügen weiterer. Dieselbe Einrichtung wie beim ersten Blog, nur mit
+    einem Zurück – beim ersten liegt dahinter nichts.
+  - Eigener Einstellungsbildschirm je Blog: Adresse, Konto, Plugin-Erkennung,
+    ob der Blog meldet und worüber, seine Rollen und Farben, seine
+    Textbausteine, und das Entfernen genau dieses Blogs. Alles zusammen auf
+    einem Bildschirm hätte bei jeder Zeile die Frage offen gelassen, für
+    welchen Blog sie gilt.
+  - Benachrichtigungen je Blog abschaltbar, mit eigenem Umfang. Ein
+    Nebenprojekt darf still bleiben, während der Hauptblog meldet. Der
+    Hauptschalter und der Prüftakt gelten weiterhin für alle.
+  - Die Hintergrundprüfung geht in einem Durchgang alle Blogs durch, statt je
+    Blog eine eigene Arbeit zu planen: Das Gerät wacht einmal auf statt n-mal.
+    Fehler werden je Blog behandelt – ein Blog mit abgelehnten Zugangsdaten
+    oder ohne Verbindung hält die Meldungen der übrigen nicht auf.
+  - Rollen, Farben und Textbausteine gelten je Blog: Die Rollen einer
+    Redaktion sind nicht die eines Kundenprojekts, und der Ton auch nicht.
+    Was vor dem Umstieg blogübergreifend eingestellt war, gilt weiter – die
+    alten Schlüssel werden gelesen, geschrieben wird von da an je Blog.
+  - Eine erneute Anmeldung bei einem bereits eingerichteten Blog aktualisiert
+    dessen Eintrag, statt einen zweiten anzulegen. Ein zweiter Eintrag würde
+    nicht nur doppelt in der Liste stehen, er würde auch jeden vorhandenen
+    Kommentar noch einmal als neu melden.
+  - Benachrichtigungen tragen den Blog als Marke neben der aus der
+    Kommentar-ID abgeleiteten Kennung. IDs sind nur innerhalb eines Blogs
+    eindeutig; ohne diese zweite Dimension hätte der Kommentar 5 des einen
+    Blogs die Meldung zum Kommentar 5 des anderen ersetzt. Bei mehreren Blogs
+    nennt die Unterzeile auch den Blog, bei einem bleibt sie, wie sie war.
+  - Eine angetippte Benachrichtigung wechselt zum betreffenden Blog. Sonst
+    stünde hinter dem geöffneten Kommentar der Posteingang eines anderen.
 - Beschriftungsspalten richten sich nach der gemessenen Textbreite statt nach
   einer festen Angabe. Bei 200 % Systemschriftgröße wurde aus „Beitrag" zuvor
   ein „Beitr / ag" – ein Umbruch mitten im Wort. Ein Test hält das für die
@@ -250,10 +307,6 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Zuvor wurde nur das Markup betrachtet – WordPress verlinkt aber nicht jede
   Adresse, und ein Kommentar mit ausgeschriebener URL blieb damit unauffällig.
   Eine verlinkte Adresse zählt weiterhin nur einmal.
-- Schalter, um Kommentare des Teams aus allen Übersichten auszublenden – sie
-  müssen in der Regel nicht moderiert werden. Der Ausschluss geschieht
-  serverseitig über `author_exclude` und wirkt deshalb auch auf die Zahlen an
-  den Filtern und auf das Nachladen weiterer Seiten.
 - Beim Erstaufbau der Liste liefen zwei Ladeanzeigen gleichzeitig: die des
   Herunterziehens und die der Liste. Statt eines Kreises im Leeren stehen
   jetzt Platzhalterkarten in der Form der späteren Inhalte; die Liste springt

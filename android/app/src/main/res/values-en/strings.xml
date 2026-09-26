@@ -134,7 +134,17 @@
     <string name="dialog_delete_message">The comment will be removed for good and cannot be restored.</string>
     <string name="dialog_edit_title">Edit comment</string>
     <string name="dialog_sign_out_title">Sign out?</string>
-    <string name="dialog_sign_out_message">Stored credentials and the local cache will be deleted. The application password stays valid in WordPress until you revoke it there.</string>
+    <string name="dialog_sign_out_message_site">%1$s will be removed from Commentator: its credentials and local cache will be deleted. The application password stays valid in WordPress until you revoke it there. Your other blogs are not affected.</string>
+
+    <string name="sites_title">Blogs</string>
+    <string name="sites_add">Add another blog</string>
+    <string name="sites_switch">Switch blog</string>
+    <string name="sites_active">Showing</string>
+    <plurals name="sites_pending">
+        <item quantity="one">%1$d pending</item>
+        <item quantity="other">%1$d pending</item>
+    </plurals>
+    <string name="action_remove_site">Remove this blog</string>
 
     <string name="snackbar_approved">Comment approved</string>
     <string name="snackbar_held">Comment set to pending</string>
@@ -145,6 +155,7 @@
     <string name="snackbar_edit_saved">Change saved</string>
 
     <string name="setup_title">Connect WordPress</string>
+    <string name="setup_add_title">Add blog</string>
     <string name="setup_url_explanation">Enter your blog address. Commentator checks whether a WordPress REST API is reachable there.</string>
     <string name="setup_url_label">Blog address</string>
     <string name="setup_url_https_hint">HTTPS only. Unencrypted connections are rejected.</string>
@@ -156,6 +167,7 @@
 
     <string name="settings_title">Settings</string>
     <string name="settings_section_account">Connection</string>
+    <string name="settings_section_sites">Blogs</string>
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_app_icon">App icon</string>
@@ -165,7 +177,6 @@
     <string name="settings_threaded">Threaded view</string>
     <string name="settings_threaded_description">Replies appear indented below the comment they answer, and threads with recent activity come first. Turned off, the list stays purely chronological.</string>
     <string name="settings_section_privacy">Privacy</string>
-    <string name="settings_blog">Blog</string>
     <string name="settings_url">Address</string>
     <string name="settings_user">User</string>
     <string name="settings_plugin">commentator-bridge plugin</string>
@@ -173,13 +184,49 @@
     <string name="settings_plugin_missing">Not installed – the core API is used</string>
     <string name="settings_no_moderation_rights">This account cannot moderate comments. Moderation actions are disabled.</string>
     <string name="settings_notifications">Notifications</string>
-    <string name="settings_notifications_description">Check for new comments in the background</string>
+    <string name="settings_notifications_description">Check for new comments in the background. Turned off, no blog notifies.</string>
+    <string name="settings_notifications_per_site_hint">Whether an individual blog notifies, and about what, is set in its own settings under “Blogs” above.</string>
+    <string name="settings_interval_description">Applies to the pass over all blogs together. They are checked in one run so the device only wakes up once.</string>
+    <string name="settings_site_notifications">This blog notifies</string>
+    <string name="settings_site_notifications_description">Turned off, this blog stays quiet while the others keep notifying.</string>
+    <string name="settings_no_moderation_rights_short">Cannot moderate</string>
     <string name="settings_team">Mark as team</string>
-    <string name="settings_team_description">Comments from these roles are set apart in the list. Your own account always counts.</string>
+    <string name="settings_team_description">Configurable per role: whether it counts as team, in which colour, whether its comments appear in the list and whether they notify. Your own account always counts as team.</string>
     <string name="settings_team_needs_plugin">Without the commentator-bridge plugin only your own account can be recognised – WordPress reveals other users\' roles to administrators only.</string>
     <string name="comment_from_team">Team</string>
-    <string name="settings_hide_team">Hide team comments</string>
-    <string name="settings_hide_team_description">Removes them from all overviews, including the counts on the filters. They rarely need moderation.</string>
+    <string name="action_done">Done</string>
+    <string name="role_self">Your own account</string>
+    <string name="role_self_always_team">Your own account always counts as team.</string>
+    <string name="role_administrator">Administrator</string>
+    <string name="role_editor">Editor</string>
+    <string name="role_author">Author</string>
+    <string name="role_contributor">Contributor</string>
+    <string name="role_summary_not_team">Not part of the team</string>
+    <string name="role_summary_visible">In the list</string>
+    <string name="role_summary_collapsed">Collapsed</string>
+    <string name="role_summary_no_color">no colour</string>
+    <string name="role_summary_muted">no notifications</string>
+    <string name="role_is_team">Treat as team</string>
+    <string name="role_is_team_description">Comments from this role are marked as coming from the team.</string>
+    <string name="role_color">Own colour</string>
+    <string name="role_color_description">Tints the card in the role\'s shade. Off, only the badge with the role name remains.</string>
+    <string name="role_timeline">Show in the list</string>
+    <string name="role_timeline_description">Off, consecutive comments are folded into a single row that can be expanded. Nothing is hidden.</string>
+    <string name="role_notify">Notify</string>
+    <string name="role_notify_description">New comments from this role are announced on the device.</string>
+    <string name="accent_schiefer">Slate</string>
+    <string name="accent_indigo">Indigo</string>
+    <string name="accent_teal">Teal</string>
+    <string name="accent_moos">Moss</string>
+    <string name="accent_ocker">Ochre</string>
+    <string name="accent_terrakotta">Terracotta</string>
+    <string name="accent_pflaume">Plum</string>
+    <plurals name="inbox_team_group">
+        <item quantity="one">%1$d comment from the team · %2$s</item>
+        <item quantity="other">%1$d comments from the team · %2$s</item>
+    </plurals>
+    <string name="inbox_team_group_expand">Expand the team\'s comments</string>
+    <string name="inbox_team_group_collapse">Collapse the team\'s comments</string>
     <string name="settings_scope">Notify about</string>
     <string name="settings_scope_pending">Moderation only</string>
     <string name="settings_scope_new">New comments</string>

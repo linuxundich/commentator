@@ -3,16 +3,16 @@
 Eine native Android-App zur Moderation von WordPress-Kommentaren.
 
 Commentator ist kein WordPress-Reader und kein Ersatz für das Backend. Es ist
-ein Werkzeug für genau eine Aufgabe: die täglichen Kommentare eines Blogs
-sichten, genehmigen, ablehnen, beantworten – schnell, vom Telefon aus, ohne
-den Umweg über die Weboberfläche.
+ein Werkzeug für genau eine Aufgabe: die täglichen Kommentare sichten,
+genehmigen, ablehnen, beantworten – schnell, vom Telefon aus, ohne den Umweg
+über die Weboberfläche. Auch für mehrere Blogs nebeneinander.
 
 ---
 
 ## Für wen ist das gedacht?
 
-Für Leute, die einen eigenen WordPress-Blog betreiben, dort regelmäßig
-Kommentare bekommen und diese nicht über `wp-admin` auf einem
+Für Leute, die einen oder mehrere eigene WordPress-Blogs betreiben, dort
+regelmäßig Kommentare bekommen und diese nicht über `wp-admin` auf einem
 Mobilbildschirm moderieren wollen. Die App verlangt kein Konto bei einem
 Dienst, keine App-Store-Anmeldung und keinen Server des Entwicklers – nur die
 eigene WordPress-Installation.
@@ -32,6 +32,16 @@ eigene WordPress-Installation.
 * Pull-to-Refresh und Aktualisieren über die Kopfleiste
 * Seitenweises Nachladen, auch bei Blogs mit vielen Kommentaren
 * Lokaler Zwischenspeicher: Die Liste ist sofort da, auch ohne Verbindung
+
+### Mehrere Blogs
+
+* Beliebig viele WordPress-Blogs in einer App
+* Umschalter in der Kopfleiste, ab dem zweiten Blog; nennt zu jedem Blog
+  Symbol, Name, Adresse und die Zahl der offenen Kommentare
+* Eigene Einstellungen je Blog: ob er benachrichtigt und worüber, seine Rollen
+  und Farben, seine Textbausteine
+* Ein Blog lässt sich einzeln entfernen, die übrigen bleiben unberührt
+* Eine angetippte Benachrichtigung wechselt zum betreffenden Blog
 
 ### Moderieren
 
@@ -147,17 +157,34 @@ Bietet die Installation den Autorisierungs-Flow nicht an, führt
 **Application Password manuell eingeben** zum selben Ergebnis – dann mit dem
 in Schritt 3 erzeugten Passwort.
 
-### 5. Benachrichtigungen einrichten
+### 5. Weitere Blogs hinzufügen
+
+**Einstellungen → Blogs → Weiteren Blog hinzufügen** führt durch dieselben
+Schritte. Jeder Blog braucht sein eigenes Application Password; die App legt
+für jeden eigene Zugangsdaten und einen eigenen Zwischenspeicher an.
+
+Ab dem zweiten Blog wird der Name in der Kopfleiste des Posteingangs zum
+Umschalter. Wer sich bei einem bereits eingerichteten Blog erneut anmeldet,
+tauscht dessen Zugangsdaten aus – es entsteht kein zweiter Eintrag.
+
+### 6. Benachrichtigungen einrichten
 
 Beim ersten Start fragt die App die Berechtigung für Benachrichtigungen ab
-(ab Android 13). In den App-Einstellungen lassen sich Benachrichtigungen und
-das Prüfintervall festlegen; die Feineinstellung je Kanal erfolgt in den
-Android-Systemeinstellungen, die aus der App heraus verlinkt sind.
+(ab Android 13). In den App-Einstellungen lassen sich der Hauptschalter für
+Benachrichtigungen und das Prüfintervall festlegen; die Feineinstellung je
+Kanal erfolgt in den Android-Systemeinstellungen, die aus der App heraus
+verlinkt sind.
+
+Ob ein einzelner Blog meldet und worüber, steht in seinen eigenen
+Einstellungen unter **Einstellungen → Blogs → <Blogname>**. Ein Nebenprojekt
+kann so still bleiben, während der Hauptblog meldet.
 
 Das kürzest mögliche Intervall sind 15 Minuten – das ist die Untergrenze von
-WorkManager für periodische Arbeit.
+WorkManager für periodische Arbeit. Es gilt für den Durchgang über alle Blogs
+gemeinsam: Sie werden in einem Lauf geprüft, damit das Gerät nur einmal
+aufwacht.
 
-### 6. App bauen
+### 7. App bauen
 
 ```bash
 cd android
@@ -168,7 +195,7 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk    # Pfad je nach System
 Das APK liegt danach unter
 `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-### 7. App installieren
+### 8. App installieren
 
 ```bash
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
@@ -367,10 +394,10 @@ Die wichtigsten Festlegungen:
   Offline-Fall kein Sonderfall.
 * **Die UI kennt weder DTOs noch HTTP-Codes.** Beides wird in der Datenschicht
   in Domänenmodelle und eine geschlossene Fehlerhierarchie übersetzt.
-* **Die WordPress-Instanz ist nie implizit.** Auch wenn Version 1 nur einen
-  Blog bedient, trägt jede Datenbankzeile eine `instanceId`, der HTTP-Client
-  wird pro Instanz erzeugt, und Zugangsdaten liegen pro Instanz. Ein zweiter
-  Blog ist damit eine Oberflächenaufgabe, keine Migration.
+* **Die WordPress-Instanz ist nie implizit.** Jede Datenbankzeile trägt eine
+  `instanceId`, der HTTP-Client wird pro Instanz erzeugt, und Zugangsdaten
+  liegen pro Instanz. Weil das von Anfang an so war, kam der Mehrfachbetrieb
+  ohne Datenmigration aus.
 * **Die Erkennung neuer Kommentare liegt hinter einer Schnittstelle.** Heute
   gibt es eine Polling-Implementierung; eine Push-Variante ließe sich
   ergänzen, ohne Benachrichtigungen, Deep Links oder UI anzufassen.

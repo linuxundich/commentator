@@ -7,7 +7,11 @@ import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.fake.FakeCommentDao
 import de.christophlangner.commentator.domain.model.NotifyScope
+import de.christophlangner.commentator.domain.model.RoleStyles
+import de.christophlangner.commentator.domain.model.Team
+import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.fake.FakeSettingsRepository
+import de.christophlangner.commentator.fake.FakeTeamRepository
 import de.christophlangner.commentator.fake.testInstance
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -38,6 +42,7 @@ class PollingNewCommentSourceTest {
     private lateinit var source: PollingNewCommentSource
     private val dao = FakeCommentDao()
     private val settings = FakeSettingsRepository()
+    private val teamRepo = FakeTeamRepository()
     private val instance = testInstance()
 
     private val json = Json {
@@ -59,7 +64,7 @@ class PollingNewCommentSourceTest {
             .create(WordPressApi::class.java)
 
         val provider = WordPressApiProvider { _, _ -> api }
-        source = PollingNewCommentSource(provider, ApiExecutor(json), dao, settings)
+        source = PollingNewCommentSource(provider, ApiExecutor(json), dao, settings, teamRepo)
     }
 
     @After
@@ -73,7 +78,7 @@ class PollingNewCommentSourceTest {
 
         val outcome = source.fetchUnnotified(instance)
 
-        val comments = (outcome as Outcome.Success).value
+        val comments = (outcome as Outcome.Success).value.toReport
         assertEquals(listOf(11L, 12L), comments.map { it.id })
     }
 
@@ -81,12 +86,12 @@ class PollingNewCommentSourceTest {
     fun `bereits gemeldete Kommentare erscheinen nicht erneut`() = runTest {
         server.enqueue(jsonResponse(comments(listOf(11L to "2026-09-19T10:00:00"))))
         val first = (source.fetchUnnotified(instance) as Outcome.Success).value
-        source.markNotified(instance, first)
+        source.markNotified(instance, first.all)
 
         server.enqueue(jsonResponse(comments(listOf(11L to "2026-09-19T10:00:00"))))
         val second = source.fetchUnnotified(instance)
 
-        assertTrue((second as Outcome.Success).value.isEmpty())
+        assertTrue((second as Outcome.Success).value.all.isEmpty())
     }
 
     @Test
@@ -103,7 +108,7 @@ class PollingNewCommentSourceTest {
 
         val outcome = source.fetchUnnotified(instance)
 
-        assertEquals(listOf(21L), (outcome as Outcome.Success).value.map { it.id })
+        assertEquals(listOf(21L), (outcome as Outcome.Success).value.toReport.map { it.id })
     }
 
     @Test
@@ -120,7 +125,7 @@ class PollingNewCommentSourceTest {
     @Test
     fun `markNotified merkt sich die neueste Kennung`() = runTest {
         server.enqueue(jsonResponse(comments(listOf(11L to "2026-09-19T10:00:00", 15L to "2026-09-19T12:00:00"))))
-        val comments = (source.fetchUnnotified(instance) as Outcome.Success).value
+        val comments = (source.fetchUnnotified(instance) as Outcome.Success).value.all
 
         source.markNotified(instance, comments)
 
@@ -176,7 +181,10 @@ class PollingNewCommentSourceTest {
         )
 
         erwartet.forEach { (scope, status) ->
-            settings.state.value = settings.state.value.copy(notifyScope = scope)
+            settings.setSite(
+                instance.id,
+                settings.siteSettingsValue(instance.id).copy(notifyScope = scope),
+            )
             server.enqueue(jsonResponse("[]"))
 
             source.fetchUnnotified(instance)
@@ -205,7 +213,7 @@ class PollingNewCommentSourceTest {
         val outcome = source.fetchUnnotified(testInstance(hasBridgePlugin = true))
 
         // Nichts Neues laut Plugin: Es darf gar keine Kommentarabfrage folgen.
-        assertTrue((outcome as Outcome.Success).value.isEmpty())
+        assertTrue((outcome as Outcome.Success).value.all.isEmpty())
         assertEquals(1, server.requestCount)
         assertTrue(server.takeRequest().url.encodedPath.endsWith("/commentator/v1/status"))
     }
@@ -217,8 +225,53 @@ class PollingNewCommentSourceTest {
 
         val outcome = source.fetchUnnotified(testInstance(hasBridgePlugin = true))
 
-        assertEquals(listOf(11L), (outcome as Outcome.Success).value.map { it.id })
+        assertEquals(listOf(11L), (outcome as Outcome.Success).value.toReport.map { it.id })
         assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `eine stummgeschaltete Rolle wird erkannt, aber nicht gemeldet`() = runTest {
+        // Erkannt werden muss sie trotzdem: Der Hintergrunddienst vermerkt
+        // auch das Stumme, sonst holte es jeder Lauf erneut vom Blog.
+        teamRepo.team = Team(members = mapOf(7L to TeamRole("editor", "Redakteur")))
+        settings.setSite(
+            instance.id,
+            settings.siteSettingsValue(instance.id).copy(
+                roleStyles = RoleStyles.DEFAULT.with(
+                    "editor",
+                    RoleStyles.defaultFor("editor").copy(notify = false),
+                ),
+            ),
+        )
+        server.enqueue(
+            jsonResponse(
+                """[{"id":11,"post":1,"parent":0,"author":7,"author_name":"Redaktion",
+                 "date_gmt":"2026-09-19T10:00:00","content":{"rendered":"<p>Text</p>"},
+                 "status":"hold"}]""",
+            ),
+        )
+
+        val gefunden = (source.fetchUnnotified(instance) as Outcome.Success).value
+
+        assertTrue(gefunden.toReport.isEmpty())
+        assertEquals(listOf(11L), gefunden.muted.map { it.id })
+    }
+
+    @Test
+    fun `eine meldende Rolle bleibt in der Meldung`() = runTest {
+        teamRepo.team = Team(members = mapOf(7L to TeamRole("editor", "Redakteur")))
+        server.enqueue(
+            jsonResponse(
+                """[{"id":11,"post":1,"parent":0,"author":7,"author_name":"Redaktion",
+                 "date_gmt":"2026-09-19T10:00:00","content":{"rendered":"<p>Text</p>"},
+                 "status":"hold"}]""",
+            ),
+        )
+
+        val gefunden = (source.fetchUnnotified(instance) as Outcome.Success).value
+
+        assertEquals(listOf(11L), gefunden.toReport.map { it.id })
+        assertTrue(gefunden.muted.isEmpty())
     }
 
     private fun comments(entries: List<Pair<Long, String>>): String =

@@ -24,8 +24,13 @@ class DefaultTeamRepository @Inject constructor(
 ) : TeamRepository {
 
     private companion object {
-        /** Ersatzrolle, wenn die tatsaechliche nicht ermittelbar ist. */
-        val EIGENES_KONTO = TeamRole(slug = "", name = "Team")
+        /**
+         * Ersatzrolle, wenn die tatsaechliche nicht ermittelbar ist.
+         *
+         * Ohne Namen: Wie die Oberflaeche das eigene Konto benennt, ist
+         * uebersetzter Text und gehoert nicht hierher.
+         */
+        val EIGENES_KONTO = TeamRole(slug = Team.SELF, name = "")
     }
 
     /**
@@ -38,14 +43,17 @@ class DefaultTeamRepository @Inject constructor(
      */
     private val cache = ConcurrentHashMap<String, Team>()
 
-    override suspend fun invalidate() {
-        cache.clear()
+    override suspend fun invalidate(instanceId: String) {
+        cache.keys.removeAll { it.substringBefore('/') == instanceId }
     }
 
     override suspend fun team(instanceId: String): Outcome<Team> {
-        val instance = instanceStore.currentActive()?.takeIf { it.id == instanceId }
+        // Nachgesehen wird in der ganzen Liste, nicht nur beim angezeigten
+        // Blog: Die Hintergrundpruefung geht alle durch, und fuer die
+        // uebrigen gaebe es sonst nie ein Team.
+        val instance = instanceStore.byId(instanceId)
             ?: return Outcome.Failure(AppError.Unauthorized)
-        val selected = settingsRepository.settings.first().teamRoles
+        val selected = settingsRepository.siteSettings(instanceId).first().teamRoles
         val key = instanceId + "/" + selected.sorted().joinToString(",")
         cache[key]?.let { return Outcome.Success(it) }
 

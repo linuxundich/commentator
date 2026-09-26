@@ -22,9 +22,14 @@ interface NewCommentSource {
      * Kommentare, über die noch nicht benachrichtigt wurde - bereits
      * entdoppelt und in aufsteigender zeitlicher Reihenfolge.
      */
-    suspend fun fetchUnnotified(instance: WordPressInstance): Outcome<List<Comment>>
+    suspend fun fetchUnnotified(instance: WordPressInstance): Outcome<NewComments>
 
-    /** Vermerkt, dass über diese Kommentare benachrichtigt wurde. */
+    /**
+     * Vermerkt, dass diese Kommentare abgehandelt sind.
+     *
+     * Dazu gehören auch die stummgeschalteten: Was hier nicht ankommt, gilt
+     * beim nächsten Lauf erneut als neu und wird erneut geholt.
+     */
     suspend fun markNotified(instance: WordPressInstance, comments: List<Comment>)
 
     /**
@@ -40,4 +45,24 @@ interface NewCommentSource {
      * stillschweigend gebrochen hätte.
      */
     suspend fun hasBaseline(instance: WordPressInstance): Boolean
+}
+
+/**
+ * Was ein Lauf gefunden hat.
+ *
+ * Getrennt nach dem, was gemeldet wird, und dem, was der Benutzer für diese
+ * Rolle abbestellt hat. Beides wird vermerkt, gemeldet wird nur das erste:
+ * Ohne diese Trennung bliebe der Stand hinter den stummen Kommentaren
+ * stehen, und jeder Lauf holte sie erneut vom Blog.
+ */
+data class NewComments(
+    val toReport: List<Comment> = emptyList(),
+    /** Erkannt, aber auf Wunsch ohne Benachrichtigung. */
+    val muted: List<Comment> = emptyList(),
+) {
+    val all: List<Comment> get() = toReport + muted
+
+    companion object {
+        val NONE = NewComments()
+    }
 }

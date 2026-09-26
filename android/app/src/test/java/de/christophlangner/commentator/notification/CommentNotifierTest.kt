@@ -107,7 +107,7 @@ class CommentNotifierTest {
         val posted = shadowOf(manager).allNotifications.single()
         assertEquals(NotificationChannels.SYNC_STATUS, posted.channelId)
 
-        notifier.clearSessionInvalid()
+        notifier.clearSessionInvalid(instance)
         assertTrue(shadowOf(manager).allNotifications.isEmpty())
     }
 

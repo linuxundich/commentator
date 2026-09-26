@@ -15,18 +15,26 @@ data class SiteDiscovery(
 /**
  * Einrichtung und Sitzungszustand.
  *
- * Alle Methoden sind instanzbezogen formuliert, auch wenn Version 1 nur eine
- * Instanz zulässt.
+ * Alle blogbezogenen Methoden nehmen die Kennung ausdruecklich. Es gibt keine
+ * Methode, die stillschweigend auf den aktiven Blog wirkt: Die
+ * Hintergrundpruefung arbeitet auf allen, und in den Einstellungen wird ein
+ * Blog bearbeitet, der gerade nicht der aktive ist.
  */
 interface AuthRepository {
 
-    /** Die derzeit eingerichtete Instanz, oder `null` vor der Einrichtung. */
+    /** Alle eingerichteten Blogs, in der Reihenfolge ihrer Einrichtung. */
+    fun observeInstances(): Flow<List<WordPressInstance>>
+
+    /** Der Blog, den der Posteingang gerade zeigt, oder `null` vor der Einrichtung. */
     fun observeActiveInstance(): Flow<WordPressInstance?>
 
+    /** Wechselt den angezeigten Blog. Unbekannte Kennungen bleiben ohne Wirkung. */
+    suspend fun setActiveInstance(instanceId: String)
+
     /**
-     * Ob die gespeicherten Zugangsdaten zuletzt abgelehnt wurden. Ist das der
-     * Fall, sperrt die Oberfläche schreibende Aktionen und bietet eine
-     * erneute Anmeldung an.
+     * Ob die gespeicherten Zugangsdaten des aktiven Blogs zuletzt abgelehnt
+     * wurden. Ist das der Fall, sperrt die Oberfläche schreibende Aktionen und
+     * bietet eine erneute Anmeldung an.
      */
     fun observeSessionInvalid(): Flow<Boolean>
 
@@ -40,6 +48,10 @@ interface AuthRepository {
      * Schließt die Anmeldung ab: prüft die Zugangsdaten gegen
      * `users/me`, legt die Instanz an und speichert das Application Password
      * verschlüsselt.
+     *
+     * Ist die Adresse bereits eingerichtet, wird der bestehende Eintrag
+     * aktualisiert und kein zweiter angelegt - siehe die Begruendung in der
+     * Umsetzung.
      */
     suspend fun completeSignIn(
         siteUrl: String,
@@ -48,15 +60,20 @@ interface AuthRepository {
     ): Outcome<WordPressInstance>
 
     /**
-     * Bewertet neu, was der Blog kann: Bridge-Plugin, Moderationsrecht und
+     * Bewertet neu, was ein Blog kann: Bridge-Plugin, Moderationsrecht und
      * Name der Installation.
      *
      * Diese Angaben stammen sonst aus dem Moment der Anmeldung. Wird das
      * Plugin später installiert oder die Rolle geändert, bliebe die App
      * ansonsten dauerhaft beim alten Stand.
      */
-    suspend fun refreshSiteCapabilities(): Outcome<WordPressInstance>
+    suspend fun refreshSiteCapabilities(instanceId: String): Outcome<WordPressInstance>
 
-    /** Meldet ab und löscht Zugangsdaten, Schlüsselmaterial und Cache. */
-    suspend fun signOut()
+    /**
+     * Entfernt einen Blog: Zugangsdaten, Zwischenspeicher und Meldestand.
+     *
+     * Das Schlüsselmaterial im Keystore verschwindet erst mit dem letzten
+     * Blog - es wird von allen geteilt.
+     */
+    suspend fun signOut(instanceId: String)
 }

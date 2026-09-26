@@ -380,4 +380,158 @@ class InboxViewModelTest {
         // Ohne weitere Seiten darf keine Anfrage entstehen.
         assertFalse(model.state.value.isLoadingMore)
     }
+
+    // --- Mehrere Blogs ---
+
+    private fun mitZweitblog(): FakeAuthRepository = FakeAuthRepository(
+        instance = testInstance(id = "instance-1"),
+        instances = listOf(
+            testInstance(id = "instance-1"),
+            testInstance(id = "instance-2"),
+        ),
+    )
+
+    @Test
+    fun `alle Blogs stehen im Zustand, damit sich umschalten laesst`() = runTest {
+        val auth = mitZweitblog()
+        val model = InboxViewModel(
+            authRepository = auth,
+            commentRepository = comments,
+            moderateComment = ModerateCommentUseCase(comments, connectivity),
+            undoModeration = UndoModerationUseCase(comments, connectivity),
+            teamRepository = teamRepo,
+            settingsRepository = settings,
+            connectivity = connectivity,
+        )
+
+        model.state.test {
+            advanceUntilIdle()
+            assertEquals(
+                listOf("instance-1", "instance-2"),
+                expectMostRecentItem().instances.map { it.id },
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `ein Wechsel zeigt die Kommentare des anderen Blogs`() = runTest {
+        val auth = mitZweitblog()
+        comments.comments.value = listOf(
+            testComment(1, instanceId = "instance-1", status = CommentStatus.PENDING),
+            testComment(2, instanceId = "instance-2", status = CommentStatus.PENDING),
+        )
+        val model = InboxViewModel(
+            authRepository = auth,
+            commentRepository = comments,
+            moderateComment = ModerateCommentUseCase(comments, connectivity),
+            undoModeration = UndoModerationUseCase(comments, connectivity),
+            teamRepository = teamRepo,
+            settingsRepository = settings,
+            connectivity = connectivity,
+        )
+
+        model.state.test {
+            advanceUntilIdle()
+            assertEquals(listOf(1L), expectMostRecentItem().comments.map { it.id })
+
+            model.switchTo("instance-2")
+            advanceUntilIdle()
+
+            val nachher = expectMostRecentItem()
+            assertEquals("instance-2", nachher.instance?.id)
+            assertEquals(listOf(2L), nachher.comments.map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `ein Wechsel verwirft eine stehende Suche`() = runTest {
+        // Die Treffer gehoeren zum alten Blog; auf dem neuen bedeuten dieselben
+        // Kennungen etwas anderes.
+        val auth = mitZweitblog()
+        val model = InboxViewModel(
+            authRepository = auth,
+            commentRepository = comments,
+            moderateComment = ModerateCommentUseCase(comments, connectivity),
+            undoModeration = UndoModerationUseCase(comments, connectivity),
+            teamRepository = teamRepo,
+            settingsRepository = settings,
+            connectivity = connectivity,
+        )
+
+        model.state.test {
+            advanceUntilIdle()
+            model.openSearch()
+            model.setSearchQuery("Frage")
+            advanceUntilIdle()
+            assertTrue(expectMostRecentItem().searchActive)
+
+            model.switchTo("instance-2")
+            advanceUntilIdle()
+
+            val nachher = expectMostRecentItem()
+            assertFalse(nachher.searchActive)
+            assertEquals("", nachher.searchQuery)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `der Wechsel auf den schon gezeigten Blog bleibt ohne Wirkung`() = runTest {
+        val auth = mitZweitblog()
+        val model = InboxViewModel(
+            authRepository = auth,
+            commentRepository = comments,
+            moderateComment = ModerateCommentUseCase(comments, connectivity),
+            undoModeration = UndoModerationUseCase(comments, connectivity),
+            teamRepository = teamRepo,
+            settingsRepository = settings,
+            connectivity = connectivity,
+        )
+
+        model.state.test {
+            advanceUntilIdle()
+            model.openSearch()
+            model.setSearchQuery("Frage")
+            advanceUntilIdle()
+
+            model.switchTo("instance-1")
+            advanceUntilIdle()
+
+            // Die Suche darf nicht zufallen, nur weil der Umschalter den
+            // bereits gezeigten Blog meldet.
+            assertTrue(expectMostRecentItem().searchActive)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `offene Kommentare werden je Blog gezaehlt`() = runTest {
+        val auth = mitZweitblog()
+        comments.comments.value = listOf(
+            testComment(1, instanceId = "instance-1", status = CommentStatus.PENDING),
+            testComment(2, instanceId = "instance-2", status = CommentStatus.PENDING),
+            testComment(3, instanceId = "instance-2", status = CommentStatus.PENDING),
+            testComment(4, instanceId = "instance-2", status = CommentStatus.APPROVED),
+        )
+        val model = InboxViewModel(
+            authRepository = auth,
+            commentRepository = comments,
+            moderateComment = ModerateCommentUseCase(comments, connectivity),
+            undoModeration = UndoModerationUseCase(comments, connectivity),
+            teamRepository = teamRepo,
+            settingsRepository = settings,
+            connectivity = connectivity,
+        )
+
+        model.state.test {
+            advanceUntilIdle()
+            assertEquals(
+                mapOf("instance-1" to 1, "instance-2" to 2),
+                expectMostRecentItem().pendingPerInstance,
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

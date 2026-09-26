@@ -3,6 +3,7 @@ package de.christophlangner.commentator.fake
 import de.christophlangner.commentator.data.local.dao.CommentDao
 import de.christophlangner.commentator.data.local.entity.CommentEntity
 import de.christophlangner.commentator.data.local.entity.CommentWithPost
+import de.christophlangner.commentator.data.local.entity.InstanceCount
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
@@ -24,6 +25,14 @@ class FakeCommentDao : CommentDao {
             .firstOrNull { it.instanceId == entity.instanceId && it.postId == entity.postId }
             ?.title,
     )
+
+    override fun observeCountsByInstance(status: String): Flow<List<InstanceCount>> =
+        stored.map { list ->
+            list.filter { it.status == status }
+                .groupingBy { it.instanceId }
+                .eachCount()
+                .map { (instanceId, anzahl) -> InstanceCount(instanceId, anzahl) }
+        }
 
     override fun observeComments(instanceId: String, status: String?): Flow<List<CommentWithPost>> =
         stored.map { list ->

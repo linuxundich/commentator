@@ -20,6 +20,7 @@ import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.model.RoleStyles
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
 import de.christophlangner.commentator.ui.inbox.InboxScreenContent
@@ -422,4 +423,43 @@ class InboxScreenTest {
         ).assertIsDisplayed()
         composeRule.onNodeWithText("Neu anmelden").assertIsDisplayed()
     }
+
+    @Test
+    fun `eingeklappte Rollen stehen als eine Zeile mit Anzahl und Rolle da`() {
+        // Ganz zu verschwinden waere schlechter als jede Filterung - man
+        // wuesste nicht einmal, dass etwas fehlt.
+        render(teamZustand())
+
+        composeRule.onNodeWithText("2 Beiträge aus dem Team · Redakteur").assertIsDisplayed()
+        assertTrue(
+            composeRule.onAllNodesWithText("Aus der Redaktion").fetchSemanticsNodes().isEmpty(),
+        )
+        // Der Kommentar eines Gastes bleibt unangetastet.
+        composeRule.onNodeWithText("Von einem Gast").assertIsDisplayed()
+    }
+
+    @Test
+    fun `die eingeklappte Zeile laesst sich aufklappen`() {
+        render(teamZustand())
+
+        composeRule.onNodeWithText("2 Beiträge aus dem Team · Redakteur").performClick()
+
+        composeRule.onNodeWithText("Aus der Redaktion").assertIsDisplayed()
+    }
+
+    /** Zwei eingeklappte Beitraege der Redaktion, dazwischen nichts. */
+    private fun teamZustand() = InboxUiState(
+        instance = testInstance(),
+        isInitialLoad = false,
+        comments = listOf(
+            testComment(1, authorId = 2, content = "Aus der Redaktion"),
+            testComment(2, authorId = 2, content = "Auch aus der Redaktion"),
+            testComment(3, authorId = 0, content = "Von einem Gast"),
+        ),
+        team = Team(members = mapOf(2L to TeamRole("editor", "Redakteur"))),
+        roleStyles = RoleStyles.DEFAULT.with(
+            "editor",
+            RoleStyles.defaultFor("editor").copy(showInTimeline = false),
+        ),
+    )
 }

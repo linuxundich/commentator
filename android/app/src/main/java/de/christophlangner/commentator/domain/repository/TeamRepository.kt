@@ -14,6 +14,12 @@ interface TeamRepository {
 
     suspend fun team(instanceId: String): Outcome<Team>
 
-    /** Verwirft den hinterlegten Stand, etwa nach einer Aenderung der Rollen. */
-    suspend fun invalidate()
+    /**
+     * Verwirft den hinterlegten Stand eines Blogs, etwa nach einer Aenderung
+     * seiner Rollenauswahl.
+     *
+     * Nur dieser Blog: Die Auswahl gilt je Blog, und die uebrigen Staende
+     * ohne Anlass wegzuwerfen wuerde nur zusaetzliche Anfragen kosten.
+     */
+    suspend fun invalidate(instanceId: String)
 }

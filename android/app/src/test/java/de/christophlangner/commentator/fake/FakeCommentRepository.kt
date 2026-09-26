@@ -43,8 +43,18 @@ class FakeCommentRepository : CommentRepository {
 
     override fun observeComments(instanceId: String, filter: CommentFilter): Flow<List<Comment>> =
         comments.map { list ->
-            val status = filter.status ?: return@map list
-            list.filter { it.status == status }
+            // Auch nach Blog: Die Liste eines Blogs darf nicht die Kommentare
+            // eines anderen enthalten.
+            val eigene = list.filter { it.instanceId == instanceId }
+            val status = filter.status ?: return@map eigene
+            eigene.filter { it.status == status }
+        }
+
+    override fun observePendingCounts(): Flow<Map<String, Int>> =
+        comments.map { list ->
+            list.filter { it.status == CommentStatus.PENDING }
+                .groupingBy { it.instanceId }
+                .eachCount()
         }
 
     override fun observeComment(instanceId: String, commentId: Long): Flow<Comment?> =

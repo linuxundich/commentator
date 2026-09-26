@@ -37,67 +37,72 @@ class DefaultReplyTemplateRepositoryTest {
         repository = DefaultReplyTemplateRepository(dataStore)
     }
 
+    private companion object {
+        /** Die Vorlagen gelten je Blog; welcher es ist, spielt hier keine Rolle. */
+        const val BLOG = "instance-1"
+    }
+
     @Test
     fun `angelegte Bausteine bleiben in der Reihenfolge des Anlegens`() = runTest {
-        repository.add("Danke für den Hinweis.")
-        repository.add("Das schaue ich mir an.")
+        repository.add(BLOG, "Danke für den Hinweis.")
+        repository.add(BLOG, "Das schaue ich mir an.")
 
         assertEquals(
             listOf("Danke für den Hinweis.", "Das schaue ich mir an."),
-            repository.templates.first().map { it.text },
+            repository.templates(BLOG).first().map { it.text },
         )
     }
 
     @Test
     fun `leerer Text wird nicht angelegt`() = runTest {
-        assertNull(repository.add("   "))
-        assertTrue(repository.templates.first().isEmpty())
+        assertNull(repository.add(BLOG, "   "))
+        assertTrue(repository.templates(BLOG).first().isEmpty())
     }
 
     @Test
     fun `umgebende Leerzeichen werden entfernt`() = runTest {
-        repository.add("  Danke!  ")
+        repository.add(BLOG, "  Danke!  ")
 
-        assertEquals("Danke!", repository.templates.first().single().text)
+        assertEquals("Danke!", repository.templates(BLOG).first().single().text)
     }
 
     @Test
     fun `Bearbeiten behaelt die Kennung`() = runTest {
-        val created = repository.add("Erster Text")!!
+        val created = repository.add(BLOG, "Erster Text")!!
 
-        repository.update(created.id, "Geänderter Text")
+        repository.update(BLOG, created.id, "Geänderter Text")
 
-        val stored = repository.templates.first().single()
+        val stored = repository.templates(BLOG).first().single()
         assertEquals(created.id, stored.id)
         assertEquals("Geänderter Text", stored.text)
     }
 
     @Test
     fun `Bearbeiten auf leeren Text laesst den bisherigen stehen`() = runTest {
-        val created = repository.add("Erster Text")!!
+        val created = repository.add(BLOG, "Erster Text")!!
 
-        repository.update(created.id, "  ")
+        repository.update(BLOG, created.id, "  ")
 
-        assertEquals("Erster Text", repository.templates.first().single().text)
+        assertEquals("Erster Text", repository.templates(BLOG).first().single().text)
     }
 
     @Test
     fun `Loeschen entfernt genau einen Eintrag`() = runTest {
-        val first = repository.add("Eins")!!
-        repository.add("Zwei")
+        val first = repository.add(BLOG, "Eins")!!
+        repository.add(BLOG, "Zwei")
 
-        repository.remove(first.id)
+        repository.remove(BLOG, first.id)
 
-        assertEquals(listOf("Zwei"), repository.templates.first().map { it.text })
+        assertEquals(listOf("Zwei"), repository.templates(BLOG).first().map { it.text })
     }
 
     @Test
     fun `ueber der Obergrenze wird nichts mehr angelegt`() = runTest {
-        repeat(ReplyTemplate.MAX_TEMPLATES) { repository.add("Baustein $it") }
+        repeat(ReplyTemplate.MAX_TEMPLATES) { repository.add(BLOG, "Baustein $it") }
 
-        repository.add("Einer zu viel")
+        repository.add(BLOG, "Einer zu viel")
 
-        val stored = repository.templates.first()
+        val stored = repository.templates(BLOG).first()
         assertEquals(ReplyTemplate.MAX_TEMPLATES, stored.size)
         assertTrue(stored.none { it.text == "Einer zu viel" })
     }

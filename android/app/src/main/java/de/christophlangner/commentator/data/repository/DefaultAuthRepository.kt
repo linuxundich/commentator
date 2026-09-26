@@ -45,7 +45,13 @@ class DefaultAuthRepository @Inject constructor(
     private val dao: CommentDao,
 ) : AuthRepository {
 
+    override fun observeInstances(): Flow<List<WordPressInstance>> = instanceStore.instances
+
     override fun observeActiveInstance(): Flow<WordPressInstance?> = instanceStore.activeInstance
+
+    override suspend fun setActiveInstance(instanceId: String) {
+        instanceStore.setActive(instanceId)
+    }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override fun observeSessionInvalid(): Flow<Boolean> =
@@ -126,8 +132,17 @@ class DefaultAuthRepository @Inject constructor(
         val index = executor.call { api.index(WordPressClientFactory.restBaseUrl(normalized)) }
             .valueOrNull?.body
 
+        // Ist die Adresse schon eingerichtet, behaelt der Eintrag seine
+        // Kennung. Daran haengen der Zwischenspeicher und der Meldestand: Ein
+        // zweiter Eintrag fuer denselben Blog wuerde nicht nur doppelt in der
+        // Liste stehen, er wuerde auch jeden vorhandenen Kommentar noch einmal
+        // als neu melden. Eine erneute Anmeldung ist deshalb ein Wechsel der
+        // Zugangsdaten, keine zweite Einrichtung - auch dann, wenn dabei ein
+        // anderes Konto verwendet wird.
+        val bestehend = instanceStore.byUrl(normalized)
+
         val instance = WordPressInstance(
-            id = UUID.randomUUID().toString(),
+            id = bestehend?.id ?: UUID.randomUUID().toString(),
             displayName = index?.name?.ifBlank { normalized } ?: normalized,
             siteUrl = normalized,
             username = credentials.username,
@@ -146,8 +161,8 @@ class DefaultAuthRepository @Inject constructor(
         return Outcome.Success(instance)
     }
 
-    override suspend fun refreshSiteCapabilities(): Outcome<WordPressInstance> {
-        val instance = instanceStore.currentActive()
+    override suspend fun refreshSiteCapabilities(instanceId: String): Outcome<WordPressInstance> {
+        val instance = instanceStore.byId(instanceId)
             ?: return Outcome.Failure(AppError.Unauthorized)
         val api = clientFactory.forInstance(instance.id, instance.siteUrl)
 
@@ -177,7 +192,9 @@ class DefaultAuthRepository @Inject constructor(
             },
             hasBridgePlugin = root.hasBridgePlugin,
         )
-        if (updated != instance) instanceStore.upsert(updated)
+        // Ohne makeActive=false wuerde das Auffrischen eines Blogs im
+        // Hintergrund den angezeigten wechseln.
+        if (updated != instance) instanceStore.upsert(updated, makeActive = false)
         return Outcome.Success(updated)
     }
 
@@ -229,8 +246,8 @@ class DefaultAuthRepository @Inject constructor(
         return puffer.readUtf8()
     }
 
-    override suspend fun signOut() {
-        val instance = instanceStore.currentActive() ?: return
+    override suspend fun signOut(instanceId: String) {
+        val instance = instanceStore.byId(instanceId) ?: return
         credentialStore.clear(instance.id)
         instanceStore.remove(instance.id)
         clientFactory.evict(instance.id)
@@ -243,7 +260,7 @@ class DefaultAuthRepository @Inject constructor(
 
         // Der Keystore-Schlüssel wird von allen Instanzen geteilt und darf erst
         // verschwinden, wenn keine mehr eingerichtet ist.
-        if (instanceStore.currentActive() == null) {
+        if (instanceStore.all().isEmpty()) {
             credentialStore.destroyKeyMaterial()
         }
     }

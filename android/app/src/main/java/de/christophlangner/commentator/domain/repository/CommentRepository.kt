@@ -29,6 +29,14 @@ interface CommentRepository {
 
     fun observeSyncState(instanceId: String): Flow<SyncState>
 
+    /**
+     * Offene Kommentare je Blog, aus dem Zwischenspeicher.
+     *
+     * Für den Blogumschalter: Er soll zeigen, wo etwas liegt, ohne dafür jeden
+     * Blog zu befragen. Blogs ohne Eintrag fehlen in der Abbildung.
+     */
+    fun observePendingCounts(): Flow<Map<String, Int>>
+
     /** Lädt die erste Seite neu und ersetzt den Cache für diesen Filter. */
     suspend fun refresh(instanceId: String, filter: CommentFilter): Outcome<Unit>
 

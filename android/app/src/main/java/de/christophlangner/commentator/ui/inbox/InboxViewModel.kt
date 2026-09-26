@@ -15,10 +15,14 @@ import de.christophlangner.commentator.domain.model.CommentThreads
 import de.christophlangner.commentator.domain.model.ThreadEntry
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.model.RoleStyles
+import de.christophlangner.commentator.domain.model.Timeline
+import de.christophlangner.commentator.domain.model.TimelineRow
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AuthRepository
 import de.christophlangner.commentator.domain.repository.CommentRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
+import de.christophlangner.commentator.domain.repository.SiteSettings
 import de.christophlangner.commentator.domain.usecase.ModerateCommentUseCase
 import de.christophlangner.commentator.domain.usecase.UndoModerationUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,6 +54,16 @@ import javax.inject.Inject
  */
 data class InboxUiState(
     val instance: WordPressInstance? = null,
+    /** Alle eingerichteten Blogs, fuer den Umschalter in der Kopfleiste. */
+    val instances: List<WordPressInstance> = emptyList(),
+    /**
+     * Offene Kommentare je Blog aus dem Zwischenspeicher.
+     *
+     * Nur zur Orientierung im Umschalter. Ein Blog ohne Eintrag zeigt keine
+     * Zahl - besser als eine Null, die nach "nichts zu tun" aussieht, obwohl
+     * dort nur noch nichts geladen wurde.
+     */
+    val pendingPerInstance: Map<String, Int> = emptyMap(),
     val filter: CommentFilter = CommentFilter.PENDING,
     val comments: List<Comment> = emptyList(),
     val isInitialLoad: Boolean = true,
@@ -67,6 +81,8 @@ data class InboxUiState(
     val counts: Map<CommentFilter, Int> = emptyMap(),
     /** Nutzer-IDs des Teams; deren Kommentare werden abgesetzt dargestellt. */
     val team: Team = Team(),
+    /** Farbe und Sichtbarkeit je Rolle. */
+    val roleStyles: RoleStyles = RoleStyles.DEFAULT,
     /**
      * Die Liste als Gespraechsfaden.
      *
@@ -95,6 +111,14 @@ data class InboxUiState(
      */
     val entries: List<ThreadEntry>
         get() = threadEntries.ifEmpty { comments.map { ThreadEntry(comment = it, depth = 0) } }
+
+    /**
+     * Die Liste, wie sie gezeichnet wird.
+     *
+     * Eingeklappte Rollen stehen hier als eine Zeile statt als viele Karten.
+     */
+    val rows: List<TimelineRow>
+        get() = Timeline.rows(entries, team, roleStyles)
 }
 
 @HiltViewModel
@@ -193,18 +217,56 @@ class InboxViewModel @Inject constructor(
         if (instance == null) flowOf(null) else commentRepository.observeSyncState(instance.id)
     }
 
-    private val threaded = settingsRepository.settings
-        .map { it.threadedInbox }
-        .distinctUntilChanged()
+    /**
+     * Was aus den Einstellungen die Darstellung bestimmt.
+     *
+     * Gebuendelt und nicht jedes Feld als eigener Fluss: `combine` nimmt in
+     * der typisierten Fassung fuenf Quellen, und die sind belegt.
+     */
+    private data class Anzeige(
+        val showAvatars: Boolean,
+        val threaded: Boolean,
+        val roleStyles: RoleStyles,
+    )
+
+    /**
+     * Die Rolleneinstellungen des angezeigten Blogs.
+     *
+     * Jeder Blog hat seine eigenen: Ein Wechsel muss deshalb auch die Farben
+     * und das Eingeklappte mitnehmen.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val siteSettings = instance.flatMapLatest { instance ->
+        if (instance == null) {
+            flowOf(SiteSettings.DEFAULT)
+        } else {
+            settingsRepository.siteSettings(instance.id)
+        }
+    }
+
+    private val anzeige = combine(
+        settingsRepository.settings
+            .map { it.showAvatars to it.threadedInbox }
+            .distinctUntilChanged(),
+        siteSettings.map { it.roleStyles }.distinctUntilChanged(),
+    ) { (avatare, faden), roleStyles ->
+        Anzeige(showAvatars = avatare, threaded = faden, roleStyles = roleStyles)
+    }
 
     private val environment = combine(
         connectivity.isOnline,
         authRepository.observeSessionInvalid(),
-        settingsRepository.settings.map { it.showAvatars }.distinctUntilChanged(),
+        anzeige,
         syncState,
-        threaded,
-    ) { isOnline, sessionInvalid, showAvatars, sync, threaded ->
-        Environment(isOnline, sessionInvalid, showAvatars, sync?.lastSuccessfulSync, threaded)
+    ) { isOnline, sessionInvalid, anzeige, sync ->
+        Environment(
+            isOnline = isOnline,
+            sessionInvalid = sessionInvalid,
+            showAvatars = anzeige.showAvatars,
+            lastSync = sync?.lastSuccessfulSync,
+            threaded = anzeige.threaded,
+            roleStyles = anzeige.roleStyles,
+        )
     }
 
     private data class Environment(
@@ -213,6 +275,7 @@ class InboxViewModel @Inject constructor(
         val showAvatars: Boolean,
         val lastSync: Instant?,
         val threaded: Boolean,
+        val roleStyles: RoleStyles,
     )
 
     /**
@@ -241,6 +304,23 @@ class InboxViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Was der Umschalter braucht.
+     *
+     * Gebuendelt, damit `combine` im Zustand nicht ueber seine typisierten
+     * Ueberladungen hinauswaechst.
+     */
+    private data class Blogs(
+        val alle: List<WordPressInstance> = emptyList(),
+        val offen: Map<String, Int> = emptyMap(),
+    )
+
+    private val blogs = combine(
+        authRepository.observeInstances(),
+        commentRepository.observePendingCounts(),
+        ::Blogs,
+    )
+
     private data class Zwischenstand(
         val instance: WordPressInstance?,
         val filter: CommentFilter,
@@ -253,7 +333,8 @@ class InboxViewModel @Inject constructor(
         combine(instance, filter, comments, transient, environment, ::Zwischenstand),
         suche,
         threadContext,
-    ) { stand, suche, bezuege ->
+        blogs,
+    ) { stand, suche, bezuege, blogs ->
         val instance = stand.instance
         val filter = stand.filter
         val comments = stand.comments
@@ -261,6 +342,8 @@ class InboxViewModel @Inject constructor(
         val environment = stand.environment
         InboxUiState(
             instance = instance,
+            instances = blogs.alle,
+            pendingPerInstance = blogs.offen,
             filter = filter,
             comments = comments,
             isInitialLoad = !transient.initialLoadDone && comments.isEmpty(),
@@ -288,6 +371,7 @@ class InboxViewModel @Inject constructor(
             signals = signalsFor(comments),
             counts = transient.counts,
             team = transient.team,
+            roleStyles = environment.roleStyles,
             searchActive = suche.aktiv,
             searchQuery = suche.text,
             isSearching = suche.laeuft,
@@ -316,6 +400,24 @@ class InboxViewModel @Inject constructor(
                 .debounce(SUCHVERZOEGERUNG)
                 .collect { (text, _) -> sucheAusfuehren(text) }
         }
+    }
+
+    /**
+     * Wechselt den angezeigten Blog.
+     *
+     * Eine stehende Suche wird dabei verworfen: Die Treffer gehoeren zum alten
+     * Blog, und auf dem neuen bedeuten dieselben Kennungen etwas anderes.
+     * Der Filter bleibt - wer offene Kommentare sichtet, will das auf dem
+     * naechsten Blog auch.
+     */
+    fun switchTo(instanceId: String) {
+        if (instance.value?.id == instanceId) return
+        suche.value = Suche()
+        // Der neue Blog braucht seine eigenen Rechte und Zaehlungen; ohne das
+        // stuenden die des vorherigen da, bis etwas anderes sie anfasst.
+        siteDataLoaded = false
+        transient.update { it.copy(counts = emptyMap(), team = Team(), initialLoadDone = false) }
+        viewModelScope.launch { authRepository.setActiveInstance(instanceId) }
     }
 
     fun openSearch() {
@@ -421,7 +523,7 @@ class InboxViewModel @Inject constructor(
                 // nachträglich installiertes Bridge-Plugin. Ein Fehler hier darf
                 // die Liste nicht beeinflussen. Beim blossen Umschalten hat sich
                 // daran nichts geaendert, deshalb entfaellt es dort.
-                authRepository.refreshSiteCapabilities()
+                authRepository.refreshSiteCapabilities(instanceId)
             }
 
             transient.update {

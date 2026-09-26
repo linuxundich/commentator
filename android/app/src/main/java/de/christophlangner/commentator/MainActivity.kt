@@ -43,19 +43,14 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        if (isCommentDeepLink(intent)) pendingDeepLink.value = intent
+        if (DeepLinks.isScreenLink(intent.data)) pendingDeepLink.value = intent
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleAuthCallback(intent)
-        if (isCommentDeepLink(intent)) pendingDeepLink.value = intent
-    }
-
-    private fun isCommentDeepLink(intent: Intent?): Boolean {
-        val data = intent?.data ?: return false
-        return data.scheme == DeepLinks.SCHEME && data.host == "comment"
+        if (DeepLinks.isScreenLink(intent.data)) pendingDeepLink.value = intent
     }
 
     /**

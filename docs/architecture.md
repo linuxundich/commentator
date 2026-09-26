@@ -15,8 +15,9 @@ WordPress-Kommentaren – kein WordPress-Reader und kein Admin-Ersatz.
 
 Rahmenbedingungen, die die Architektur prägen:
 
-* Version 1 bedient **genau einen** Blog, die Architektur muss aber mehrere
-  WordPress-Instanzen ohne Umbau tragen.
+* Die Architektur trägt mehrere WordPress-Instanzen. Version 1 bediente nur
+  einen Blog, war aber von Anfang an darauf angelegt – der Mehrfachbetrieb kam
+  später ohne Umbau der Datenschicht.
 * Es gibt **keinen eigenen Server**. Alles, was die App kann, muss sie
   gegen die WordPress-REST-API oder lokal erledigen.
 * Datensparsamkeit und Nachvollziehbarkeit der Netzwerkverbindungen haben
@@ -153,7 +154,7 @@ de.christophlangner.commentator
 
 ## 4. Mehrere WordPress-Instanzen
 
-Auch wenn Version 1 nur einen Blog bedient, ist die Instanz nie implizit.
+Die App verwaltet mehrere Blogs. Die Instanz ist dabei nie implizit.
 
 ```kotlin
 data class WordPressInstance(
@@ -180,8 +181,43 @@ Konsequenzen, die heute schon umgesetzt sind:
 * Benachrichtigungen führen den Zustand „zuletzt gesehener Kommentar“
   pro Instanz.
 
-Was für Multi-Blog später noch fehlt, ist reine UI-Arbeit (Instanzliste,
-Umschalter, kombinierter Posteingang) – siehe `BACKLOG.md`.
+Dass diese Entscheidungen von Anfang an so fielen, hat sich ausgezahlt: Der
+Mehrfachbetrieb kam ohne Datenmigration und ohne Eingriff in die Datenschicht.
+
+Darauf aufbauend gilt:
+
+* Einstellungen sind geteilt in **blogübergreifend** (`AppSettings`:
+  Hauptschalter für Benachrichtigungen, Prüftakt, Avatare, E-Mail-Anzeige,
+  Fadenansicht) und **je Blog** (`SiteSettings`: ob dieser Blog meldet,
+  worüber, welche Rollen als Team gelten, deren Farben). Wären die Rollen
+  global, würde eine Redaktion auf einem Blog die Farben eines anderen
+  mitverstellen. Textbausteine liegen ebenfalls je Blog.
+* Blogbezogene Werte liegen in DataStore unter einem Schlüssel mit angehängter
+  Kennung. Fehlt er, greift der frühere blogübergreifende Schlüssel: Als es
+  nur einen Blog gab, galten diese Werte für ihn, und dort sollen sie bleiben.
+  Geschrieben wird immer der blogbezogene Schlüssel; der alte wird nur noch
+  gelesen. Damit brauchte auch die Einstellungsschicht keine Migration.
+* Die Hintergrundprüfung ist **eine** WorkManager-Arbeit, die alle Blogs
+  durchläuft. Das Gerät wacht einmal auf statt n-mal, und die Abfragen laufen
+  ohnehin über dieselbe Verbindung. Der Preis ist, dass die Fehlerbehandlung
+  von Hand je Blog geschieht: Ein Blog mit abgelehnten Zugangsdaten bekommt
+  seinen Hinweis und blockiert die übrigen nicht; ein netzbedingter Fehler
+  lässt den ganzen Durchgang wiederholen, aber erst, nachdem alle Blogs
+  abgearbeitet sind. Ein früher Abbruch hieße, dass ein unerreichbarer Blog
+  die Benachrichtigungen aller anderen aufhält.
+* Benachrichtigungen tragen den Blog als **Marke** (`tag`) neben der aus der
+  Kommentar-ID abgeleiteten Zahl. Kommentar-IDs sind nur innerhalb eines Blogs
+  eindeutig; die Kennung des Blogs über einen Hashwert in die Zahl zu falten
+  hätte Zusammenstöße nur unwahrscheinlicher gemacht, nicht unmöglich – und
+  ein Zusammenstoß hieße, dass ein Blog die Meldung eines anderen überschreibt.
+* Eine erneute Anmeldung bei einer bereits eingerichteten Adresse aktualisiert
+  den vorhandenen Eintrag und behält seine `id`. Daran hängen Zwischenspeicher
+  und Meldestand: Ein zweiter Eintrag für denselben Blog würde jeden
+  vorhandenen Kommentar noch einmal als neu melden.
+
+Was noch fehlt – der kombinierte Posteingang über alle Blogs – steht in
+`BACKLOG.md`. Die Sortierung über Instanzgrenzen hinweg ist dort die offene
+Frage, nicht die Datenhaltung.
 
 ---
 

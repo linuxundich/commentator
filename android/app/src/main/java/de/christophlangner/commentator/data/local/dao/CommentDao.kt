@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import de.christophlangner.commentator.data.local.entity.CommentEntity
 import de.christophlangner.commentator.data.local.entity.CommentWithPost
+import de.christophlangner.commentator.data.local.entity.InstanceCount
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
@@ -183,6 +184,21 @@ interface CommentDao {
         upsertComments(replies)
         deleteStaleReplies(instanceId, parentId, replies.map { it.id })
     }
+
+    /**
+     * Anzahl je Blog in einem Status, über alle Blogs in einer Abfrage.
+     *
+     * Der Umschalter braucht sie für jeden Blog zugleich; eine Abfrage je
+     * Blog wäre bei jedem Öffnen ein Bündel gleichartiger Zugriffe.
+     */
+    @Query(
+        """
+        SELECT instanceId, COUNT(*) AS anzahl FROM comments
+        WHERE status = :status
+        GROUP BY instanceId
+        """,
+    )
+    fun observeCountsByInstance(status: String): Flow<List<InstanceCount>>
 
     // --- Synchronisierungszustand ---
 

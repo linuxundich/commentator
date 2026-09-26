@@ -55,6 +55,10 @@ fun StatusChip(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
+                // Eine Marke ist einzeilig. Ohne das bricht sie unter Druck
+                // mitten im Wort um - "Genehmig" ueber "t" - statt der Zeile
+                // daneben den Platz zu nehmen.
+                maxLines = 1,
                 // Kein clearAndSetSemantics: Der Status muss vorgelesen werden.
                 // Das Symbol daneben ist als dekorativ ausgezeichnet, sodass
                 // nichts doppelt angesagt wird.

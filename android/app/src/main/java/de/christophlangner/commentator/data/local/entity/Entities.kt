@@ -70,6 +70,18 @@ data class NotifiedCommentEntity(
     val notifiedAtEpochMillis: Long,
 )
 
+/**
+ * Wie viele Kommentare je Blog in einem Status liegen.
+ *
+ * Aus dem Zwischenspeicher, nicht vom Server: Der Blogumschalter soll keine
+ * Anfrage je Blog auslösen. Ein Blog, der noch nie geladen wurde, kommt hier
+ * gar nicht vor - er zeigt dann keine Zahl statt einer falschen Null.
+ */
+data class InstanceCount(
+    val instanceId: String,
+    val anzahl: Int,
+)
+
 /** Kommentar samt Beitragstitel, wie ihn die Oberfläche braucht. */
 data class CommentWithPost(
     @Embedded val comment: CommentEntity,

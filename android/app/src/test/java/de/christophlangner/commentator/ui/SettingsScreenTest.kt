@@ -1,17 +1,13 @@
 package de.christophlangner.commentator.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
-import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.repository.AppSettings
-import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.fake.testInstance
 import de.christophlangner.commentator.ui.settings.SettingsContent
 import de.christophlangner.commentator.ui.settings.SettingsUiState
@@ -24,6 +20,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+/**
+ * Die Einstellungen, die fuer alle Blogs gelten.
+ *
+ * Was je Blog gilt, steht im [SiteSettingsScreenTest].
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "de-rDE-w411dp-h891dp")
 class SettingsScreenTest {
@@ -33,81 +34,115 @@ class SettingsScreenTest {
 
     private val intervalOptions = listOf(15, 30, 60, 180, 360)
 
-    private val deleted = mutableListOf<String>()
-    private var addRequested = 0
+    private var openedSite: String? = null
+    private var addSiteRequested = 0
 
-    private fun render(templates: List<ReplyTemplate> = emptyList()) {
+    private fun render(
+        instances: List<de.christophlangner.commentator.domain.model.WordPressInstance> =
+            listOf(testInstance()),
+        activeInstanceId: String? = "instance-1",
+    ) {
         composeRule.setContent {
             CommentatorTheme(dynamicColor = false) {
                 SettingsContent(
                     state = SettingsUiState(
-                        instance = testInstance(),
-                        templates = templates,
+                        instances = instances,
+                        activeInstanceId = activeInstanceId,
                         settings = AppSettings(
                             notificationsEnabled = true,
                             syncIntervalMinutes = 15,
                             showAvatars = false,
                             showAuthorEmail = false,
-                            notifyScope = NotifyScope.DEFAULT,
-                            teamRoles = emptySet(),
-                            hideTeamComments = false,
                             threadedInbox = true,
                         ),
                     ),
                     intervalOptions = intervalOptions,
                     onNotificationsEnabled = {},
-                    onNotifyScope = {},
-                    onToggleTeamRole = {},
-                    onHideTeamComments = {},
                     onThreadedInbox = {},
                     onSyncInterval = {},
                     onAppIcon = {},
                     onShowAvatars = {},
                     onShowAuthorEmail = {},
                     onOpenSystemNotifications = {},
-                    onSignOutRequest = {},
+                    onOpenSite = { openedSite = it },
+                    onAddSite = { addSiteRequested++ },
                     onOpenAbout = {},
-                    onAddTemplate = { addRequested++ },
-                    onEditTemplate = {},
-                    onDeleteTemplate = { deleted += it },
                 )
             }
         }
     }
 
     @Test
-    fun `ohne Bausteine steht ein Hinweis statt einer leeren Liste`() {
-        render()
-
-        // Der Bildschirm ist laenger als die Testflaeche; ohne Scrollen gilt
-        // in Compose nichts weiter unten als sichtbar.
-        composeRule.onNodeWithText("Noch keine Textbausteine angelegt")
-            .performScrollTo()
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun `Bausteine werden aufgelistet und lassen sich loeschen`() {
+    fun `jeder eingerichtete Blog steht in der Liste`() {
         render(
-            listOf(
-                ReplyTemplate("t1", "Danke für den Hinweis."),
-                ReplyTemplate("t2", "Das schaue ich mir an."),
+            instances = listOf(
+                testInstance(id = "instance-1"),
+                testInstance(id = "instance-2").copy(
+                    displayName = "Zweitblog",
+                    siteUrl = "https://zweit.test",
+                ),
             ),
         )
 
-        composeRule.onNodeWithText("Danke für den Hinweis.")
-            .performScrollTo()
-            .assertIsDisplayed()
-        composeRule.onAllNodesWithContentDescription("Baustein löschen")[0].performClick()
-
-        assertEquals(listOf("t1"), deleted)
+        composeRule.onNodeWithText("Testblog").assertIsDisplayed()
+        composeRule.onNodeWithText("Zweitblog").assertIsDisplayed()
+        // Die Adresse gehoert dazu: Zwei Blogs koennen denselben Namen tragen.
+        composeRule.onNodeWithText("zweit.test").assertIsDisplayed()
     }
 
     @Test
-    fun `an der Obergrenze laesst sich nichts mehr hinzufuegen`() {
-        render(List(ReplyTemplate.MAX_TEMPLATES) { ReplyTemplate("t$it", "Baustein $it") })
+    fun `der angezeigte Blog ist als solcher gekennzeichnet`() {
+        render(
+            instances = listOf(
+                testInstance(id = "instance-1"),
+                testInstance(id = "instance-2").copy(displayName = "Zweitblog"),
+            ),
+            activeInstanceId = "instance-2",
+        )
 
-        composeRule.onNodeWithText("Baustein hinzufügen").performScrollTo().assertIsNotEnabled()
+        composeRule.onNodeWithText("Angezeigt").assertIsDisplayed()
+    }
+
+    @Test
+    fun `ein Tippen auf den Blog fuehrt in seine Einstellungen`() {
+        render(
+            instances = listOf(
+                testInstance(id = "instance-1"),
+                testInstance(id = "instance-2").copy(displayName = "Zweitblog"),
+            ),
+        )
+
+        composeRule.onNodeWithText("Zweitblog").performClick()
+
+        assertEquals("instance-2", openedSite)
+    }
+
+    @Test
+    fun `ein Blog ohne Moderationsrecht sagt das in seiner Zeile`() {
+        render(instances = listOf(testInstance(canModerate = false)))
+
+        composeRule.onNodeWithText("Darf nicht moderieren").assertIsDisplayed()
+    }
+
+    @Test
+    fun `Hinzufuegen ist von hier erreichbar`() {
+        render()
+
+        composeRule.onNodeWithText("Weiteren Blog hinzufügen").performScrollTo().performClick()
+
+        assertEquals(1, addSiteRequested)
+    }
+
+    @Test
+    fun `der Hauptschalter verweist auf die Einstellung je Blog`() {
+        // Der Umfang lag frueher unter dem Hauptschalter. Ohne diesen Hinweis
+        // sucht man ihn dort weiter.
+        render()
+
+        composeRule.onNodeWithText(
+            "Ob ein einzelner Blog meldet und worüber, steht in seinen Einstellungen " +
+                "oben unter „Blogs“.",
+        ).performScrollTo().assertIsDisplayed()
     }
 
     @Test
