@@ -8,6 +8,8 @@ import de.christophlangner.commentator.data.local.entity.InstanceCount
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
+import de.christophlangner.commentator.data.local.entity.TeamMemberEntity
+import de.christophlangner.commentator.data.local.entity.TeamRoleEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -20,6 +22,8 @@ class FakeCommentDao : CommentDao {
     private val syncStates = MutableStateFlow<Map<String, SyncStateEntity>>(emptyMap())
     val notified = MutableStateFlow<List<NotifiedCommentEntity>>(emptyList())
     private val filterCounts = MutableStateFlow<List<FilterCountEntity>>(emptyList())
+    private val teamMembers = MutableStateFlow<List<TeamMemberEntity>>(emptyList())
+    private val teamRoles = MutableStateFlow<List<TeamRoleEntity>>(emptyList())
 
     private fun withTitle(entity: CommentEntity) = CommentWithPost(
         comment = entity,
@@ -27,6 +31,37 @@ class FakeCommentDao : CommentDao {
             .firstOrNull { it.instanceId == entity.instanceId && it.postId == entity.postId }
             ?.title,
     )
+
+    override fun observeTeamMembers(instanceId: String): Flow<List<TeamMemberEntity>> =
+        teamMembers.map { liste -> liste.filter { it.instanceId == instanceId } }
+
+    override fun observeTeamRoles(instanceId: String): Flow<List<TeamRoleEntity>> =
+        teamRoles.map { liste -> liste.filter { it.instanceId == instanceId } }
+
+    override suspend fun teamMembers(instanceId: String): List<TeamMemberEntity> =
+        teamMembers.value.filter { it.instanceId == instanceId }
+
+    override suspend fun teamRoles(instanceId: String): List<TeamRoleEntity> =
+        teamRoles.value.filter { it.instanceId == instanceId }
+
+    override suspend fun upsertTeamMembers(members: List<TeamMemberEntity>) {
+        val neu = members.map { it.instanceId to it.userId }.toSet()
+        teamMembers.value =
+            teamMembers.value.filterNot { (it.instanceId to it.userId) in neu } + members
+    }
+
+    override suspend fun upsertTeamRoles(roles: List<TeamRoleEntity>) {
+        val neu = roles.map { it.instanceId to it.slug }.toSet()
+        teamRoles.value = teamRoles.value.filterNot { (it.instanceId to it.slug) in neu } + roles
+    }
+
+    override suspend fun deleteTeamMembers(instanceId: String) {
+        teamMembers.value = teamMembers.value.filterNot { it.instanceId == instanceId }
+    }
+
+    override suspend fun deleteTeamRoles(instanceId: String) {
+        teamRoles.value = teamRoles.value.filterNot { it.instanceId == instanceId }
+    }
 
     override fun observeFilterCounts(instanceId: String): Flow<List<FilterCountEntity>> =
         filterCounts.map { liste -> liste.filter { it.instanceId == instanceId } }

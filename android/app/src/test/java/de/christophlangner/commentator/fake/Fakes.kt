@@ -145,8 +145,21 @@ class FakeTeamRepository(
 
     var invalidations = 0
 
+    /**
+     * Der gespeicherte Stand, wie ihn die Oberflaeche liest.
+     *
+     * Vorbelegt heisst: Dieses Team lag schon vor dem Start im
+     * Zwischenspeicher - genau der Fall, um den es beim Aufbau geht.
+     */
+    val gespeichertesTeam = MutableStateFlow(Team())
+
+    override fun observeTeam(instanceId: String): Flow<Team> = gespeichertesTeam
+
     override suspend fun team(instanceId: String): Outcome<Team> {
         calls++
+        // Wie im echten Repository: Der Abruf schreibt in den
+        // Zwischenspeicher, und von dort liest die Oberflaeche.
+        gespeichertesTeam.value = team
         return Outcome.Success(team)
     }
 
@@ -155,6 +168,7 @@ class FakeTeamRepository(
     override suspend fun invalidate(instanceId: String) {
         invalidations++
         invalidatedIds += instanceId
+        gespeichertesTeam.value = Team()
     }
 }
 

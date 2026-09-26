@@ -2,6 +2,7 @@ package de.christophlangner.commentator.domain.repository
 
 import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.domain.model.Team
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Wer auf diesem Blog zum Team gehört.
@@ -13,6 +14,15 @@ import de.christophlangner.commentator.domain.model.Team
 interface TeamRepository {
 
     suspend fun team(instanceId: String): Outcome<Team>
+
+    /**
+     * Das zuletzt bekannte Team, fortlaufend beobachtet.
+     *
+     * Damit die Kommentare des Teams schon beim Aufbau ihre Rollenmarke
+     * tragen und eingeklappte Rollen gleich eingeklappt sind - vorher kam
+     * beides erst nach dem Aktualisieren, also sichtbar spaeter.
+     */
+    fun observeTeam(instanceId: String): Flow<Team>
 
     /**
      * Verwirft den hinterlegten Stand eines Blogs, etwa nach einer Aenderung

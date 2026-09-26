@@ -4,12 +4,17 @@ import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.core.map
 import de.christophlangner.commentator.data.account.InstanceStore
+import de.christophlangner.commentator.data.local.dao.CommentDao
+import de.christophlangner.commentator.data.local.entity.TeamMemberEntity
+import de.christophlangner.commentator.data.local.entity.TeamRoleEntity
 import de.christophlangner.commentator.data.remote.ApiExecutor
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.repository.TeamRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -21,6 +26,7 @@ class DefaultTeamRepository @Inject constructor(
     private val executor: ApiExecutor,
     private val instanceStore: InstanceStore,
     private val settingsRepository: SettingsRepository,
+    private val dao: CommentDao,
 ) : TeamRepository {
 
     private companion object {
@@ -43,8 +49,22 @@ class DefaultTeamRepository @Inject constructor(
      */
     private val cache = ConcurrentHashMap<String, Team>()
 
+    override fun observeTeam(instanceId: String): Flow<Team> = combine(
+        dao.observeTeamMembers(instanceId),
+        dao.observeTeamRoles(instanceId),
+    ) { mitglieder, rollen ->
+        Team(
+            members = mitglieder.associate { it.userId to TeamRole(it.roleSlug, it.roleName) },
+            availableRoles = rollen.map { TeamRole(it.slug, it.name) },
+        )
+    }
+
     override suspend fun invalidate(instanceId: String) {
         cache.keys.removeAll { it.substringBefore('/') == instanceId }
+        // Auch der gespeicherte Stand: Er gilt je Rollenauswahl, und nach
+        // deren Aenderung waere er schlicht falsch. Lieber kurz keine
+        // Rollenmarke als eine, die nicht mehr stimmt.
+        dao.replaceTeam(instanceId, emptyList(), emptyList())
     }
 
     override suspend fun team(instanceId: String): Outcome<Team> {
@@ -61,14 +81,14 @@ class DefaultTeamRepository @Inject constructor(
             // Ohne Plugin bleibt nur das eigene Konto. Besser als nichts: Die
             // eigenen Antworten sind der häufigste Fall überhaupt. Die Rolle
             // ist dabei unbekannt.
-            return Outcome.Success(
-                Team(members = mapOf(instance.userId to EIGENES_KONTO))
-                    .also { cache[key] = it },
-            )
+            val team = Team(members = mapOf(instance.userId to EIGENES_KONTO))
+            festhalten(instanceId, team)
+            cache[key] = team
+            return Outcome.Success(team)
         }
 
         val api = clientFactory.forInstance(instance.id, instance.siteUrl)
-        return executor.call { api.bridgeTeam() }.map { response ->
+        val outcome = executor.call { api.bridgeTeam() }.map { response ->
             val body = response.body
             val bekannteRollen = body.roles.associate { it.slug to TeamRole(it.slug, it.name) }
 
@@ -86,7 +106,47 @@ class DefaultTeamRepository @Inject constructor(
                 // gerade nicht ausgewählt ist.
                 members = members + (instance.userId to (members[instance.userId] ?: EIGENES_KONTO)),
                 availableRoles = bekannteRollen.values.toList(),
-            ).also { cache[key] = it }
+            )
         }
+
+        return when (outcome) {
+            is Outcome.Success -> {
+                festhalten(instanceId, outcome.value)
+                cache[key] = outcome.value
+                outcome
+            }
+            // Ohne Verbindung der zuletzt bekannte Stand. Sonst galte
+            // niemand als Team: Die Liste verloere ihre Rollenmarken, und
+            // die Hintergrundpruefung meldete ausgerechnet die Rollen, die
+            // stummgeschaltet sind. Nicht in den Arbeitsspeicher gelegt - der
+            // naechste Versuch soll es wieder beim Blog probieren.
+            is Outcome.Failure -> gespeichertesTeam(instanceId)?.let { Outcome.Success(it) }
+                ?: outcome
+        }
+    }
+
+    private suspend fun festhalten(instanceId: String, team: Team) {
+        dao.replaceTeam(
+            instanceId = instanceId,
+            members = team.members.map { (userId, rolle) ->
+                TeamMemberEntity(
+                    instanceId = instanceId,
+                    userId = userId,
+                    roleSlug = rolle.slug,
+                    roleName = rolle.name,
+                )
+            },
+            roles = team.availableRoles.map { TeamRoleEntity(instanceId, it.slug, it.name) },
+        )
+    }
+
+    /** Der gespeicherte Stand, oder `null` wenn noch nie einer geholt wurde. */
+    private suspend fun gespeichertesTeam(instanceId: String): Team? {
+        val mitglieder = dao.teamMembers(instanceId)
+        if (mitglieder.isEmpty()) return null
+        return Team(
+            members = mitglieder.associate { it.userId to TeamRole(it.roleSlug, it.roleName) },
+            availableRoles = dao.teamRoles(instanceId).map { TeamRole(it.slug, it.name) },
+        )
     }
 }

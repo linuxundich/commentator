@@ -13,6 +13,8 @@ import de.christophlangner.commentator.data.local.entity.InstanceCount
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
+import de.christophlangner.commentator.data.local.entity.TeamMemberEntity
+import de.christophlangner.commentator.data.local.entity.TeamRoleEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -200,6 +202,51 @@ interface CommentDao {
         """,
     )
     fun observeCountsByInstance(status: String): Flow<List<InstanceCount>>
+
+    // --- Team ---
+
+    @Query("SELECT * FROM team_members WHERE instanceId = :instanceId")
+    fun observeTeamMembers(instanceId: String): Flow<List<TeamMemberEntity>>
+
+    @Query("SELECT * FROM team_roles WHERE instanceId = :instanceId")
+    fun observeTeamRoles(instanceId: String): Flow<List<TeamRoleEntity>>
+
+    @Query("SELECT * FROM team_members WHERE instanceId = :instanceId")
+    suspend fun teamMembers(instanceId: String): List<TeamMemberEntity>
+
+    @Query("SELECT * FROM team_roles WHERE instanceId = :instanceId")
+    suspend fun teamRoles(instanceId: String): List<TeamRoleEntity>
+
+    @Upsert
+    suspend fun upsertTeamMembers(members: List<TeamMemberEntity>)
+
+    @Upsert
+    suspend fun upsertTeamRoles(roles: List<TeamRoleEntity>)
+
+    @Query("DELETE FROM team_members WHERE instanceId = :instanceId")
+    suspend fun deleteTeamMembers(instanceId: String)
+
+    @Query("DELETE FROM team_roles WHERE instanceId = :instanceId")
+    suspend fun deleteTeamRoles(instanceId: String)
+
+    /**
+     * Schreibt das Team eines Blogs und raeumt dabei auf.
+     *
+     * Ersetzt statt ergaenzt: Wer aus dem Team ausgeschieden ist, darf nicht
+     * als Mitglied stehen bleiben - seine Kommentare traegen sonst weiter
+     * eine Rollenmarke, die es nicht mehr gibt.
+     */
+    @Transaction
+    suspend fun replaceTeam(
+        instanceId: String,
+        members: List<TeamMemberEntity>,
+        roles: List<TeamRoleEntity>,
+    ) {
+        deleteTeamMembers(instanceId)
+        deleteTeamRoles(instanceId)
+        upsertTeamMembers(members)
+        upsertTeamRoles(roles)
+    }
 
     // --- Zaehlungen je Filter ---
 

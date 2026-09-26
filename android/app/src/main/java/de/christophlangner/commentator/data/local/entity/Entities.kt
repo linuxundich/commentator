@@ -57,6 +57,43 @@ data class SyncStateEntity(
 )
 
 /**
+ * Wer auf einem Blog zum Team gehoert, und in welcher Rolle.
+ *
+ * Gespeichert, weil die Zuordnung sonst erst nach dem Aktualisieren
+ * vorliegt: Beim Start standen die Kommentare des Teams kurz ohne ihre
+ * Rollenmarke da, und eingeklappte Rollen klappten erst nachtraeglich zu.
+ * Die Zuordnung aendert sich selten - sie zwischen zwei Starts wegzuwerfen
+ * kostet nur Zeit.
+ */
+@Entity(tableName = "team_members", primaryKeys = ["instanceId", "userId"])
+data class TeamMemberEntity(
+    val instanceId: String,
+    val userId: Long,
+    val roleSlug: String,
+    /**
+     * Der Anzeigename der Rolle, wie der Blog ihn meldet.
+     *
+     * Beim eigenen Konto ohne Plugin leer - wie die Oberflaeche es dann
+     * benennt, ist uebersetzter Text und gehoert nicht in die Datenbank.
+     */
+    val roleName: String,
+)
+
+/**
+ * Die Rollen, die ein Blog kennt.
+ *
+ * Getrennt von den Mitgliedern: Eine Rolle kann es geben, ohne dass ihr
+ * gerade jemand angehoert - fuer die Auswahl in den Einstellungen muss sie
+ * trotzdem dastehen.
+ */
+@Entity(tableName = "team_roles", primaryKeys = ["instanceId", "slug"])
+data class TeamRoleEntity(
+    val instanceId: String,
+    val slug: String,
+    val name: String,
+)
+
+/**
  * Wie viele Kommentare ein Filter zuletzt enthielt.
  *
  * Der Zwischenspeicher allein kann "hier ist nichts" nicht von "hier wurde

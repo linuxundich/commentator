@@ -255,6 +255,7 @@ class DefaultAuthRepository @Inject constructor(
 
         dao.deleteAllComments(instance.id)
         dao.deleteFilterCounts(instance.id)
+        dao.replaceTeam(instance.id, emptyList(), emptyList())
         dao.deletePostTitles(instance.id)
         dao.deleteSyncState(instance.id)
         dao.deleteNotified(instance.id)

@@ -106,6 +106,44 @@ class MigrationTest {
         db.close()
     }
 
+    @Test
+    fun migrationVonDreiAufVierErhaeltDaten() {
+        helper.createDatabase(DB, 3).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO filter_counts (instanceId, filter, count, updatedAtEpochMillis)
+                VALUES ('i1', 'PENDING', 0, 1700000000000)
+                """.trimIndent(),
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            DB,
+            4,
+            true,
+            CommentatorDatabase.MIGRATION_3_4,
+        )
+
+        // Die Zaehlung ueberlebt - sonst zeigte der naechste Start wieder
+        // Platzhalter statt des Leerzustands.
+        db.query("SELECT count FROM filter_counts WHERE filter = 'PENDING'").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+
+        // Leer, aber vorhanden: Wer zum Team gehoert, weiss erst der
+        // naechste Abruf.
+        db.query("SELECT COUNT(*) FROM team_members").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM team_roles").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
     private companion object {
         const val DB = "migration-test.db"
     }

@@ -11,6 +11,8 @@ import de.christophlangner.commentator.domain.usecase.UndoModerationUseCase
 import de.christophlangner.commentator.fake.FakeAuthRepository
 import de.christophlangner.commentator.fake.FakeCommentRepository
 import de.christophlangner.commentator.fake.FakeConnectivityObserver
+import de.christophlangner.commentator.domain.model.Team
+import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.FakeTeamRepository
 import de.christophlangner.commentator.fake.MainDispatcherRule
@@ -263,6 +265,22 @@ class InboxViewModelTest {
         model.state.test {
             advanceUntilIdle()
             assertEquals(true, expectMostRecentItem().isInitialLoad)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `das gespeicherte Team traegt seine Rollenmarke schon vor dem Abruf`() = runTest {
+        // Sonst stehen die Kommentare des Teams beim Start kurz ohne Marke
+        // da, und eingeklappte Rollen klappen erst nachtraeglich zu.
+        teamRepo.gespeichertesTeam.value =
+            Team(members = mapOf(7L to TeamRole("editor", "Redakteur")))
+        comments.refreshGate = CompletableDeferred()
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            assertEquals("editor", expectMostRecentItem().team.roleOf(7L)?.slug)
             cancelAndIgnoreRemainingEvents()
         }
     }

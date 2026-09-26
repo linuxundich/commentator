@@ -77,6 +77,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Benachrichtigung direkt in die Detailansicht.
 - Lokaler Room-Cache für Kommentare, Beitragstitel, Zählungen je Filter und
   Synchronisierungszustand.
+- Die Rollenmarken des Teams stehen sofort da. Wer zum Team gehört, wird
+  ebenfalls gespeichert: Vorher kam die Zuordnung erst nach dem
+  Aktualisieren, die Kommentare des Teams standen beim Start also kurz ohne
+  Marke, und eingeklappte Rollen klappten erst nachträglich zu. Ohne
+  Verbindung gilt jetzt der zuletzt bekannte Stand, statt dass niemand als
+  Team gilt – das betraf auch die Hintergrundprüfung, die sonst ausgerechnet
+  die stummgeschalteten Rollen gemeldet hätte.
 - Der Posteingang öffnet mit dem zuletzt gewählten Filter. Blogübergreifend,
   wie der Filter selbst: Beim Wechsel des Blogs bleibt er ohnehin stehen, und
   je Blog gespeichert spränge er beim Umschalten. Geholt wird er, bevor etwas

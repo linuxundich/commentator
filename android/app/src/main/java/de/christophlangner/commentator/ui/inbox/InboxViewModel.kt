@@ -154,7 +154,8 @@ class InboxViewModel @Inject constructor(
         val error: AppError? = null,
         /** Ob die Zahlen in diesem Lauf schon einmal geholt wurden. */
         val countsLoaded: Boolean = false,
-        val team: Team = Team(),
+        /** Ob das Team in diesem Lauf schon einmal geholt wurde. */
+        val teamLoaded: Boolean = false,
     )
 
     /**
@@ -238,6 +239,30 @@ class InboxViewModel @Inject constructor(
     private val zaehlungen = instance.flatMapLatest { instance ->
         if (instance == null) flowOf(emptyMap()) else commentRepository.observeCounts(instance.id)
     }
+
+    /**
+     * Das zuletzt bekannte Team des angezeigten Blogs.
+     *
+     * Wie die Zahlen aus dem Zwischenspeicher: Die Rollenmarken sollen schon
+     * beim Aufbau dastehen, und eingeklappte Rollen gleich eingeklappt sein.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val team = instance.flatMapLatest { instance ->
+        if (instance == null) flowOf(Team()) else teamRepository.observeTeam(instance.id)
+    }
+
+    /**
+     * Was aus dem Zwischenspeicher zum Blog gehoert.
+     *
+     * Gebuendelt, weil `combine` im Zustand sonst ueber seine typisierten
+     * Ueberladungen hinauswuechse.
+     */
+    private data class Bestand(
+        val counts: Map<CommentFilter, Int>,
+        val team: Team,
+    )
+
+    private val bestand = combine(zaehlungen, team, ::Bestand)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val syncState = instance.flatMapLatest { instance ->
@@ -361,8 +386,9 @@ class InboxViewModel @Inject constructor(
         suche,
         threadContext,
         blogs,
-        zaehlungen,
-    ) { stand, suche, bezuege, blogs, zaehlungen ->
+        bestand,
+    ) { stand, suche, bezuege, blogs, bestand ->
+        val zaehlungen = bestand.counts
         val instance = stand.instance
         val filter = stand.filter
         val comments = stand.comments
@@ -404,7 +430,7 @@ class InboxViewModel @Inject constructor(
             ),
             signals = signalsFor(comments),
             counts = zaehlungen,
-            team = transient.team,
+            team = bestand.team,
             roleStyles = environment.roleStyles,
             searchActive = suche.aktiv,
             searchQuery = suche.text,
@@ -460,7 +486,9 @@ class InboxViewModel @Inject constructor(
         // Der neue Blog braucht seine eigenen Rechte und Zaehlungen; ohne das
         // stuenden die des vorherigen da, bis etwas anderes sie anfasst.
         siteDataLoaded = false
-        transient.update { it.copy(countsLoaded = false, team = Team(), initialLoadDone = false) }
+        transient.update {
+            it.copy(countsLoaded = false, teamLoaded = false, initialLoadDone = false)
+        }
         viewModelScope.launch { authRepository.setActiveInstance(instanceId) }
     }
 
@@ -584,7 +612,7 @@ class InboxViewModel @Inject constructor(
             }
 
             if (withSiteData || !transient.value.countsLoaded) loadCounts()
-            if (withSiteData || transient.value.team.memberIds.isEmpty()) loadTeam()
+            if (withSiteData || !transient.value.teamLoaded) loadTeam()
         }
     }
 
@@ -638,9 +666,11 @@ class InboxViewModel @Inject constructor(
      */
     private suspend fun loadTeam() {
         val instanceId = instance.value?.id ?: return
-        val outcome = teamRepository.team(instanceId)
-        if (outcome is Outcome.Success) {
-            transient.update { it.copy(team = outcome.value) }
+        // Wie bei den Zahlen: Das Repository schreibt in den
+        // Zwischenspeicher, von dort liest die Oberflaeche. Hier bleibt nur
+        // der Vermerk, dass es in diesem Lauf geschehen ist.
+        if (teamRepository.team(instanceId) is Outcome.Success) {
+            transient.update { it.copy(teamLoaded = true) }
         }
     }
 

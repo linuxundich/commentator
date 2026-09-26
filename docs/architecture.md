@@ -415,8 +415,8 @@ Room ist die **Single Source of Truth** für die Kommentarliste. Der Ablauf:
 3. Ergebnisse werden in Room geschrieben, die UI aktualisiert sich dadurch.
 
 Gecacht werden: Kommentare (inkl. Status), Beitragstitel, Blog-Konfiguration,
-die Anzahl je Filter und der Zeitpunkt der letzten erfolgreichen
-Synchronisierung.
+die Anzahl je Filter, die Teamzugehörigkeit und der Zeitpunkt der letzten
+erfolgreichen Synchronisierung.
 
 Die Anzahl je Filter (`filter_counts`) steht dort nicht nur für die
 Filterleiste. Eine leere Kommentartabelle ist mehrdeutig — sie heißt entweder
@@ -426,6 +426,15 @@ Ohne die gespeicherte Zahl musste sie die zweite Deutung annehmen und beim
 Start Platzhalterkarten zeigen, bis der Server bestätigte, was die App schon
 wusste. Eine festgehaltene 0 ist eine Antwort, ein fehlender Eintrag heißt
 „noch nie geholt“.
+
+Das Team (`team_members`, `team_roles`) liegt aus demselben Grund dort. An ihm
+hängt mehr als die Rollenmarke: Ohne bekanntes Team gilt niemand als Mitglied,
+eingeklappte Rollen klappen auf, und die Hintergrundprüfung meldet
+ausgerechnet die Rollen, die stummgeschaltet sind. Schlägt der Abruf fehl,
+gilt deshalb der gespeicherte Stand statt eines leeren Teams — anders als bei
+den Kommentaren ist „nichts bekannt“ hier keine harmlose Antwort. Die Auswahl,
+welche Rollen als Team gelten, entscheidet über die gespeicherte Zuordnung;
+eine Änderung verwirft sie deshalb mit (`invalidate`).
 
 Die Zahl verkürzt nur die Wartezeit, sie ersetzt den Abruf nicht: Nach einem
 Neustart wird weiterhin bei jedem Öffnen aktualisiert. Deshalb bleibt auch der

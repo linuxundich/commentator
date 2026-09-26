@@ -73,6 +73,7 @@ object AppModule {
     ).addMigrations(
         CommentatorDatabase.MIGRATION_1_2,
         CommentatorDatabase.MIGRATION_2_3,
+        CommentatorDatabase.MIGRATION_3_4,
     ).build()
 
     @Provides

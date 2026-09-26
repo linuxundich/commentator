@@ -11,6 +11,8 @@ import de.christophlangner.commentator.data.local.entity.FilterCountEntity
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
+import de.christophlangner.commentator.data.local.entity.TeamMemberEntity
+import de.christophlangner.commentator.data.local.entity.TeamRoleEntity
 
 /**
  * Lokaler Cache.
@@ -25,9 +27,11 @@ import de.christophlangner.commentator.data.local.entity.SyncStateEntity
         FilterCountEntity::class,
         PostTitleEntity::class,
         SyncStateEntity::class,
+        TeamMemberEntity::class,
+        TeamRoleEntity::class,
         NotifiedCommentEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class CommentatorDatabase : RoomDatabase() {
@@ -73,6 +77,40 @@ abstract class CommentatorDatabase : RoomDatabase() {
                         count INTEGER NOT NULL,
                         updatedAtEpochMillis INTEGER NOT NULL,
                         PRIMARY KEY(instanceId, filter)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        /**
+         * Nimmt das Team auf.
+         *
+         * Zwei Tabellen: Eine Rolle kann es geben, ohne dass ihr gerade
+         * jemand angehoert. Beide leer angelegt - wer zum Team gehoert,
+         * weiss nur der Blog, und bis zum ersten Abruf verhaelt sich die App
+         * wie bisher.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS team_members (
+                        instanceId TEXT NOT NULL,
+                        userId INTEGER NOT NULL,
+                        roleSlug TEXT NOT NULL,
+                        roleName TEXT NOT NULL,
+                        PRIMARY KEY(instanceId, userId)
+                    )
+                    """.trimIndent(),
+                )
+                connection.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS team_roles (
+                        instanceId TEXT NOT NULL,
+                        slug TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        PRIMARY KEY(instanceId, slug)
                     )
                     """.trimIndent(),
                 )
