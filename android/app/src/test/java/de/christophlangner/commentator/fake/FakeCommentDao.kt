@@ -3,6 +3,7 @@ package de.christophlangner.commentator.fake
 import de.christophlangner.commentator.data.local.dao.CommentDao
 import de.christophlangner.commentator.data.local.entity.CommentEntity
 import de.christophlangner.commentator.data.local.entity.CommentWithPost
+import de.christophlangner.commentator.data.local.entity.FilterCountEntity
 import de.christophlangner.commentator.data.local.entity.InstanceCount
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
@@ -18,6 +19,7 @@ class FakeCommentDao : CommentDao {
     private val titles = MutableStateFlow<List<PostTitleEntity>>(emptyList())
     private val syncStates = MutableStateFlow<Map<String, SyncStateEntity>>(emptyMap())
     val notified = MutableStateFlow<List<NotifiedCommentEntity>>(emptyList())
+    private val filterCounts = MutableStateFlow<List<FilterCountEntity>>(emptyList())
 
     private fun withTitle(entity: CommentEntity) = CommentWithPost(
         comment = entity,
@@ -25,6 +27,19 @@ class FakeCommentDao : CommentDao {
             .firstOrNull { it.instanceId == entity.instanceId && it.postId == entity.postId }
             ?.title,
     )
+
+    override fun observeFilterCounts(instanceId: String): Flow<List<FilterCountEntity>> =
+        filterCounts.map { liste -> liste.filter { it.instanceId == instanceId } }
+
+    override suspend fun upsertFilterCounts(counts: List<FilterCountEntity>) {
+        val neu = counts.map { it.instanceId to it.filter }.toSet()
+        filterCounts.value =
+            filterCounts.value.filterNot { (it.instanceId to it.filter) in neu } + counts
+    }
+
+    override suspend fun deleteFilterCounts(instanceId: String) {
+        filterCounts.value = filterCounts.value.filterNot { it.instanceId == instanceId }
+    }
 
     override fun observeCountsByInstance(status: String): Flow<List<InstanceCount>> =
         stored.map { list ->

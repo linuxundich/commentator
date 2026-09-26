@@ -414,8 +414,24 @@ Room ist die **Single Source of Truth** für die Kommentarliste. Der Ablauf:
 2. Parallel läuft die Aktualisierung gegen die API.
 3. Ergebnisse werden in Room geschrieben, die UI aktualisiert sich dadurch.
 
-Gecacht werden: Kommentare (inkl. Status), Beitragstitel, Blog-Konfiguration
-und der Zeitpunkt der letzten erfolgreichen Synchronisierung.
+Gecacht werden: Kommentare (inkl. Status), Beitragstitel, Blog-Konfiguration,
+die Anzahl je Filter und der Zeitpunkt der letzten erfolgreichen
+Synchronisierung.
+
+Die Anzahl je Filter (`filter_counts`) steht dort nicht nur für die
+Filterleiste. Eine leere Kommentartabelle ist mehrdeutig — sie heißt entweder
+„dieser Filter ist leer“ oder „dieser Filter wurde noch nie geholt“, und für
+die Oberfläche ist das der Unterschied zwischen Leerzustand und Ladeanzeige.
+Ohne die gespeicherte Zahl musste sie die zweite Deutung annehmen und beim
+Start Platzhalterkarten zeigen, bis der Server bestätigte, was die App schon
+wusste. Eine festgehaltene 0 ist eine Antwort, ein fehlender Eintrag heißt
+„noch nie geholt“.
+
+Die Zahl verkürzt nur die Wartezeit, sie ersetzt den Abruf nicht: Nach einem
+Neustart wird weiterhin bei jedem Öffnen aktualisiert. Deshalb bleibt auch der
+Zeitpunkt der letzten Aktualisierung je Filter bewusst im Arbeitsspeicher — er
+entscheidet über das Überspringen eines Abrufs, und diese Entscheidung soll
+einen Neustart nicht überleben.
 
 Die Unterscheidung zwischen lokalem und frischem Stand ist **sichtbar**: Eine
 Leiste über der Liste nennt den Zeitpunkt der letzten Synchronisierung und

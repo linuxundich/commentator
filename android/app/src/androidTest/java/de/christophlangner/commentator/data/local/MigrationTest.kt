@@ -9,7 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.runner.RunWith
 
 /**
- * Die erste Migration des Projekts.
+ * Die Migrationen des Projekts.
  *
  * Geprüft wird nicht nur, dass sie durchläuft, sondern dass die Daten
  * erhalten bleiben: Ginge der Cache verloren, wäre auch der Ausgangszustand
@@ -66,6 +66,42 @@ class MigrationTest {
         db.query("SELECT lastNotifiedCommentId FROM sync_state").use { c ->
             c.moveToFirst()
             assertEquals(7L, c.getLong(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrationVonZweiAufDreiErhaeltDaten() {
+        helper.createDatabase(DB, 2).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO comments (instanceId, id, postId, parentId, authorId,
+                    authorName, authorEmail, authorUrl, avatarUrl, contentHtml,
+                    contentPlain, dateEpochMillis, status, link)
+                VALUES ('i1', 7, 1, 0, 2, 'Max', null, null, null, '<p>Hallo</p>',
+                    'Hallo', 1700000000000, 'PENDING', null)
+                """.trimIndent(),
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            DB,
+            3,
+            true,
+            CommentatorDatabase.MIGRATION_2_3,
+        )
+
+        db.query("SELECT id FROM comments").use { c ->
+            assertEquals(1, c.count)
+            c.moveToFirst()
+            assertEquals(7L, c.getLong(0))
+        }
+
+        // Leer, aber vorhanden: Was die Filter enthalten, weiss erst der
+        // naechste Abruf. Bis dahin gilt "noch nie geholt".
+        db.query("SELECT COUNT(*) FROM filter_counts").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
         }
         db.close()
     }

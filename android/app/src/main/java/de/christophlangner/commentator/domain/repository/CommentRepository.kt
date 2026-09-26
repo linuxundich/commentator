@@ -37,6 +37,16 @@ interface CommentRepository {
      */
     fun observePendingCounts(): Flow<Map<String, Int>>
 
+    /**
+     * Die zuletzt bekannten Zahlen je Filter, aus dem Zwischenspeicher.
+     *
+     * Ein fehlender Eintrag heisst "noch nie geholt", eine 0 heisst "leer".
+     * Diese Unterscheidung braucht die Oberflaeche: Ohne sie muesste sie
+     * einen leeren Zwischenspeicher als Ladezustand deuten und beim Start
+     * Platzhalter zeigen, obwohl die Antwort laengst feststeht.
+     */
+    fun observeCounts(instanceId: String): Flow<Map<CommentFilter, Int>>
+
     /** Lädt die erste Seite neu und ersetzt den Cache für diesen Filter. */
     suspend fun refresh(instanceId: String, filter: CommentFilter): Outcome<Unit>
 

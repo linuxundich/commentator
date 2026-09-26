@@ -150,8 +150,8 @@ class InboxViewModel @Inject constructor(
         val isLoadingMore: Boolean = false,
         val initialLoadDone: Boolean = false,
         val error: AppError? = null,
-        /** Anzahl je Filter, leer solange nicht ermittelt. */
-        val counts: Map<CommentFilter, Int> = emptyMap(),
+        /** Ob die Zahlen in diesem Lauf schon einmal geholt wurden. */
+        val countsLoaded: Boolean = false,
         val team: Team = Team(),
     )
 
@@ -210,6 +210,18 @@ class InboxViewModel @Inject constructor(
             aktiv -> commentRepository.observeCommentsByIds(instance.id, treffer.orEmpty())
             else -> commentRepository.observeComments(instance.id, filter)
         }
+    }
+
+    /**
+     * Die zuletzt bekannten Zahlen je Filter.
+     *
+     * Aus dem Zwischenspeicher und nicht aus dem laufenden Abruf: Die
+     * Filterleiste soll schon beim Aufbau Zahlen tragen. Der Abruf schreibt
+     * dorthin und wirkt darum von selbst hierher zurueck.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val zaehlungen = instance.flatMapLatest { instance ->
+        if (instance == null) flowOf(emptyMap()) else commentRepository.observeCounts(instance.id)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -334,19 +346,26 @@ class InboxViewModel @Inject constructor(
         suche,
         threadContext,
         blogs,
-    ) { stand, suche, bezuege, blogs ->
+        zaehlungen,
+    ) { stand, suche, bezuege, blogs, zaehlungen ->
         val instance = stand.instance
         val filter = stand.filter
         val comments = stand.comments
         val transient = stand.transient
         val environment = stand.environment
+        // Der Zwischenspeicher kann "hier ist nichts" nicht von "hier wurde
+        // noch nichts geladen" unterscheiden - beides ist eine leere Liste.
+        // Die gespeicherte Zahl kann es: Eine 0 ist eine Antwort, und dann
+        // gehoert der Leerzustand auf den Schirm, keine Platzhalterkarte.
+        val bekanntLeer = zaehlungen[filter] == 0
+
         InboxUiState(
             instance = instance,
             instances = blogs.alle,
             pendingPerInstance = blogs.offen,
             filter = filter,
             comments = comments,
-            isInitialLoad = !transient.initialLoadDone && comments.isEmpty(),
+            isInitialLoad = !transient.initialLoadDone && comments.isEmpty() && !bekanntLeer,
             isRefreshing = transient.isRefreshing,
             isLoadingMore = transient.isLoadingMore,
             // Waehrend der Suche wird nicht nachgeladen: Die Trefferliste
@@ -369,7 +388,7 @@ class InboxViewModel @Inject constructor(
                 threaded = environment.threaded && !suche.aktiv,
             ),
             signals = signalsFor(comments),
-            counts = transient.counts,
+            counts = zaehlungen,
             team = transient.team,
             roleStyles = environment.roleStyles,
             searchActive = suche.aktiv,
@@ -416,7 +435,7 @@ class InboxViewModel @Inject constructor(
         // Der neue Blog braucht seine eigenen Rechte und Zaehlungen; ohne das
         // stuenden die des vorherigen da, bis etwas anderes sie anfasst.
         siteDataLoaded = false
-        transient.update { it.copy(counts = emptyMap(), team = Team(), initialLoadDone = false) }
+        transient.update { it.copy(countsLoaded = false, team = Team(), initialLoadDone = false) }
         viewModelScope.launch { authRepository.setActiveInstance(instanceId) }
     }
 
@@ -534,7 +553,7 @@ class InboxViewModel @Inject constructor(
                 )
             }
 
-            if (withSiteData || transient.value.counts.isEmpty()) loadCounts()
+            if (withSiteData || !transient.value.countsLoaded) loadCounts()
             if (withSiteData || transient.value.team.memberIds.isEmpty()) loadTeam()
         }
     }
@@ -556,8 +575,10 @@ class InboxViewModel @Inject constructor(
     private suspend fun loadCounts() {
         val instanceId = instance.value?.id ?: return
         val outcome = commentRepository.countsByFilter(instanceId)
+        // Geschrieben hat das Repository schon; hier bleibt nur der Vermerk,
+        // dass es in diesem Lauf geschehen ist.
         if (outcome is Outcome.Success && outcome.value.isNotEmpty()) {
-            transient.update { it.copy(counts = outcome.value) }
+            transient.update { it.copy(countsLoaded = true) }
         }
     }
 

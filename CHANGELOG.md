@@ -75,8 +75,16 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   abgeleitete Kennung.
 - Deep Link `commentator://comment/<instanceId>/<commentId>` aus der
   Benachrichtigung direkt in die Detailansicht.
-- Lokaler Room-Cache für Kommentare, Beitragstitel und
+- Lokaler Room-Cache für Kommentare, Beitragstitel, Zählungen je Filter und
   Synchronisierungszustand.
+- Der Posteingang zeigt beim Öffnen sofort den zuletzt bekannten Stand: Die
+  Zahlen der Filterleiste stehen aus dem Zwischenspeicher da, bevor der Server
+  geantwortet hat, und ein Filter, der beim letzten Mal leer war, zeigt den
+  Leerzustand statt sekundenlang Platzhalterkarten. Dafür wird die Anzahl je
+  Filter mitgespeichert: Eine leere Tabelle allein kann „hier ist nichts“ nicht
+  von „hier wurde noch nichts geladen“ unterscheiden, eine festgehaltene 0
+  schon. Aktualisiert wird trotzdem bei jedem Start – der gespeicherte Stand
+  überbrückt nur die Wartezeit, er ersetzt den Abruf nicht.
 - Sichtbare Unterscheidung zwischen gespeichertem und frisch geladenem Stand,
   einschließlich Offline-Band mit Zeitpunkt der letzten Aktualisierung.
 - Einstellungen für Benachrichtigungen, Prüfintervall, Avatare und die Anzeige

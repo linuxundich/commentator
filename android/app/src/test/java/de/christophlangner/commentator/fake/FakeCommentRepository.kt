@@ -9,6 +9,7 @@ import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
 import de.christophlangner.commentator.domain.repository.CommentRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -86,8 +87,17 @@ class FakeCommentRepository : CommentRepository {
         return Outcome.Success(treffer)
     }
 
+    /**
+     * Haelt den Abruf an, bis der Test ihn freigibt.
+     *
+     * Damit laesst sich pruefen, was waehrend des Ladens auf dem Schirm
+     * steht - und genau darum geht es beim Aufbau.
+     */
+    var refreshGate: CompletableDeferred<Unit>? = null
+
     override suspend fun refresh(instanceId: String, filter: CommentFilter): Outcome<Unit> {
         refreshCount++
+        refreshGate?.await()
         if (refreshResult is Outcome.Success) {
             syncState.value = SyncState(Instant.ofEpochMilli(1_000), false)
         }
@@ -128,8 +138,22 @@ class FakeCommentRepository : CommentRepository {
     var countsByFilter: Map<CommentFilter, Int> = emptyMap()
     var countCalls = 0
 
+    /**
+     * Die gespeicherten Zahlen, wie sie die Oberflaeche liest.
+     *
+     * Vorbelegt heisst: Diese Zahlen lagen schon vor dem Start im
+     * Zwischenspeicher - genau der Fall, um den es beim Aufbau geht.
+     */
+    val gespeicherteZahlen = MutableStateFlow<Map<CommentFilter, Int>>(emptyMap())
+
+    override fun observeCounts(instanceId: String): Flow<Map<CommentFilter, Int>> =
+        gespeicherteZahlen
+
     override suspend fun countsByFilter(instanceId: String): Outcome<Map<CommentFilter, Int>> {
         countCalls++
+        // Wie im echten Repository: Der Abruf schreibt in den
+        // Zwischenspeicher, und von dort liest die Oberflaeche.
+        if (countsByFilter.isNotEmpty()) gespeicherteZahlen.value = countsByFilter
         return Outcome.Success(countsByFilter)
     }
 

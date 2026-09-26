@@ -6,6 +6,7 @@ import de.christophlangner.commentator.core.map
 import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.data.local.dao.CommentDao
 import de.christophlangner.commentator.data.local.entity.CommentEntity
+import de.christophlangner.commentator.data.local.entity.FilterCountEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
 import de.christophlangner.commentator.data.remote.ApiExecutor
@@ -90,6 +91,17 @@ class DefaultCommentRepository @Inject constructor(
                 lastSuccessfulSync = state?.lastSyncEpochMillis?.let(Instant::ofEpochMilli),
                 isSyncing = syncing[instanceId] == true,
             )
+        }
+
+    override fun observeCounts(instanceId: String): Flow<Map<CommentFilter, Int>> =
+        dao.observeFilterCounts(instanceId).map { zeilen ->
+            zeilen.mapNotNull { zeile ->
+                // Ein Filter, den es nicht mehr gibt, wird stillschweigend
+                // uebergangen - die Zeile schadet nicht und verschwindet beim
+                // naechsten Abruf.
+                CommentFilter.entries.firstOrNull { it.name == zeile.filter }
+                    ?.let { it to zeile.count }
+            }.toMap()
         }
 
     override fun observePendingCounts(): Flow<Map<String, Int>> =
@@ -261,6 +273,23 @@ class DefaultCommentRepository @Inject constructor(
             // Nur die Kopfzeile zaehlt; ein einzelner Fehlschlag laesst die
             // uebrigen Zahlen unberuehrt.
             if (result is Outcome.Success) counts[filter] = result.value.totalItems
+        }
+
+        // Festgehalten wird, was tatsaechlich ermittelt wurde. Ein Filter,
+        // dessen Abfrage scheiterte, behaelt seinen bisherigen Eintrag -
+        // besser eine kurz veraltete Zahl als gar keine.
+        if (counts.isNotEmpty()) {
+            val jetzt = System.currentTimeMillis()
+            dao.upsertFilterCounts(
+                counts.map { (filter, anzahl) ->
+                    FilterCountEntity(
+                        instanceId = instanceId,
+                        filter = filter.name,
+                        count = anzahl,
+                        updatedAtEpochMillis = jetzt,
+                    )
+                },
+            )
         }
         return Outcome.Success(counts)
     }

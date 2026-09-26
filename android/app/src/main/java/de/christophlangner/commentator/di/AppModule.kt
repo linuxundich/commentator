@@ -70,7 +70,10 @@ object AppModule {
         context,
         CommentatorDatabase::class.java,
         CommentatorDatabase.NAME,
-    ).addMigrations(CommentatorDatabase.MIGRATION_1_2).build()
+    ).addMigrations(
+        CommentatorDatabase.MIGRATION_1_2,
+        CommentatorDatabase.MIGRATION_2_3,
+    ).build()
 
     @Provides
     fun provideCommentDao(database: CommentatorDatabase): CommentDao = database.commentDao()

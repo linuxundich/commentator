@@ -254,6 +254,7 @@ class DefaultAuthRepository @Inject constructor(
         sessionMonitor.reportAuthorized(instance.id)
 
         dao.deleteAllComments(instance.id)
+        dao.deleteFilterCounts(instance.id)
         dao.deletePostTitles(instance.id)
         dao.deleteSyncState(instance.id)
         dao.deleteNotified(instance.id)

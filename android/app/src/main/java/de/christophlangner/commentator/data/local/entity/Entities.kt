@@ -57,6 +57,28 @@ data class SyncStateEntity(
 )
 
 /**
+ * Wie viele Kommentare ein Filter zuletzt enthielt.
+ *
+ * Der Zwischenspeicher allein kann "hier ist nichts" nicht von "hier wurde
+ * noch nichts geladen" unterscheiden - beides ist eine leere Tabelle. Genau
+ * daran hing bisher der Start: Wer nichts Offenes hatte, sah bei jedem
+ * Oeffnen erst Platzhalterkarten, bis der Server dasselbe bestaetigte, was
+ * die App beim letzten Mal schon wusste.
+ *
+ * Deshalb wird die Zahl festgehalten, nicht nur die Kommentare. Ein Eintrag
+ * mit 0 ist eine Antwort; ein fehlender Eintrag heisst "noch nie geholt".
+ * [updatedAtEpochMillis] sagt, wie alt die Auskunft ist.
+ */
+@Entity(tableName = "filter_counts", primaryKeys = ["instanceId", "filter"])
+data class FilterCountEntity(
+    val instanceId: String,
+    /** Name aus `CommentFilter`, nicht der Wert der API. */
+    val filter: String,
+    val count: Int,
+    val updatedAtEpochMillis: Long,
+)
+
+/**
  * Bereits gemeldete Kommentare.
  *
  * Zusammen mit [SyncStateEntity.lastNotifiedCommentId] verhindert diese

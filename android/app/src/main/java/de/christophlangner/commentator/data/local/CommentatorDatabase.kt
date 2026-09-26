@@ -7,6 +7,7 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 import de.christophlangner.commentator.data.local.dao.CommentDao
 import de.christophlangner.commentator.data.local.entity.CommentEntity
+import de.christophlangner.commentator.data.local.entity.FilterCountEntity
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
 import de.christophlangner.commentator.data.local.entity.SyncStateEntity
@@ -21,11 +22,12 @@ import de.christophlangner.commentator.data.local.entity.SyncStateEntity
 @Database(
     entities = [
         CommentEntity::class,
+        FilterCountEntity::class,
         PostTitleEntity::class,
         SyncStateEntity::class,
         NotifiedCommentEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class CommentatorDatabase : RoomDatabase() {
@@ -50,6 +52,29 @@ abstract class CommentatorDatabase : RoomDatabase() {
             override fun migrate(connection: SQLiteConnection) {
                 connection.execSQL(
                     "ALTER TABLE comments ADD COLUMN authorId INTEGER NOT NULL DEFAULT 0",
+                )
+            }
+        }
+
+        /**
+         * Nimmt die Zaehlungen je Filter auf.
+         *
+         * Leer angelegt und nicht gefuellt: Was die Filter enthalten, weiss
+         * nur der Server. Bis zum ersten Abruf verhaelt sich die App wie
+         * bisher - danach steht die Auskunft auch nach einem Neustart bereit.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS filter_counts (
+                        instanceId TEXT NOT NULL,
+                        filter TEXT NOT NULL,
+                        count INTEGER NOT NULL,
+                        updatedAtEpochMillis INTEGER NOT NULL,
+                        PRIMARY KEY(instanceId, filter)
+                    )
+                    """.trimIndent(),
                 )
             }
         }

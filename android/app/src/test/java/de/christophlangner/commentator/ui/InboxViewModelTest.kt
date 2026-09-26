@@ -17,6 +17,7 @@ import de.christophlangner.commentator.fake.MainDispatcherRule
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
 import de.christophlangner.commentator.ui.inbox.InboxViewModel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -164,6 +165,55 @@ class InboxViewModelTest {
             val counts = expectMostRecentItem().counts
             assertEquals(3, counts[CommentFilter.PENDING])
             assertEquals(12, counts[CommentFilter.SPAM])
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `gespeicherte Zahlen stehen schon vor dem Abruf in der Leiste`() = runTest {
+        // Sie kommen aus dem Zwischenspeicher, nicht aus der Antwort des
+        // Servers - sonst traegt die Filterleiste beim Aufbau nichts.
+        comments.gespeicherteZahlen.value = mapOf(CommentFilter.PENDING to 4)
+        // Der Abruf bleibt haengen: Was jetzt dasteht, kann nur aus dem
+        // Zwischenspeicher stammen.
+        comments.refreshGate = CompletableDeferred()
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            assertEquals(4, expectMostRecentItem().counts[CommentFilter.PENDING])
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `ein bekannt leerer Filter zeigt keinen Erstaufbau`() = runTest {
+        // Der haeufigste Start ueberhaupt: nichts Offenes. Frueher standen
+        // dafuer bei jedem Oeffnen sekundenlang Platzhalterkarten, obwohl die
+        // Antwort seit dem letzten Lauf feststand.
+        comments.gespeicherteZahlen.value = mapOf(CommentFilter.PENDING to 0)
+        comments.refreshGate = CompletableDeferred()
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            val zustand = expectMostRecentItem()
+            assertTrue(zustand.comments.isEmpty())
+            assertEquals(false, zustand.isInitialLoad)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `ohne gespeicherte Zahl bleibt es beim Erstaufbau`() = runTest {
+        // Nichts gespeichert heisst "noch nie geholt" - und dann ist die
+        // leere Liste ein Ladezustand, keine Antwort.
+        comments.refreshGate = CompletableDeferred()
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            assertEquals(true, expectMostRecentItem().isInitialLoad)
             cancelAndIgnoreRemainingEvents()
         }
     }

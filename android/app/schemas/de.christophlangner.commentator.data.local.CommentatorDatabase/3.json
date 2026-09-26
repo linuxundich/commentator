@@ -1,0 +1,273 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "713f7ba93bbb94834830571351c7acd1",
+    "entities": [
+      {
+        "tableName": "comments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`instanceId` TEXT NOT NULL, `id` INTEGER NOT NULL, `postId` INTEGER NOT NULL, `parentId` INTEGER NOT NULL, `authorId` INTEGER NOT NULL, `authorName` TEXT NOT NULL, `authorEmail` TEXT, `authorUrl` TEXT, `avatarUrl` TEXT, `contentHtml` TEXT NOT NULL, `contentPlain` TEXT NOT NULL, `dateEpochMillis` INTEGER NOT NULL, `status` TEXT NOT NULL, `link` TEXT, PRIMARY KEY(`instanceId`, `id`))",
+        "fields": [
+          {
+            "fieldPath": "instanceId",
+            "columnName": "instanceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postId",
+            "columnName": "postId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentId",
+            "columnName": "parentId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authorId",
+            "columnName": "authorId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authorName",
+            "columnName": "authorName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authorEmail",
+            "columnName": "authorEmail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "authorUrl",
+            "columnName": "authorUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "avatarUrl",
+            "columnName": "avatarUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contentHtml",
+            "columnName": "contentHtml",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contentPlain",
+            "columnName": "contentPlain",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateEpochMillis",
+            "columnName": "dateEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "link",
+            "columnName": "link",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "instanceId",
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_comments_instanceId_status_dateEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "instanceId",
+              "status",
+              "dateEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_comments_instanceId_status_dateEpochMillis` ON `${TABLE_NAME}` (`instanceId`, `status`, `dateEpochMillis`)"
+          },
+          {
+            "name": "index_comments_instanceId_parentId",
+            "unique": false,
+            "columnNames": [
+              "instanceId",
+              "parentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_comments_instanceId_parentId` ON `${TABLE_NAME}` (`instanceId`, `parentId`)"
+          },
+          {
+            "name": "index_comments_instanceId_postId",
+            "unique": false,
+            "columnNames": [
+              "instanceId",
+              "postId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_comments_instanceId_postId` ON `${TABLE_NAME}` (`instanceId`, `postId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "filter_counts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`instanceId` TEXT NOT NULL, `filter` TEXT NOT NULL, `count` INTEGER NOT NULL, `updatedAtEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`instanceId`, `filter`))",
+        "fields": [
+          {
+            "fieldPath": "instanceId",
+            "columnName": "instanceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filter",
+            "columnName": "filter",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtEpochMillis",
+            "columnName": "updatedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "instanceId",
+            "filter"
+          ]
+        }
+      },
+      {
+        "tableName": "post_titles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`instanceId` TEXT NOT NULL, `postId` INTEGER NOT NULL, `title` TEXT NOT NULL, PRIMARY KEY(`instanceId`, `postId`))",
+        "fields": [
+          {
+            "fieldPath": "instanceId",
+            "columnName": "instanceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "postId",
+            "columnName": "postId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "instanceId",
+            "postId"
+          ]
+        }
+      },
+      {
+        "tableName": "sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`instanceId` TEXT NOT NULL, `lastSyncEpochMillis` INTEGER, `lastNotifiedCommentId` INTEGER NOT NULL, `lastNotifiedDateEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`instanceId`))",
+        "fields": [
+          {
+            "fieldPath": "instanceId",
+            "columnName": "instanceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSyncEpochMillis",
+            "columnName": "lastSyncEpochMillis",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastNotifiedCommentId",
+            "columnName": "lastNotifiedCommentId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastNotifiedDateEpochMillis",
+            "columnName": "lastNotifiedDateEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "instanceId"
+          ]
+        }
+      },
+      {
+        "tableName": "notified_comments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`instanceId` TEXT NOT NULL, `commentId` INTEGER NOT NULL, `notifiedAtEpochMillis` INTEGER NOT NULL, PRIMARY KEY(`instanceId`, `commentId`))",
+        "fields": [
+          {
+            "fieldPath": "instanceId",
+            "columnName": "instanceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "commentId",
+            "columnName": "commentId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notifiedAtEpochMillis",
+            "columnName": "notifiedAtEpochMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "instanceId",
+            "commentId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '713f7ba93bbb94834830571351c7acd1')"
+    ]
+  }
+}

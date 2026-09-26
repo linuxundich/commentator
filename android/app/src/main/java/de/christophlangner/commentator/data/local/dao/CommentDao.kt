@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import de.christophlangner.commentator.data.local.entity.CommentEntity
 import de.christophlangner.commentator.data.local.entity.CommentWithPost
+import de.christophlangner.commentator.data.local.entity.FilterCountEntity
 import de.christophlangner.commentator.data.local.entity.InstanceCount
 import de.christophlangner.commentator.data.local.entity.NotifiedCommentEntity
 import de.christophlangner.commentator.data.local.entity.PostTitleEntity
@@ -199,6 +200,23 @@ interface CommentDao {
         """,
     )
     fun observeCountsByInstance(status: String): Flow<List<InstanceCount>>
+
+    // --- Zaehlungen je Filter ---
+
+    /**
+     * Die zuletzt bekannten Zahlen eines Blogs.
+     *
+     * Fortlaufend beobachtet, damit die Filterleiste schon beim Aufbau
+     * Zahlen zeigt und nicht erst, wenn der Server geantwortet hat.
+     */
+    @Query("SELECT * FROM filter_counts WHERE instanceId = :instanceId")
+    fun observeFilterCounts(instanceId: String): Flow<List<FilterCountEntity>>
+
+    @Upsert
+    suspend fun upsertFilterCounts(counts: List<FilterCountEntity>)
+
+    @Query("DELETE FROM filter_counts WHERE instanceId = :instanceId")
+    suspend fun deleteFilterCounts(instanceId: String)
 
     // --- Synchronisierungszustand ---
 
