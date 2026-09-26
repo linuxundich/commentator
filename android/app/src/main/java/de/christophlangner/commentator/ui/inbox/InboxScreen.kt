@@ -16,10 +16,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.draw.rotate
+import de.christophlangner.commentator.ui.theme.Bewegung
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -32,13 +42,12 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +57,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -93,6 +104,7 @@ import de.christophlangner.commentator.ui.common.ErrorState
 import de.christophlangner.commentator.ui.common.CommentSkeletonList
 import de.christophlangner.commentator.ui.common.OfflineBanner
 import de.christophlangner.commentator.ui.common.SessionInvalidBanner
+import de.christophlangner.commentator.ui.theme.CommentatorFormen
 
 /**
  * Posteingang: die wichtigste Ansicht der App.
@@ -387,6 +399,7 @@ internal fun InboxScreenContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun InboxContent(
     state: InboxUiState,
@@ -491,7 +504,9 @@ private fun InboxContent(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator()
+                        // Die Expressive-Ladeanzeige wandert durch eine Folge
+                        // von Formen, statt einen Kreis zu drehen.
+                        LoadingIndicator()
                     }
                 }
             }
@@ -601,26 +616,43 @@ private fun TeamGroupRow(
                 // Ohne Beschriftung: Was das Antippen tut, sagt bereits die
                 // Zeile selbst - sie ist die Schaltflaeche, das Zeichen nur
                 // ihr Zeiger. Zweimal vorgelesen waere es nur im Weg.
+                //
+                // Gedreht statt ausgetauscht: Zwei Zeichen, die einander
+                // ersetzen, springen. Dasselbe Zeichen, das sich dreht, zeigt
+                // den Weg von zu nach auf - und traegt dabei die Feder, die
+                // auch die Gruppe darunter aufschiebt.
+                val drehung by animateFloatAsState(
+                    targetValue = if (expanded) 180f else 0f,
+                    animationSpec = Bewegung.raeumlich(),
+                    label = "Gruppenpfeil",
+                )
                 Icon(
-                    imageVector = if (expanded) {
-                        Icons.Default.KeyboardArrowUp
-                    } else {
-                        Icons.Default.KeyboardArrowDown
-                    },
+                    imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(drehung),
                 )
             }
         }
 
-        if (expanded) {
-            group.entries.forEach { entry ->
-                InboxEntry(
-                    entry = entry,
-                    state = state,
-                    onOpenComment = onOpenComment,
-                    onModerate = onModerate,
-                )
+        // Die eingeklappten Beitraege schieben sich auf, statt zu erscheinen.
+        // Vorher wechselte die Liste ohne Uebergang, und es war nicht zu
+        // sehen, woher die neuen Karten kamen - gerade bei einer Gruppe in der
+        // Mitte einer langen Liste.
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(Bewegung.raeumlich()) + fadeIn(Bewegung.effekt()),
+            exit = shrinkVertically(Bewegung.raeumlich()) + fadeOut(Bewegung.schnellerEffekt()),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                group.entries.forEach { entry ->
+                    InboxEntry(
+                        entry = entry,
+                        state = state,
+                        onOpenComment = onOpenComment,
+                        onModerate = onModerate,
+                    )
+                }
             }
         }
     }
@@ -633,23 +665,25 @@ private fun FilterRow(
     counts: Map<CommentFilter, Int>,
     onSelect: (CommentFilter) -> Unit,
 ) {
+    val filter = CommentFilter.entries.toList()
+
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // Eng gesetzt: Die Marken bilden eine zusammenhaengende Gruppe. Mit
+        // dem vorherigen Abstand von 8 dp standen dort fuenf einzelne Dinge,
+        // zwischen denen nichts erkennbar zusammengehoerte.
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        items(CommentFilter.entries.toList()) { filter ->
-            val name = stringResource(filter.labelRes())
-            val anzahl = counts[filter]
-            FilterChip(
-                selected = filter == selected,
-                onClick = { onSelect(filter) },
-                label = {
-                    // Ist die Zahl nicht bekannt, steht dort nur der Name -
-                    // eine erfundene Null waere schlechter als keine Angabe.
-                    Text(anzahl?.let { "$name · $it" } ?: name)
-                },
-                colors = FilterChipDefaults.filterChipColors(),
+        itemsIndexed(filter) { index, eintrag ->
+            val name = stringResource(eintrag.labelRes())
+            val anzahl = counts[eintrag]
+            val gewaehlt = eintrag == selected
+
+            ToggleButton(
+                checked = gewaehlt,
+                onCheckedChange = { onSelect(eintrag) },
+                shapes = gruppenFormen(index = index, anzahl = filter.size),
                 // Der Mittelpunkt trennt fuers Auge; vorgelesen ergibt er
                 // nichts. Fuer Bildschirmleser steht die Zahl deshalb
                 // ausgeschrieben da.
@@ -664,9 +698,52 @@ private fun FilterRow(
                     )
                     Modifier.semantics { contentDescription = gesprochen }
                 },
-            )
+            ) {
+                // Ist die Zahl nicht bekannt, steht dort nur der Name -
+                // eine erfundene Null waere schlechter als keine Angabe.
+                Text(anzahl?.let { "$name · $it" } ?: name)
+            }
         }
     }
+}
+
+/**
+ * Die drei Formen eines Schalters in der verbundenen Filterleiste.
+ *
+ * Material 3 Expressive fasst verwandte Schalter zu einer Gruppe zusammen: Sie
+ * ist aussen rund und innen fast gerade, und dadurch als ein Ding erkennbar.
+ * Gedrueckt und ausgewaehlt traegt ein Schalter jeweils eine eigene, rundere
+ * Form - [ToggleButton] wandelt zwischen ihnen, statt sie zu tauschen.
+ *
+ * Die Form und nicht nur die Farbe: Wer Farben schlecht unterscheidet, sieht
+ * an einer eingefaerbten Marke nichts. An einer runden schon. Und weil der
+ * Wandel animiert ist, ist auch die Richtung der Aenderung ablesbar - welcher
+ * Schalter gerade aufgeht und welcher zugeht.
+ *
+ * Die Leiste scrollt waagerecht. Aussen heisst deshalb "erster und letzter
+ * Eintrag der Liste", nicht "am Bildschirmrand" - sonst aenderte sich die Form
+ * beim Scrollen.
+ */
+@Composable
+private fun gruppenFormen(index: Int, anzahl: Int): ToggleButtonShapes {
+    val aussen = CommentatorFormen.GruppeAussen
+    val innen = CommentatorFormen.GruppeInnen
+    val erster = index == 0
+    val letzter = index == anzahl - 1
+
+    return ToggleButtonShapes(
+        shape = RoundedCornerShape(
+            topStart = if (erster) aussen else innen,
+            bottomStart = if (erster) aussen else innen,
+            topEnd = if (letzter) aussen else innen,
+            bottomEnd = if (letzter) aussen else innen,
+        ),
+        // Unter dem Finger geht der Schalter auf. Das ist die Rueckmeldung,
+        // die sonst allein die Farbe traegt.
+        pressedShape = RoundedCornerShape(CommentatorFormen.GruppeGedrueckt),
+        // Der gewaehlte loest sich aus der Gruppe: rundum die volle Rundung.
+        checkedShape = RoundedCornerShape(CommentatorFormen.GruppeGewaehlt),
+    )
 }
 
 /**

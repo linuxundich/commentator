@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import de.christophlangner.commentator.R
 
 /** Ladeanzeige für den Erstaufbau einer Liste. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoadingState(modifier: Modifier = Modifier) {
     Column(
@@ -28,7 +30,8 @@ fun LoadingState(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator()
+        // Expressive: Formenfolge statt sich drehendem Kreis.
+        LoadingIndicator()
         Text(
             text = stringResource(R.string.state_loading),
             style = MaterialTheme.typography.bodyMedium,

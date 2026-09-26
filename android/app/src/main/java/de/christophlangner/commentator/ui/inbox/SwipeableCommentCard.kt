@@ -45,6 +45,7 @@ import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.RoleStyle
 import de.christophlangner.commentator.domain.model.TeamRole
+import de.christophlangner.commentator.ui.theme.Bewegung
 import kotlin.math.abs
 
 /**
@@ -167,6 +168,11 @@ private fun SwipeBackground(state: SwipeToDismissBoxState) {
     // weiter, wo sie abgeschaltet ist oder nicht wahrgenommen wird.
     val betonung by animateFloatAsState(
         targetValue = if (scharf) BETONT else 1f,
+        // Schnelle Feder: Die Bestaetigung muss innerhalb der Geste ankommen,
+        // sonst bestaetigt sie etwas, das schon vorbei ist. Eine Feder statt
+        // einer Kurve auch deshalb, weil der Finger hier noch schiebt - die
+        // Feder nimmt die Geschwindigkeit mit, eine Kurve beginnt bei Null.
+        animationSpec = Bewegung.schnellRaeumlich(),
         label = "Wischbetonung",
     )
 

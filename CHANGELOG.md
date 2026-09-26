@@ -291,6 +291,41 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
     nennt die Unterzeile auch den Blog, bei einem bleibt sie, wie sie war.
   - Eine angetippte Benachrichtigung wechselt zum betreffenden Blog. Sonst
     stünde hinter dem geöffneten Kommentar der Posteingang eines anderen.
+- Die Oberfläche folgt Material 3 Expressive.
+  - **Bewegung** als Federphysik statt fester Dauern. Eine Feder kennt die
+    Geschwindigkeit, mit der eine Bewegung ankommt, und läuft daraus weiter;
+    eine Kurve über 200 ms beginnt immer bei Null, auch wenn der Finger das
+    Element gerade noch geschoben hat. Getrennt nach räumlich (Platz und
+    Größe, schwingt leicht über) und Effekt (Deckkraft und Farbe, schwingt
+    nicht über - eine überschwingende Deckkraft müsste über 100 % hinaus und
+    flackerte nur). Das Schema kommt aus dem Theme, nicht aus Konstanten in
+    den Komponenten, damit keine Stelle bei ihrer eigenen Zeitangabe bleibt.
+  - **Filterleiste als verbundene Gruppe** aus `ToggleButton`: außen rund,
+    innen fast gerade, und damit als ein Ding erkennbar statt als fünf
+    einzelne Marken. Jeder Schalter hat drei Formen - ruhend, unter dem
+    Finger, ausgewählt - und wandelt zwischen ihnen, statt sie zu tauschen.
+    Die Auswahl trägt damit ihre Form und nicht nur ihre Farbe; wer Farben
+    schlecht unterscheidet, sieht an einer eingefärbten Marke nichts, an einer
+    runden schon.
+  - **Formenskala** mit größerer Spannweite: zurückhaltend dort, wo viele
+    Elemente nebeneinanderliegen, rund dort, wo eine Fläche für sich steht.
+    Die Kommentarliste bleibt bewusst dicht - sie ist der Arbeitsbereich, und
+    jeder Millimeter Radius kostet dort nutzbare Breite.
+  - **Betonte Typografie**: mehr Gewicht auf Titeln, Überschriften und
+    Beschriftungen, damit die Gliederung beim Überfliegen erkennbar ist. Der
+    Kommentartext selbst bleibt unberührt - er wird gelesen, nicht
+    überflogen.
+  - **Ladeanzeige** als Folge wandelnder Formen statt eines sich drehenden
+    Kreises.
+  - Das Auf- und Zuklappen zusammengefasster Team-Beiträge ist animiert; es
+    wechselte zuvor ohne Übergang, und es war nicht zu sehen, woher die neuen
+    Karten kamen. Der Pfeil dreht sich, statt gegen ein zweites Zeichen
+    getauscht zu werden.
+  - Dafür hängt `compose-material3` als einziges Compose-Artefakt an einer
+    eigenen Version (1.5.0-alpha29) statt an der BOM. In der stabilen Linie
+    1.4.0 ist die gesamte Expressive-API Kotlin-`internal` und aus App-Code
+    nicht aufrufbar; die neuen Komponenten fehlen dort ganz. Begründung und
+    Preis stehen in `docs/architecture.md`.
 - Beschriftungsspalten richten sich nach der gemessenen Textbreite statt nach
   einer festen Angabe. Bei 200 % Systemschriftgröße wurde aus „Beitrag" zuvor
   ein „Beitr / ag" – ein Umbruch mitten im Wort. Ein Test hält das für die

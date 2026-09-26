@@ -1,6 +1,10 @@
 package de.christophlangner.commentator.ui.common
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.core.time.RelativeTime
+import de.christophlangner.commentator.ui.theme.Bewegung
 import java.time.Instant
 
 /**
@@ -35,7 +40,17 @@ fun OfflineBanner(
     lastSync: Instant?,
     modifier: Modifier = Modifier,
 ) {
-    AnimatedVisibility(visible = isOffline, modifier = modifier) {
+    AnimatedVisibility(
+        visible = isOffline,
+        // Das Band schiebt den Inhalt darunter weg - eine Groessenaenderung,
+        // also eine raeumliche Feder. Die Deckkraft bekommt die Effektfeder:
+        // Sie darf nicht ueberschwingen, sonst flackert sie am Ende.
+        enter = expandVertically(Bewegung.langsamRaeumlich()) +
+            fadeIn(Bewegung.effekt()),
+        exit = shrinkVertically(Bewegung.langsamRaeumlich()) +
+            fadeOut(Bewegung.schnellerEffekt()),
+        modifier = modifier,
+    ) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -74,7 +89,14 @@ fun SessionInvalidBanner(
     onReauthenticate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AnimatedVisibility(visible = visible, modifier = modifier) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(Bewegung.langsamRaeumlich()) +
+            fadeIn(Bewegung.effekt()),
+        exit = shrinkVertically(Bewegung.langsamRaeumlich()) +
+            fadeOut(Bewegung.schnellerEffekt()),
+        modifier = modifier,
+    ) {
         Surface(
             color = MaterialTheme.colorScheme.errorContainer,
             contentColor = MaterialTheme.colorScheme.onErrorContainer,

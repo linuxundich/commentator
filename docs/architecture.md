@@ -41,7 +41,8 @@ Tutorials.
 | compileSdk / targetSdk | 37 | 37 | API 37 ist die höchste von AGP 9.4 unterstützte Ebene. Das SDK-Paket heißt seit den SDK-Minor-Releases `platforms;android-37.0`. |
 | minSdk | 26 | – | Android 8.0. Notification Channels sind ab 26 Pflicht und ohne Kompatibilitätspfade nutzbar; deckt praktisch den gesamten aktiven Gerätebestand ab. |
 | Build Tools | 37.0.0 | 37.0.0 | AGP 9.4 verlangt min. 36.0.0. |
-| Compose BOM | 2026.09.00 | 2026.09.00 | Hält alle Compose-Artefakte konsistent. Material 3 kommt aus der BOM. |
+| Compose BOM | 2026.09.00 | 2026.09.00 | Hält alle Compose-Artefakte konsistent. |
+| compose-material3 | 1.5.0-alpha29 | 1.5.0-alpha29 | **Einzige bewusste Ausnahme von der Stable-Regel**, und das einzige Compose-Artefakt mit eigener Version. Begründung unten. |
 | Navigation Compose | 2.10.1 | 2.10.1 | Typsichere Navigation über `@Serializable`-Routen. |
 | Lifecycle | 2.11.0 | 2.12.0-alpha03 | Neueste stabile Version. |
 | Hilt | 2.60.1 | 2.60.1 | In den Vorgaben ausdrücklich bevorzugt; mit KSP betrieben. |
@@ -55,6 +56,41 @@ Tutorials.
 | Coil | 3.6.3 | 3.6.3 | Avatare. Siehe Abschnitt 4 zur Drittanbieter-Abwägung. |
 | material-icons-core | 1.7.8 | 1.7.8 | Auf dieser Version eingefroren. Material 3 liefert die Symbole nicht mehr mit, deshalb ausdrücklich aufgenommen. |
 | Robolectric | 4.17 | 4.17 | Compose-Oberflächentests ohne Gerät. |
+
+### Die Ausnahme: material3 als Alpha
+
+Für das Android Gradle Plugin steht oben „Alphas sind für ein Produktivprojekt
+ungeeignet". Bei `compose-material3` wird davon abgewichen, und das soll
+nachvollziehbar bleiben.
+
+Material 3 Expressive ist in der stabilen Linie **1.4.0 nicht benutzbar**.
+Vorhanden ist es dort: `MaterialExpressiveTheme`, `MotionScheme`,
+`MaterialTheme.motionScheme` und sogar `ExperimentalMaterial3ExpressiveApi`
+liegen im Artefakt. Sie sind aber sämtlich Kotlin-`internal` und aus App-Code
+nicht aufrufbar. Ein Blick mit `javap` täuscht hier: Kotlins `internal` ist im
+Bytecode `public` und nur in den Metadaten markiert - erst der Compiler sagt
+es. Die Komponenten `ButtonGroup`, `ToggleButton`, `LoadingIndicator`,
+`MaterialShapes` und `FloatingToolbar` fehlen in 1.4.0 vollständig.
+
+Ohne die Alpha wäre also nur die Hälfte erreichbar gewesen: Form und Schrift
+öffentlich, die Bewegung nur als Nachbau mit von Hand gesetzten Federn - und
+die mitgelieferten Komponenten wären beim Standardschema geblieben, weil jede
+Material-Komponente ihr Bewegungsschema aus dem Theme liest und nicht aus dem
+Aufrufer.
+
+Was die Entscheidung kostet:
+
+* Die Alpha-Linie ändert Signaturen zwischen den Fassungen. `MaterialShapes`
+  und `LoadingIndicator` wurden in der 1.5.0-Reihe schon einmal zurück auf
+  experimentell gestuft. Ein Anheben ist deshalb nichts, was nebenbei
+  mitläuft.
+* Die BOM wird für genau ein Artefakt überstimmt. Die übrigen
+  Compose-Artefakte bleiben konsistent aus der BOM; `material3` hängt an einer
+  eigenen Version in `libs.versions.toml`.
+* Alles Expressive steht hinter `@OptIn(ExperimentalMaterial3ExpressiveApi)`.
+
+Sobald 1.5.0 stabil ist, entfällt der Sondereintrag und `material3` kommt
+wieder aus der BOM.
 
 ### Bewusst *nicht* verwendet
 
