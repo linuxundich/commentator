@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
+import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.fake.testInstance
 import de.christophlangner.commentator.ui.settings.SettingsContent
@@ -54,6 +55,7 @@ class SettingsScreenTest {
                             showAvatars = false,
                             showAuthorEmail = false,
                             threadedInbox = true,
+                            lastFilter = CommentFilter.PENDING,
                         ),
                     ),
                     intervalOptions = intervalOptions,

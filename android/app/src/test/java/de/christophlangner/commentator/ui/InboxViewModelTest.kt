@@ -66,6 +66,55 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun `startet mit dem zuletzt gewaehlten Filter`() = runTest {
+        // Wer zuletzt im Papierkorb war, landet dort wieder - und nicht auf
+        // einem Posteingang, der bei vielen ohnehin meist leer ist.
+        settings.state.value = settings.state.value.copy(lastFilter = CommentFilter.TRASH)
+        comments.comments.value = listOf(
+            testComment(1, status = CommentStatus.PENDING),
+            testComment(2, status = CommentStatus.TRASH),
+        )
+
+        viewModel().state.test {
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertEquals(CommentFilter.TRASH, state.filter)
+            assertEquals(listOf(2L), state.comments.map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `der gewaehlte Filter wird gemerkt`() = runTest {
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            model.setFilter(CommentFilter.SPAM)
+            advanceUntilIdle()
+
+            assertEquals(CommentFilter.SPAM, settings.state.value.lastFilter)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `vor dem gemerkten Filter wird nichts geladen`() = runTest {
+        // Sonst faengt die Liste beim Posteingang an und springt gleich
+        // darauf um - ein sichtbarer Sprung und eine Abfrage zu viel.
+        settings.state.value = settings.state.value.copy(lastFilter = CommentFilter.SPAM)
+        val model = viewModel()
+
+        model.state.test {
+            advanceUntilIdle()
+            expectMostRecentItem()
+            // Genau ein Abruf, und zwar fuer den gemerkten Filter.
+            assertEquals(1, comments.refreshCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `Filterwechsel aendert die angezeigte Liste`() = runTest {
         comments.comments.value = listOf(
             testComment(1, status = CommentStatus.PENDING),

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.model.RoleAccent
 import de.christophlangner.commentator.domain.model.RoleStyles
@@ -50,6 +51,30 @@ class DefaultSettingsRepositoryTest {
         assertFalse(settings.showAuthorEmail)
         assertTrue(settings.notificationsEnabled)
         assertEquals(AppSettings.DEFAULT_SYNC_INTERVAL_MINUTES, settings.syncIntervalMinutes)
+    }
+
+    @Test
+    fun `der zuletzt gewaehlte Filter ueberdauert den Neustart`() = runTest {
+        val store = dataStore("filter")
+        DefaultSettingsRepository(store).setLastFilter(CommentFilter.SPAM)
+
+        // Zweite Instanz auf derselben Datei: genau der Fall nach einem
+        // Neustart der App.
+        val gelesen = DefaultSettingsRepository(store).settings.first()
+
+        assertEquals(CommentFilter.SPAM, gelesen.lastFilter)
+    }
+
+    @Test
+    fun `ein unbekannter Filter faellt auf den Posteingang zurueck`() = runTest {
+        // Etwa nach einer Fassung, die einen Filter kannte, den es nicht
+        // mehr gibt. Lieber der Posteingang als ein Absturz beim Start.
+        val store = dataStore("filter-unbekannt")
+        store.edit { it[stringPreferencesKey("last_filter")] = "ARCHIVIERT" }
+
+        val gelesen = DefaultSettingsRepository(store).settings.first()
+
+        assertEquals(CommentFilter.PENDING, gelesen.lastFilter)
     }
 
     @Test

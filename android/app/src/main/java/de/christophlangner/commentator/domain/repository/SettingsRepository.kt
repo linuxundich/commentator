@@ -1,5 +1,6 @@
 package de.christophlangner.commentator.domain.repository
 
+import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.model.RoleStyle
 import de.christophlangner.commentator.domain.model.RoleStyles
@@ -43,6 +44,18 @@ data class AppSettings(
      * beurteilen als eine Frage ohne Antwort.
      */
     val threadedInbox: Boolean,
+    /**
+     * Der zuletzt gewaehlte Filter des Posteingangs.
+     *
+     * Bloguebergreifend, wie der Filter selbst: Ein Wechsel des Blogs nimmt
+     * ihn mit, weil wer offene Kommentare sichtet das auf dem naechsten Blog
+     * auch will. Waere er je Blog gespeichert, spraenge er beim Umschalten -
+     * und das waere genau die Gewohnheit, die hier festgehalten werden soll.
+     *
+     * Keine Einstellung, die jemand von Hand setzt, sondern eine gemerkte
+     * Gewohnheit. Sie steht hier, weil hier alles Blogunabhaengige steht.
+     */
+    val lastFilter: CommentFilter,
 ) {
     companion object {
         /**
@@ -60,6 +73,7 @@ data class AppSettings(
             showAvatars = false,
             showAuthorEmail = false,
             threadedInbox = true,
+            lastFilter = CommentFilter.PENDING,
         )
     }
 }
@@ -109,6 +123,9 @@ interface SettingsRepository {
     suspend fun setShowAvatars(show: Boolean)
     suspend fun setShowAuthorEmail(show: Boolean)
     suspend fun setThreadedInbox(threaded: Boolean)
+
+    /** Haelt fest, welchen Filter der Posteingang zuletzt zeigte. */
+    suspend fun setLastFilter(filter: CommentFilter)
 
     /**
      * Die Einstellungen eines Blogs.

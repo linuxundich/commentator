@@ -26,7 +26,8 @@ eigene WordPress-Installation.
 * Kommentare über die offizielle WordPress-REST-API abrufen
 * Übersichtliche Liste mit Autor, Zeitpunkt, Text, zugehörigem Beitrag und
   Status
-* Filter: Alle, Offen, Genehmigt, Spam, Papierkorb
+* Filter: Alle, Offen, Genehmigt, Spam, Papierkorb; der zuletzt gewählte wird
+  gemerkt
 * Optional Avatare (standardmäßig aus, siehe Datenschutz)
 * Umschaltbares App-Symbol (grün oder blau)
 * Pull-to-Refresh und Aktualisieren über die Kopfleiste

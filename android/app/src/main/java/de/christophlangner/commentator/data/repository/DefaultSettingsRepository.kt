@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import de.christophlangner.commentator.core.AppLog
+import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.model.RoleAccent
 import de.christophlangner.commentator.domain.model.RoleStyle
@@ -45,6 +46,7 @@ class DefaultSettingsRepository @Inject constructor(
             showAvatars = prefs[AVATARS] ?: AppSettings.DEFAULT.showAvatars,
             showAuthorEmail = prefs[AUTHOR_EMAIL] ?: AppSettings.DEFAULT.showAuthorEmail,
             threadedInbox = prefs[THREADED] ?: AppSettings.DEFAULT.threadedInbox,
+            lastFilter = lastFilterOf(prefs),
         )
     }
 
@@ -68,6 +70,23 @@ class DefaultSettingsRepository @Inject constructor(
 
     override suspend fun setThreadedInbox(threaded: Boolean) {
         dataStore.edit { it[THREADED] = threaded }
+    }
+
+    override suspend fun setLastFilter(filter: CommentFilter) {
+        dataStore.edit { it[LAST_FILTER] = filter.name }
+    }
+
+    /**
+     * Der gemerkte Filter.
+     *
+     * Ein Name, den es nicht mehr gibt, faellt auf die Voreinstellung
+     * zurueck: Lieber der Posteingang als ein Absturz, wenn aus einer
+     * aelteren Fassung ein unbekannter Wert dasteht.
+     */
+    private fun lastFilterOf(prefs: Preferences): CommentFilter {
+        val gespeichert = prefs[LAST_FILTER] ?: return AppSettings.DEFAULT.lastFilter
+        return CommentFilter.entries.firstOrNull { it.name == gespeichert }
+            ?: AppSettings.DEFAULT.lastFilter
     }
 
     override fun siteSettings(instanceId: String): Flow<SiteSettings> =
@@ -200,6 +219,7 @@ class DefaultSettingsRepository @Inject constructor(
         val AVATARS = booleanPreferencesKey("show_avatars")
         val AUTHOR_EMAIL = booleanPreferencesKey("show_author_email")
         val THREADED = booleanPreferencesKey("threaded_inbox")
+        val LAST_FILTER = stringPreferencesKey("last_filter")
 
         // Nur noch gelesen: Stand aus der Zeit, als die App einen Blog kannte.
         val ONLY_PENDING = booleanPreferencesKey("notify_only_pending")

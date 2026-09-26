@@ -35,6 +35,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -128,7 +130,7 @@ class InboxViewModel @Inject constructor(
     private val moderateComment: ModerateCommentUseCase,
     private val teamRepository: TeamRepository,
     private val undoModeration: UndoModerationUseCase,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     connectivity: ConnectivityObserver,
 ) : ViewModel() {
 
@@ -155,7 +157,20 @@ class InboxViewModel @Inject constructor(
         val team: Team = Team(),
     )
 
-    private val filter = MutableStateFlow(CommentFilter.PENDING)
+    /**
+     * Der angezeigte Filter, `null` solange der gemerkte noch nicht gelesen
+     * ist.
+     *
+     * Die Unterscheidung ist noetig, weil sonst mit dem Posteingang
+     * angefangen und gleich darauf auf den gemerkten Filter gewechselt
+     * wuerde: ein sichtbarer Sprung und eine Abfrage, die niemand wollte.
+     * Alles, was am Filter haengt, wartet deshalb auf den ersten Wert.
+     */
+    private val filter = MutableStateFlow<CommentFilter?>(null)
+
+    /** Der Filter, sobald er feststeht. */
+    private val aktiverFilter = filter.filterNotNull()
+
     private val transient = MutableStateFlow(Transient())
 
     /**
@@ -196,7 +211,7 @@ class InboxViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private val comments = combine(
         instance,
-        filter,
+        aktiverFilter,
         // Nur die beiden Felder, die die Liste bestimmen - sonst wuerde jeder
         // Tastendruck die Abfrage neu aufsetzen.
         suche.map { it.aktiv to it.treffer }.distinctUntilChanged(),
@@ -342,7 +357,7 @@ class InboxViewModel @Inject constructor(
     )
 
     val state: StateFlow<InboxUiState> = combine(
-        combine(instance, filter, comments, transient, environment, ::Zwischenstand),
+        combine(instance, aktiverFilter, comments, transient, environment, ::Zwischenstand),
         suche,
         threadContext,
         blogs,
@@ -403,8 +418,18 @@ class InboxViewModel @Inject constructor(
     )
 
     init {
+        // Zuerst der gemerkte Filter, dann alles Weitere: Wer zuletzt im
+        // Papierkorb war, soll dort wieder landen und nicht auf einem
+        // Posteingang, der bei ihm ohnehin meist leer ist.
         viewModelScope.launch {
-            combine(instance, filter, ::Pair)
+            val gemerkt = settingsRepository.settings.first().lastFilter
+            // Hat der Benutzer in der Zwischenzeit schon getippt, gilt seine
+            // Wahl - der gespeicherte Stand ist dann veraltet.
+            filter.compareAndSet(null, gemerkt)
+        }
+
+        viewModelScope.launch {
+            combine(instance, aktiverFilter, ::Pair)
                 .distinctUntilChanged()
                 .collect { (instance, filter) ->
                     if (instance != null) refreshIfStale(instance.id, filter)
@@ -415,7 +440,7 @@ class InboxViewModel @Inject constructor(
         // Tastendruck waere eine eigene Anfrage an den Blog.
         @OptIn(FlowPreview::class)
         viewModelScope.launch {
-            combine(suche.map { it.text.trim() }.distinctUntilChanged(), filter, ::Pair)
+            combine(suche.map { it.text.trim() }.distinctUntilChanged(), aktiverFilter, ::Pair)
                 .debounce(SUCHVERZOEGERUNG)
                 .collect { (text, _) -> sucheAusfuehren(text) }
         }
@@ -467,7 +492,8 @@ class InboxViewModel @Inject constructor(
         }
 
         suche.update { it.copy(laeuft = true) }
-        when (val outcome = commentRepository.search(instanceId, text, filter.value)) {
+        val filter = filter.value ?: return
+        when (val outcome = commentRepository.search(instanceId, text, filter)) {
             is Outcome.Success -> suche.update {
                 // Nur uebernehmen, wenn die Antwort noch zur Eingabe passt -
                 // sonst ueberholt eine langsame Anfrage eine neuere.
@@ -518,6 +544,9 @@ class InboxViewModel @Inject constructor(
 
     fun setFilter(newFilter: CommentFilter) {
         filter.value = newFilter
+        // Festgehalten wird hier und nicht beim Verlassen des Bildschirms:
+        // Ein Prozess, den das System einsammelt, kommt an kein Ende mehr.
+        viewModelScope.launch { settingsRepository.setLastFilter(newFilter) }
     }
 
     /** Vom Benutzer ausgeloest: holt alles, auch Rechte und Zaehlungen. */
@@ -533,9 +562,10 @@ class InboxViewModel @Inject constructor(
 
     private fun refresh(withSiteData: Boolean) {
         val instanceId = instance.value?.id ?: return
+        val filter = filter.value ?: return
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, error = null) }
-            val outcome = commentRepository.refresh(instanceId, filter.value)
+            val outcome = commentRepository.refresh(instanceId, filter)
 
             if (withSiteData) {
                 // Zieht nebenbei nach, was sich am Blog geändert hat - etwa ein
@@ -643,12 +673,13 @@ class InboxViewModel @Inject constructor(
 
     fun loadMore() {
         val instanceId = instance.value?.id ?: return
+        val filter = filter.value ?: return
         val current = state.value
         if (current.isLoadingMore || !current.canLoadMore) return
 
         viewModelScope.launch {
             transient.update { it.copy(isLoadingMore = true) }
-            val outcome = commentRepository.loadNextPage(instanceId, filter.value)
+            val outcome = commentRepository.loadNextPage(instanceId, filter)
             transient.update { it.copy(isLoadingMore = false) }
             if (outcome is Outcome.Failure) _events.tryEmit(Event.Failed(outcome.error))
         }
@@ -691,9 +722,10 @@ class InboxViewModel @Inject constructor(
      */
     fun emptyCurrentFilter() {
         val instanceId = instance.value?.id ?: return
+        val filter = filter.value ?: return
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true) }
-            val outcome = commentRepository.emptyStatus(instanceId, filter.value)
+            val outcome = commentRepository.emptyStatus(instanceId, filter)
             transient.update { it.copy(isRefreshing = false) }
             when (outcome) {
                 is Outcome.Success -> {

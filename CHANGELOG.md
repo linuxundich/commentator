@@ -77,6 +77,11 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
   Benachrichtigung direkt in die Detailansicht.
 - Lokaler Room-Cache für Kommentare, Beitragstitel, Zählungen je Filter und
   Synchronisierungszustand.
+- Der Posteingang öffnet mit dem zuletzt gewählten Filter. Blogübergreifend,
+  wie der Filter selbst: Beim Wechsel des Blogs bleibt er ohnehin stehen, und
+  je Blog gespeichert spränge er beim Umschalten. Geholt wird er, bevor etwas
+  geladen wird – sonst finge die Liste beim Posteingang an und spränge gleich
+  darauf um.
 - Der Posteingang zeigt beim Öffnen sofort den zuletzt bekannten Stand: Die
   Zahlen der Filterleiste stehen aus dem Zwischenspeicher da, bevor der Server
   geantwortet hat, und ein Filter, der beim letzten Mal leer war, zeigt den

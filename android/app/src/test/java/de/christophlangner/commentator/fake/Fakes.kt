@@ -3,6 +3,7 @@ package de.christophlangner.commentator.fake
 import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.core.net.ConnectivityObserver
+import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.domain.repository.AppSettings
 import de.christophlangner.commentator.domain.repository.AuthRepository
@@ -171,6 +172,7 @@ class FakeSettingsRepository(
         showAvatars = false,
         showAuthorEmail = false,
         threadedInbox = true,
+        lastFilter = CommentFilter.PENDING,
     ),
     /** Vorbelegung, die fuer jeden noch nicht gesetzten Blog gilt. */
     var siteDefault: SiteSettings = SiteSettings.DEFAULT,
@@ -200,6 +202,10 @@ class FakeSettingsRepository(
 
     override suspend fun setThreadedInbox(threaded: Boolean) {
         state.value = state.value.copy(threadedInbox = threaded)
+    }
+
+    override suspend fun setLastFilter(filter: CommentFilter) {
+        state.value = state.value.copy(lastFilter = filter)
     }
 
     override fun siteSettings(instanceId: String): Flow<SiteSettings> =
