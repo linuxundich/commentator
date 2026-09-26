@@ -235,6 +235,7 @@
     <string name="role_timeline_description">Aus werden aufeinanderfolgende Beiträge zu einer Zeile zusammengefasst, die sich aufklappen lässt. Ausgeblendet wird nichts.</string>
     <string name="role_notify">Benachrichtigen</string>
     <string name="role_notify_description">Neue Kommentare aus dieser Rolle melden sich auf dem Gerät.</string>
+    <string name="role_notify_self_description">Auch die eigenen Antworten melden sich auf dem Gerät. Voreingestellt aus: Wer gerade geantwortet hat, weiß davon.</string>
     <string name="accent_schiefer">Schiefer</string>
     <string name="accent_indigo">Indigo</string>
     <string name="accent_teal">Petrol</string>

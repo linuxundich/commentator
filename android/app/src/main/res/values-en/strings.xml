@@ -214,6 +214,7 @@
     <string name="role_timeline_description">Off, consecutive comments are folded into a single row that can be expanded. Nothing is hidden.</string>
     <string name="role_notify">Notify</string>
     <string name="role_notify_description">New comments from this role are announced on the device.</string>
+    <string name="role_notify_self_description">Your own replies are announced on the device as well. Off by default: whoever just replied already knows.</string>
     <string name="accent_schiefer">Slate</string>
     <string name="accent_indigo">Indigo</string>
     <string name="accent_teal">Teal</string>

@@ -98,6 +98,13 @@ data class RoleStyles(val byRole: Map<String, RoleStyle> = emptyMap()) {
                 Team.CONTRIBUTOR -> RoleAccent.OCKER
                 else -> RoleAccent.SCHIEFER
             },
+            // Ueber die eigenen Beitraege meldet die App voreingestellt
+            // nicht: Wer gerade geantwortet hat, weiss davon. Eine Meldung
+            // ueber die eigene Antwort waere nichts als eine Quittung - und
+            // sie kaeme noch dazu mit Verzoegerung, wenn die naechste
+            // Hintergrundpruefung laeuft. Einschalten laesst es sich beim
+            // eigenen Konto trotzdem.
+            notify = slug != Team.SELF,
         )
     }
 }

@@ -379,7 +379,17 @@ internal fun RoleDialog(
 
                 DialogSwitch(
                     title = stringResource(R.string.role_notify),
-                    description = stringResource(R.string.role_notify_description),
+                    description = stringResource(
+                        // Beim eigenen Konto ist "diese Rolle" die falsche
+                        // Auskunft: Gemeint sind die eigenen Antworten, und
+                        // dass darueber voreingestellt nichts kommt, steht
+                        // sonst nirgends.
+                        if (canLeaveTeam) {
+                            R.string.role_notify_description
+                        } else {
+                            R.string.role_notify_self_description
+                        },
+                    ),
                     checked = style.notify,
                     enabled = isTeam,
                     onCheckedChange = { onStyleChange(style.copy(notify = it)) },

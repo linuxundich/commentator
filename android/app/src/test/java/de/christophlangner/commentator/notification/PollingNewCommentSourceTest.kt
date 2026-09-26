@@ -274,6 +274,56 @@ class PollingNewCommentSourceTest {
         assertTrue(gefunden.muted.isEmpty())
     }
 
+    @Test
+    fun `eigene Kommentare melden sich voreingestellt nicht`() = runTest {
+        // Der haeufigste Fall ueberhaupt: Wer gerade geantwortet hat, soll
+        // darueber keine Benachrichtigung bekommen.
+        server.enqueue(jsonResponse(eigenerKommentar()))
+
+        val gefunden = (source.fetchUnnotified(instance) as Outcome.Success).value
+
+        assertTrue(gefunden.toReport.isEmpty())
+        assertEquals(listOf(11L), gefunden.muted.map { it.id })
+    }
+
+    @Test
+    fun `eigene Kommentare melden, wenn es eingeschaltet ist`() = runTest {
+        settings.setSite(
+            instance.id,
+            settings.siteSettingsValue(instance.id).copy(
+                roleStyles = RoleStyles.DEFAULT.with(
+                    Team.SELF,
+                    RoleStyles.defaultFor(Team.SELF).copy(notify = true),
+                ),
+            ),
+        )
+        server.enqueue(jsonResponse(eigenerKommentar()))
+
+        val gefunden = (source.fetchUnnotified(instance) as Outcome.Success).value
+
+        assertEquals(listOf(11L), gefunden.toReport.map { it.id })
+    }
+
+    @Test
+    fun `die bekannte Rolle des eigenen Kontos hebt die Einstellung nicht auf`() = runTest {
+        // Mit Plugin kennt die App die tatsaechliche Rolle. Faenden die
+        // eigenen Antworten sich darunter wieder, haette der Schalter beim
+        // eigenen Konto auf genau diesen Blogs keine Wirkung.
+        teamRepo.team = Team(members = mapOf(2L to TeamRole("administrator", "Administrator")))
+        server.enqueue(jsonResponse(eigenerKommentar()))
+
+        val gefunden = (source.fetchUnnotified(instance) as Outcome.Success).value
+
+        assertTrue(gefunden.toReport.isEmpty())
+        assertEquals(listOf(11L), gefunden.muted.map { it.id })
+    }
+
+    /** Ein Kommentar des angemeldeten Kontos - [testInstance] traegt die 2. */
+    private fun eigenerKommentar() =
+        """[{"id":11,"post":1,"parent":0,"author":2,"author_name":"Moderator",
+         "date_gmt":"2026-09-19T10:00:00","content":{"rendered":"<p>Text</p>"},
+         "status":"hold"}]"""
+
     private fun comments(entries: List<Pair<Long, String>>): String =
         entries.joinToString(prefix = "[", postfix = "]") { (id, date) ->
             """

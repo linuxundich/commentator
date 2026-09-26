@@ -130,8 +130,10 @@ class RoleDialogTest {
         assertTrue(
             composeRule.onAllNodesWithText("Als Team führen").fetchSemanticsNodes().isEmpty(),
         )
-        // Alles Weitere bleibt trotzdem einstellbar.
+        // Alles Weitere bleibt trotzdem einstellbar - die Meldung ueber die
+        // eigenen Antworten steht voreingestellt aus und laesst sich hier
+        // einschalten.
         composeRule.onNodeWithText("Benachrichtigen").performClick()
-        assertEquals(false, stile.single().notify)
+        assertEquals(true, stile.single().notify)
     }
 }

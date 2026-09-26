@@ -68,6 +68,8 @@ eigene WordPress-Installation.
 * Getrennte Benachrichtigungskanäle, einzeln über die Android-Systemeinstellungen
   steuerbar
 * Kein Kommentar wird zweimal gemeldet
+* Über die eigenen Beiträge meldet die App voreingestellt nicht; im Dialog
+  **Eigenes Konto** lässt sich das einschalten
 * Prüfintervall einstellbar
 
 ### Sonstiges

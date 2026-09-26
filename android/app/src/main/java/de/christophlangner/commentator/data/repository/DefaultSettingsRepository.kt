@@ -169,13 +169,18 @@ class DefaultSettingsRepository @Inject constructor(
         val accent: String? = null,
         val color: Boolean = true,
         val timeline: Boolean = true,
-        val notify: Boolean = true,
+        /**
+         * Offen gelassen und nicht auf `true` gesetzt: Was hier fehlt, soll
+         * die Voreinstellung der Rolle bekommen - und die ist beim eigenen
+         * Konto "nicht melden".
+         */
+        val notify: Boolean? = null,
     ) {
         fun toDomain(slug: String) = RoleStyle(
             accent = accent?.let(RoleAccent::fromStorage) ?: RoleStyles.defaultFor(slug).accent,
             colorEnabled = color,
             showInTimeline = timeline,
-            notify = notify,
+            notify = notify ?: RoleStyles.defaultFor(slug).notify,
         )
     }
 

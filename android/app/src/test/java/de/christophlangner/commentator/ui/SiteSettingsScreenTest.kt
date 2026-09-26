@@ -190,7 +190,11 @@ class SiteSettingsScreenTest {
         render()
 
         composeRule.onNodeWithText("Eigenes Konto").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("In der Liste").performScrollTo().assertIsDisplayed()
+        // In der Liste, aber ohne Meldung: Die eigenen Antworten melden sich
+        // voreingestellt nicht.
+        composeRule.onNodeWithText("In der Liste · ohne Benachrichtigung")
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test

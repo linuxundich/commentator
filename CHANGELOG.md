@@ -213,6 +213,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 - Benachrichtigungen je Rolle abschaltbar. Stummgeschaltete Kommentare werden
   trotzdem vermerkt, sonst holte sie der Hintergrunddienst bei jedem Lauf
   erneut vom Blog.
+- Über die eigenen Beiträge meldet die App voreingestellt nicht: Wer gerade
+  geantwortet hat, weiß davon, und die Meldung käme erst mit der nächsten
+  Hintergrundprüfung. Einschalten lässt sich das im Dialog „Eigenes Konto“.
+  Die eigenen Beiträge entscheiden sich immer an diesem Eintrag, auch wenn das
+  Plugin die tatsächliche Rolle kennt – sonst wäre der Schalter ausgerechnet
+  dort wirkungslos, und die eigenen Antworten ließen sich nur zusammen mit
+  denen aller anderen Administratoren stummschalten.
 - Wischgesten in der Liste: nach rechts genehmigen, nach links als Spam
   markieren. Beides ist rücknehmbar, und die Schaltflächen auf der Karte
   bleiben erhalten – eine Geste ist nie der einzige Weg zu einer Aktion.

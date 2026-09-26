@@ -117,14 +117,37 @@ class PollingNewCommentSource @Inject constructor(
                 }
 
                 val (stumm, melden) = fresh.partition { comment ->
-                    val rolle = team.roleOf(comment.authorId) ?: return@partition false
-                    !einstellungen.roleStyles.notifies(rolle.slug)
+                    val kuerzel = meldeKuerzel(comment, instance, team)
+                        ?: return@partition false
+                    !einstellungen.roleStyles.notifies(kuerzel)
                 }
 
                 Outcome.Success(NewComments(toReport = melden, muted = stumm))
             }
         }
     }
+
+    /**
+     * Unter welchem Rollenkuerzel ueber einen Kommentar entschieden wird,
+     * oder `null` fuer alles, was nicht zum Team gehoert - dessen Kommentare
+     * sind die, um die es beim Moderieren ueberhaupt geht.
+     *
+     * Die eigenen Beitraege zaehlen immer zum eigenen Konto, auch wenn das
+     * Plugin die tatsaechliche Rolle kennt. Sonst haette der Schalter beim
+     * eigenen Konto ausgerechnet auf den Blogs keine Wirkung, auf denen die
+     * App am meisten weiss: Dort faende sich der eigene Beitrag unter
+     * "Administrator" wieder, und wer die eigenen Antworten stummschalten
+     * will, muesste die ganze Rolle stummschalten - mitsamt den Beitraegen
+     * aller anderen Administratoren.
+     */
+    private fun meldeKuerzel(comment: Comment, instance: WordPressInstance, team: Team): String? =
+        // Gaeste tragen bei WordPress die 0; ohne diese Bedingung waere
+        // jeder Gast das eigene Konto, sobald dessen Kennung fehlte.
+        if (comment.authorId != 0L && comment.authorId == instance.userId) {
+            Team.SELF
+        } else {
+            team.roleOf(comment.authorId)?.slug
+        }
 
     override suspend fun hasBaseline(instance: WordPressInstance): Boolean =
         (dao.syncState(instance.id)?.lastNotifiedDateEpochMillis ?: 0L) > 0L
