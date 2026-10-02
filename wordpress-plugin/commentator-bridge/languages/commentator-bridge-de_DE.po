@@ -1,0 +1,84 @@
+# German translation of Commentator Bridge.
+msgid ""
+msgstr ""
+"Project-Id-Version: Commentator Bridge 1.8.0\n"
+"PO-Revision-Date: 2026-10-02 14:20+0200\n"
+"Last-Translator: Christoph Langner\n"
+"Language-Team: German\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: commentator-bridge\n"
+
+#. Plugin Name of the plugin
+#: commentator-bridge.php
+msgid "Commentator Bridge"
+msgstr "Commentator Bridge"
+
+#. Plugin URI of the plugin
+#: commentator-bridge.php
+msgid "https://github.com/linuxundich/commentator"
+msgstr "https://github.com/linuxundich/commentator"
+
+#. Description of the plugin
+#: commentator-bridge.php
+msgid "Lean REST endpoints for the Commentator Android app: cheap checks for new comments, bulk actions the core API lacks, and optional instant notifications via UnifiedPush."
+msgstr "Schlanke REST-Endpunkte für die Android-App Commentator: sparsame Prüfung auf neue Kommentare, Sammelaktionen, die die Kern-API nicht kennt, und optionale Sofortmeldung über UnifiedPush."
+
+#. Author of the plugin
+#: commentator-bridge.php
+msgid "Christoph Langner"
+msgstr "Christoph Langner"
+
+#: commentator-bridge.php:473
+msgid "An empty entry is not allowed."
+msgstr "Ein leerer Eintrag ist nicht zulässig."
+
+#: commentator-bridge.php:538
+#: commentator-bridge.php:782
+msgid "Instant notifications are disabled on this site."
+msgstr "Die Sofortmeldung ist auf diesem Blog abgeschaltet."
+
+#: commentator-bridge.php:547
+msgid "The push address must be a publicly reachable HTTPS address."
+msgstr "Die Push-Adresse muss eine öffentlich erreichbare HTTPS-Adresse sein."
+
+#: commentator-bridge.php:764
+msgid "Commentator: instant notifications"
+msgstr "Commentator: Sofortmeldung"
+
+#: commentator-bridge.php:766
+msgid "The address has been removed."
+msgstr "Die Adresse wurde entfernt."
+
+#. translators: 1: number of accepted test wake-ups, 2: number of rejected ones
+#: commentator-bridge.php:773
+#, php-format
+msgid "Test wake-up: %1$d accepted, %2$d rejected."
+msgstr "Testweckruf: %1$d angenommen, %2$d abgelehnt."
+
+#: commentator-bridge.php:779
+msgid "Accepted means the push server took it. Whether it reaches the phone is shown there by a notification from Commentator."
+msgstr "Angenommen heißt, der Push-Server hat ihn entgegengenommen. Ob er auf dem Telefon ankommt, zeigt dort eine Benachrichtigung von Commentator."
+
+#: commentator-bridge.php:784
+msgid "No devices registered. Instant notifications are set up in the Commentator app, in the settings of this blog."
+msgstr "Keine Geräte hinterlegt. Eingerichtet wird die Sofortmeldung in der App Commentator unter den Einstellungen des Blogs."
+
+#: commentator-bridge.php:786
+msgid "On every new comment and every status change, these addresses receive a wake-up call without any content."
+msgstr "Bei jedem neuen Kommentar und jeder Statusänderung geht an diese Adressen ein Weckruf ohne Inhalt."
+
+#: commentator-bridge.php:793
+msgid "Remove"
+msgstr "Entfernen"
+
+#: commentator-bridge.php:799
+msgid "Send test wake-up"
+msgstr "Testweckruf senden"
+
+#: commentator-bridge.php:827
+msgid "You are not allowed to do this."
+msgstr "Keine Berechtigung."

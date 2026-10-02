@@ -2,14 +2,15 @@
 /**
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/linuxundich/commentator
- * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
- * Version:           1.7.0
+ * Description:       Lean REST endpoints for the Commentator Android app: cheap checks for new comments, bulk actions the core API lacks, and optional instant notifications via UnifiedPush.
+ * Version:           1.8.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
  * License:           MIT
  * License URI:       https://opensource.org/licenses/MIT
  * Text Domain:       commentator-bridge
+ * Domain Path:       /languages
  *
  * Dieses Plugin ist optional. Ohne es funktioniert die App vollständig, sie
  * stellt dann lediglich etwas teurere Anfragen an die Kern-API.
@@ -59,7 +60,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.7.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.8.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -87,6 +88,7 @@ const COMMENTATOR_BRIDGE_PUSH_LIMIT = 5;
  */
 const COMMENTATOR_BRIDGE_PUSH_STATUS_GAP = 30;
 
+add_action( 'init', 'commentator_bridge_load_textdomain' );
 add_action( 'rest_api_init', 'commentator_bridge_register_routes' );
 add_action( 'wp_insert_comment', 'commentator_bridge_push_new_comment', 10, 2 );
 add_action( 'transition_comment_status', 'commentator_bridge_push_status_change', 10, 3 );
@@ -94,6 +96,14 @@ add_action( 'show_user_profile', 'commentator_bridge_profile_section' );
 add_action( 'edit_user_profile', 'commentator_bridge_profile_section' );
 add_action( 'admin_post_commentator_push_remove', 'commentator_bridge_profile_remove' );
 add_action( 'admin_post_commentator_push_test', 'commentator_bridge_profile_test' );
+
+/**
+ * Englisch im Code, Übersetzungen unter languages/. WordPress wählt sie nach
+ * der Sprache des Blogs beziehungsweise des angemeldeten Kontos.
+ */
+function commentator_bridge_load_textdomain(): void {
+	load_plugin_textdomain( 'commentator-bridge', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
 
 function commentator_bridge_register_routes(): void {
 	register_rest_route(
@@ -460,7 +470,7 @@ function commentator_bridge_blocklist_add( WP_REST_Request $request ) {
 	if ( '' === $value ) {
 		return new WP_Error(
 			'commentator_blocklist_empty',
-			__( 'Ein leerer Eintrag ist nicht zulässig.', 'commentator-bridge' ),
+			__( 'An empty entry is not allowed.', 'commentator-bridge' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -525,7 +535,7 @@ function commentator_bridge_push_add( WP_REST_Request $request ) {
 	if ( ! commentator_bridge_push_enabled() ) {
 		return new WP_Error(
 			'commentator_push_disabled',
-			'Die Sofortmeldung ist auf diesem Blog abgeschaltet.',
+			__( 'Instant notifications are disabled on this site.', 'commentator-bridge' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -534,7 +544,7 @@ function commentator_bridge_push_add( WP_REST_Request $request ) {
 	if ( '' === $endpoint || ! commentator_bridge_push_endpoint_valid( $endpoint ) ) {
 		return new WP_Error(
 			'commentator_invalid_endpoint',
-			'Die Push-Adresse muss eine öffentlich erreichbare HTTPS-Adresse sein.',
+			__( 'The push address must be a publicly reachable HTTPS address.', 'commentator-bridge' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -751,33 +761,42 @@ function commentator_bridge_profile_section( WP_User $user ): void {
 	$endpoints = commentator_bridge_push_endpoints( (int) $user->ID );
 	$notice    = isset( $_GET['commentator_push'] ) ? sanitize_key( wp_unslash( $_GET['commentator_push'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
 	?>
-	<h2 id="commentator-push">Commentator: Sofortmeldung</h2>
+	<h2 id="commentator-push"><?php esc_html_e( 'Commentator: instant notifications', 'commentator-bridge' ); ?></h2>
 	<?php if ( 'removed' === $notice ) : ?>
-		<p><strong>Die Adresse wurde entfernt.</strong></p>
+		<p><strong><?php esc_html_e( 'The address has been removed.', 'commentator-bridge' ); ?></strong></p>
 	<?php elseif ( 0 === strpos( $notice, 'tested' ) ) : ?>
 		<?php $parts = explode( '_', $notice ); ?>
-		<p><strong>Testweckruf: <?php echo (int) ( $parts[1] ?? 0 ); ?> angenommen, <?php echo (int) ( $parts[2] ?? 0 ); ?> abgelehnt.</strong>
-		Angenommen heißt, der Push-Server hat ihn entgegengenommen. Ob er auf dem Telefon ankommt, zeigt dort eine Benachrichtigung von Commentator.</p>
+		<p><strong>
+		<?php
+		printf(
+			/* translators: 1: number of accepted test wake-ups, 2: number of rejected ones */
+			esc_html__( 'Test wake-up: %1$d accepted, %2$d rejected.', 'commentator-bridge' ),
+			(int) ( $parts[1] ?? 0 ),
+			(int) ( $parts[2] ?? 0 )
+		);
+		?>
+		</strong>
+		<?php esc_html_e( 'Accepted means the push server took it. Whether it reaches the phone is shown there by a notification from Commentator.', 'commentator-bridge' ); ?></p>
 	<?php endif; ?>
 	<?php if ( ! commentator_bridge_push_enabled() ) : ?>
-		<p>Die Sofortmeldung ist auf diesem Blog abgeschaltet (<code>COMMENTATOR_BRIDGE_DISABLE_PUSH</code>).</p>
+		<p><?php esc_html_e( 'Instant notifications are disabled on this site.', 'commentator-bridge' ); ?> (<code>COMMENTATOR_BRIDGE_DISABLE_PUSH</code>)</p>
 	<?php elseif ( empty( $endpoints ) ) : ?>
-		<p>Keine Geräte hinterlegt. Eingerichtet wird die Sofortmeldung in der App Commentator unter den Einstellungen des Blogs.</p>
+		<p><?php esc_html_e( 'No devices registered. Instant notifications are set up in the Commentator app, in the settings of this blog.', 'commentator-bridge' ); ?></p>
 	<?php else : ?>
-		<p>Bei jedem neuen Kommentar und jeder Statusänderung geht an diese Adressen ein Weckruf ohne Inhalt.</p>
+		<p><?php esc_html_e( 'On every new comment and every status change, these addresses receive a wake-up call without any content.', 'commentator-bridge' ); ?></p>
 		<table class="widefat striped" style="max-width:40em">
 			<tbody>
 			<?php foreach ( $endpoints as $endpoint ) : ?>
 				<tr>
 					<td><code><?php echo esc_html( commentator_bridge_push_label( $endpoint ) ); ?></code></td>
 					<td style="text-align:right">
-						<a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_remove', (int) $user->ID, $endpoint ) ); ?>">Entfernen</a>
+						<a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_remove', (int) $user->ID, $endpoint ) ); ?>"><?php esc_html_e( 'Remove', 'commentator-bridge' ); ?></a>
 					</td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table>
-		<p><a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_test', (int) $user->ID ) ); ?>">Testweckruf senden</a></p>
+		<p><a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_test', (int) $user->ID ) ); ?>"><?php esc_html_e( 'Send test wake-up', 'commentator-bridge' ); ?></a></p>
 	<?php endif; ?>
 	<?php
 }
@@ -805,7 +824,7 @@ function commentator_bridge_profile_target( string $action ): int {
 	$user_id = isset( $_GET['user_id'] ) ? absint( $_GET['user_id'] ) : 0;
 	check_admin_referer( $action . '_' . $user_id );
 	if ( ! $user_id || ! current_user_can( 'edit_user', $user_id ) ) {
-		wp_die( 'Keine Berechtigung.', 403 );
+		wp_die( esc_html__( 'You are not allowed to do this.', 'commentator-bridge' ), 403 );
 	}
 	return $user_id;
 }

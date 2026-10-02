@@ -1,0 +1,86 @@
+# Copyright (C) 2026 Christoph Langner
+# This file is distributed under the MIT.
+msgid ""
+msgstr ""
+"Project-Id-Version: Commentator Bridge 1.8.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/commentator-bridge\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-02T12:18:27+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: commentator-bridge\n"
+
+#. Plugin Name of the plugin
+#: commentator-bridge.php
+msgid "Commentator Bridge"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: commentator-bridge.php
+msgid "https://github.com/linuxundich/commentator"
+msgstr ""
+
+#. Description of the plugin
+#: commentator-bridge.php
+msgid "Lean REST endpoints for the Commentator Android app: cheap checks for new comments, bulk actions the core API lacks, and optional instant notifications via UnifiedPush."
+msgstr ""
+
+#. Author of the plugin
+#: commentator-bridge.php
+msgid "Christoph Langner"
+msgstr ""
+
+#: commentator-bridge.php:473
+msgid "An empty entry is not allowed."
+msgstr ""
+
+#: commentator-bridge.php:538
+#: commentator-bridge.php:782
+msgid "Instant notifications are disabled on this site."
+msgstr ""
+
+#: commentator-bridge.php:547
+msgid "The push address must be a publicly reachable HTTPS address."
+msgstr ""
+
+#: commentator-bridge.php:764
+msgid "Commentator: instant notifications"
+msgstr ""
+
+#: commentator-bridge.php:766
+msgid "The address has been removed."
+msgstr ""
+
+#. translators: 1: number of accepted test wake-ups, 2: number of rejected ones
+#: commentator-bridge.php:773
+#, php-format
+msgid "Test wake-up: %1$d accepted, %2$d rejected."
+msgstr ""
+
+#: commentator-bridge.php:779
+msgid "Accepted means the push server took it. Whether it reaches the phone is shown there by a notification from Commentator."
+msgstr ""
+
+#: commentator-bridge.php:784
+msgid "No devices registered. Instant notifications are set up in the Commentator app, in the settings of this blog."
+msgstr ""
+
+#: commentator-bridge.php:786
+msgid "On every new comment and every status change, these addresses receive a wake-up call without any content."
+msgstr ""
+
+#: commentator-bridge.php:793
+msgid "Remove"
+msgstr ""
+
+#: commentator-bridge.php:799
+msgid "Send test wake-up"
+msgstr ""
+
+#: commentator-bridge.php:827
+msgid "You are not allowed to do this."
+msgstr ""

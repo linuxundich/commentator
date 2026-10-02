@@ -4,7 +4,7 @@ Tags: comments, moderation, rest-api
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -65,9 +65,8 @@ Wake-ups for status changes go to an address at most once every 30 seconds;
 bulk moderation in the admin thus triggers one instead of dozens. New
 comments always trigger a wake-up.
 
-In the user profile, the section "Commentator: Sofortmeldung" (instant
-notifications) shows where the blog sends wake-ups, with "Entfernen" (remove)
-and "Testweckruf senden" (send test wake-up).
+In the user profile, the section "Commentator: instant notifications" shows
+where the blog sends wake-ups, with "Remove" and "Send test wake-up".
 
 == For admins ==
 
@@ -111,6 +110,9 @@ The app detects the plugin automatically by the `commentator/v1` namespace in
 the response from `/wp-json/`.
 
 == Changelog ==
+
+= 1.8.0 =
+* English user interface, translatable; German translation included.
 
 = 1.7.0 =
 * `/push/test` and a section in the user profile: view stored addresses,

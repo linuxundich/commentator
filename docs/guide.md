@@ -241,9 +241,9 @@ blog's hosting only does IPv4.
 Whether the route works is shown by **Test** under “Notify instantly”: the
 plugin sends a test wake-up call, and if it arrives, the notification
 “Instant notifications work” appears. In the WordPress profile, the section
-“Commentator: Sofortmeldung” (instant notifications) shows where the blog
-sends wake-up calls, with “Entfernen” (remove) and the same test (from plugin
-1.7.0).
+“Commentator: instant notifications” shows where the blog sends wake-up
+calls, with “Remove” and the same test (from plugin 1.7.0). The plugin speaks
+English and German, following the language of the site or the user profile.
 
 Since plugin 1.6.0, moderating on the web also sends a wake-up call: the
 notification for a comment handled there then disappears immediately. If

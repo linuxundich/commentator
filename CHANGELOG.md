@@ -206,12 +206,17 @@ is listed under `[Unreleased]`.
 
 **WordPress plugin**
 
+- Version 1.8.0: English user interface with a German translation. All texts
+  the plugin shows - the profile section, error messages of its REST routes,
+  the plugin description - are now English in the code and translatable
+  (text domain `commentator-bridge`, `languages/`). The bundled German
+  translation is used automatically when the site or the user's profile is
+  set to German.
 - Version 1.7.0: `POST commentator/v1/push/test` sends a test wake-up call to
   your own addresses and reports how many the push server accepted. The user
   profile shows the registered addresses (server and end of the topic, not
-  the full address) in the "Commentator: Sofortmeldung" (instant
-  notifications) section, with "Entfernen" (remove) and "Testweckruf senden"
-  (send test wake-up call). Wake-up calls for status changes go to
+  the full address) in the "Commentator: instant notifications" section, with
+  "Remove" and "Send test wake-up". Wake-up calls for status changes go to
   an address at most every 30 seconds; new comments always wake. For admins
   without a settings page: `COMMENTATOR_BRIDGE_DISABLE_PUSH` disables instant
   notifications, the filters `commentator_bridge_push_allow_local` and
