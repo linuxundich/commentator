@@ -236,7 +236,9 @@
     <string name="settings_scope_pending">Moderation only</string>
     <string name="settings_scope_new">New comments</string>
     <string name="settings_scope_everything">Including spam</string>
-    <string name="settings_scope_description">“New comments” leaves out whatever a spam filter has already sorted out. “Including spam” lets you spot misclassifications early – at the cost of far more frequent notifications.</string>
+    <string name="settings_scope_pending_description">Only comments waiting for approval.</string>
+    <string name="settings_scope_new_description">Every new comment, except what a spam filter has already caught.</string>
+    <string name="settings_scope_everything_description">Caught spam too – you spot misclassifications early, but get notified far more often.</string>
     <string name="settings_push">Notify instantly</string>
     <string name="settings_push_description">New comments within seconds instead of at the next check – via a UnifiedPush app such as ntfy, without Google. Regular checks continue.</string>
     <string name="settings_push_needs_plugin">Requires the Commentator Bridge plugin 1.5 or later on the blog.</string>

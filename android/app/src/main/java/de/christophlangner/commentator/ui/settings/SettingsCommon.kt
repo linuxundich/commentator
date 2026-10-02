@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -61,19 +64,142 @@ import de.christophlangner.commentator.ui.theme.roleColors
  * unmittelbar geprüft, aber nichts davon ist Teil der Oberfläche nach außen.
  */
 
+/**
+ * Die Maße der Einstellungsbildschirme an einer Stelle.
+ *
+ * Alles beginnt bei [Edge] vom Rand - Text, Schalter, Chips und auch der Text
+ * in Textknöpfen, die ihren eigenen Innenabstand mitbringen. Zeilen haben
+ * oben und unten [Row], Zusatztexte stehen dicht an dem, was sie erklären.
+ */
+internal object SettingsSpacing {
+    val Edge = 16.dp
+    val Row = 12.dp
+    val Gap = 8.dp
+    val SectionTop = 24.dp
+
+    /** Textknöpfe haben 12 dp Innenabstand; so beginnt ihr Text bei [Edge]. */
+    val TextButtonEdge = 4.dp
+}
+
 @Composable
 internal fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+        modifier = Modifier.padding(
+            start = SettingsSpacing.Edge,
+            end = SettingsSpacing.Edge,
+            top = SettingsSpacing.SectionTop,
+            bottom = SettingsSpacing.Gap,
+        ),
     )
+}
+
+/** Erklärender Text zu einem Abschnitt oder dem Element darüber. */
+@Composable
+internal fun SettingsDescription(text: String, color: Color = Color.Unspecified) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else color,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Gap / 2),
+    )
+}
+
+/** Überschrift über einer Auswahl, im Maß eines Zeilentitels. */
+@Composable
+internal fun SettingsLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier.padding(
+            start = SettingsSpacing.Edge,
+            end = SettingsSpacing.Edge,
+            top = SettingsSpacing.Row,
+        ),
+    )
+}
+
+/**
+ * Chips nebeneinander, bei Bedarf umbrechend.
+ *
+ * FlowRow statt Row: Passen nicht alle in eine Zeile, bräche in einer Row der
+ * Text des letzten Chips senkrecht um und zöge die ganze Zeile in die Länge.
+ */
+@Composable
+internal fun ChipGroup(content: @Composable FlowRowScope.() -> Unit) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(SettingsSpacing.Gap),
+        verticalArrangement = Arrangement.spacedBy(SettingsSpacing.Gap),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Gap),
+        content = content,
+    )
+}
+
+/** Eine Option einer Einfachauswahl, mit kurzer Erklärung. */
+@Composable
+internal fun RadioRow(
+    title: String,
+    description: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    val farbe = if (enabled) {
+        MaterialTheme.colorScheme.onSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            // Der Knopf bringt 12 dp Innenabstand mit; so steht der Kreis bei
+            // derselben Kante wie aller übriger Inhalt.
+            .padding(start = SettingsSpacing.TextButtonEdge, end = SettingsSpacing.Edge, top = 4.dp, bottom = 4.dp),
+    ) {
+        RadioButton(selected = selected, onClick = null, enabled = enabled, modifier = Modifier.size(48.dp))
+        Column(modifier = Modifier.weight(1f).padding(start = SettingsSpacing.TextButtonEdge)) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge, color = farbe)
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else farbe,
+            )
+        }
+    }
+}
+
+/** Textknopf, dessen Text an derselben Kante beginnt wie der übrige Inhalt. */
+@Composable
+internal fun SettingsTextButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    color: Color = Color.Unspecified,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.padding(horizontal = SettingsSpacing.TextButtonEdge, vertical = SettingsSpacing.Gap / 2),
+    ) {
+        Text(text = text, color = color)
+    }
 }
 
 @Composable
 internal fun InfoRow(label: String, value: String) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Gap),
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
@@ -103,9 +229,9 @@ internal fun SwitchRow(
             .fillMaxWidth()
             // Die ganze Zeile schaltet, damit das Berührungsziel groß genug ist.
             .clickable(enabled = enabled, role = Role.Switch) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Row),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).padding(end = SettingsSpacing.Edge)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge, color = farbe)
             Text(
                 text = description,
@@ -123,6 +249,12 @@ internal fun NotifyScope.labelRes(): Int = when (this) {
     NotifyScope.EVERYTHING -> R.string.settings_scope_everything
 }
 
+internal fun NotifyScope.descriptionRes(): Int = when (this) {
+    NotifyScope.PENDING -> R.string.settings_scope_pending_description
+    NotifyScope.NEW_COMMENTS -> R.string.settings_scope_new_description
+    NotifyScope.EVERYTHING -> R.string.settings_scope_everything_description
+}
+
 // --- Antwortvorlagen ---
 
 @Composable
@@ -136,7 +268,7 @@ internal fun TemplateRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onEdit)
-            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = SettingsSpacing.Edge, top = SettingsSpacing.Gap / 2, bottom = SettingsSpacing.Gap / 2),
     ) {
         Text(
             text = template.text,
@@ -252,7 +384,7 @@ internal fun RoleRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Row),
     ) {
         Box(
             modifier = Modifier

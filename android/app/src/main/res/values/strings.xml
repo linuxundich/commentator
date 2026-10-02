@@ -257,7 +257,9 @@
     <string name="settings_scope_pending">Nur Moderation</string>
     <string name="settings_scope_new">Neue Kommentare</string>
     <string name="settings_scope_everything">Auch Spam</string>
-    <string name="settings_scope_description">„Neue Kommentare“ lässt aus, was ein Spamfilter bereits aussortiert hat. Mit „Auch Spam“ bemerkst du Fehleinstufungen früh – dafür meldet sich die App deutlich häufiger.</string>
+    <string name="settings_scope_pending_description">Nur Kommentare, die auf Freigabe warten.</string>
+    <string name="settings_scope_new_description">Jeder neue Kommentar, außer was ein Spamfilter aussortiert hat.</string>
+    <string name="settings_scope_everything_description">Auch aussortierter Spam – so fallen Fehleinstufungen früh auf, dafür meldet sich die App deutlich häufiger.</string>
     <string name="settings_push">Sofort melden</string>
     <string name="settings_push_description">Neue Kommentare in Sekunden statt bei der nächsten Prüfung – über eine UnifiedPush-App wie ntfy, ohne Google. Die Prüfung läuft weiter.</string>
     <string name="settings_push_needs_plugin">Braucht auf dem Blog das Plugin Commentator Bridge ab Version 1.5.</string>

@@ -3,10 +3,11 @@ package de.christophlangner.commentator.ui.settings
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -230,11 +230,9 @@ internal fun SiteSettingsContent(
                 ),
             )
             if (!instance.canModerate) {
-                Text(
+                SettingsDescription(
                     text = stringResource(R.string.settings_no_moderation_rights),
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
@@ -249,33 +247,19 @@ internal fun SiteSettingsContent(
             onCheckedChange = onNotificationsEnabled,
         )
 
-        Text(
-            text = stringResource(R.string.settings_scope),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            NotifyScope.entries.forEach { scope ->
-                FilterChip(
-                    selected = state.settings.notifyScope == scope,
-                    onClick = { onNotifyScope(scope) },
-                    enabled = state.settings.notificationsEnabled,
-                    label = { Text(stringResource(scope.labelRes())) },
-                )
-            }
+        SettingsLabel(stringResource(R.string.settings_scope))
+        // Eine Liste statt Chips: Drei längere Begriffe brachen als Chips
+        // unschön um, und was sie unterscheidet, stand in einem Absatz
+        // darunter. So steht die Erklärung bei der Option.
+        NotifyScope.entries.forEach { scope ->
+            RadioRow(
+                title = stringResource(scope.labelRes()),
+                description = stringResource(scope.descriptionRes()),
+                selected = state.settings.notifyScope == scope,
+                onClick = { onNotifyScope(scope) },
+                enabled = state.settings.notificationsEnabled,
+            )
         }
-        Text(
-            text = stringResource(R.string.settings_scope_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
 
         InstantPushRow(state = state, onInstantPush = onInstantPush)
         if (state.settings.instantPush && state.settings.pushEndpoint != null) {
@@ -285,20 +269,10 @@ internal fun SiteSettingsContent(
         HorizontalDivider()
         SectionTitle(stringResource(R.string.settings_team))
 
-        Text(
-            text = stringResource(R.string.settings_team_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        SettingsDescription(stringResource(R.string.settings_team_description))
 
         if (state.availableRoles.isEmpty()) {
-            Text(
-                text = stringResource(R.string.settings_team_needs_plugin),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
+            SettingsDescription(stringResource(R.string.settings_team_needs_plugin))
         }
 
         // Je Rolle eine Zeile statt eines Feldes von Schaltern: Zu jeder Rolle
@@ -317,18 +291,13 @@ internal fun SiteSettingsContent(
         HorizontalDivider()
         SectionTitle(stringResource(R.string.templates_section))
 
-        Text(
-            text = stringResource(R.string.templates_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        SettingsDescription(stringResource(R.string.templates_description))
 
         if (state.templates.isEmpty()) {
             Text(
                 text = stringResource(R.string.templates_empty),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Row),
             )
         } else {
             state.templates.forEach { template ->
@@ -340,32 +309,22 @@ internal fun SiteSettingsContent(
             }
         }
 
-        TextButton(
+        SettingsTextButton(
+            text = stringResource(R.string.templates_add),
             onClick = onAddTemplate,
             enabled = state.canAddTemplate,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(stringResource(R.string.templates_add))
-        }
+        )
         if (!state.canAddTemplate) {
-            Text(
-                text = stringResource(R.string.templates_full, ReplyTemplate.MAX_TEMPLATES),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
+            SettingsDescription(stringResource(R.string.templates_full, ReplyTemplate.MAX_TEMPLATES))
         }
 
-        HorizontalDivider()
-        TextButton(
+        HorizontalDivider(modifier = Modifier.padding(top = SettingsSpacing.Gap))
+        SettingsTextButton(
+            text = stringResource(R.string.action_remove_site),
             onClick = onSignOutRequest,
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.action_remove_site),
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
+            color = MaterialTheme.colorScheme.error,
+        )
+        Spacer(Modifier.height(SettingsSpacing.Gap))
     }
 }
 
@@ -436,7 +395,9 @@ private fun PushTestRow(test: PushTest?, onPushTest: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            // Rechts nur so viel, dass der Text des Knopfes mit dem Schalter
+            // darüber abschließt; der Knopf bringt eigenen Innenabstand mit.
+            .padding(start = SettingsSpacing.Edge, end = SettingsSpacing.TextButtonEdge, bottom = SettingsSpacing.Gap),
     ) {
         Text(
             text = when (test) {

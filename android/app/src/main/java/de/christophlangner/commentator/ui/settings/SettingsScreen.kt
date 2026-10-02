@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -150,7 +151,7 @@ internal fun SettingsContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onAddSite)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Row),
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(16.dp))
@@ -172,29 +173,10 @@ internal fun SettingsContent(
 
         // Dass der Umfang je Blog eingestellt wird, muss hier stehen: Sonst
         // sucht man ihn unter dem Hauptschalter, wo er früher war.
-        Text(
-            text = stringResource(R.string.settings_notifications_per_site_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-        )
+        SettingsDescription(stringResource(R.string.settings_notifications_per_site_hint))
 
-        Text(
-            text = stringResource(R.string.settings_interval),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-        )
-        // FlowRow statt Row: Die Auswahl hat mehr Einträge, als nebeneinander
-        // passen. In einer Row bliebe für den letzten Chip fast keine
-        // Breite übrig, sein Text bräche senkrecht um und zöge die ganze
-        // Zeile in die Länge.
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
+        SettingsLabel(stringResource(R.string.settings_interval))
+        ChipGroup {
             intervalOptions.forEach { minutes ->
                 FilterChip(
                     selected = state.settings.syncIntervalMinutes == minutes,
@@ -205,35 +187,18 @@ internal fun SettingsContent(
             }
         }
         // Der Takt gilt für den Durchgang über alle Blogs, nicht je Blog.
-        Text(
-            text = stringResource(R.string.settings_interval_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        SettingsDescription(stringResource(R.string.settings_interval_description))
 
-        TextButton(
+        SettingsTextButton(
+            text = stringResource(R.string.settings_open_system_notifications),
             onClick = onOpenSystemNotifications,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(stringResource(R.string.settings_open_system_notifications))
-        }
+        )
 
         HorizontalDivider()
         SectionTitle(stringResource(R.string.settings_section_appearance))
 
-        Text(
-            text = stringResource(R.string.settings_app_icon),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 16.dp, top = 4.dp),
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
+        SettingsLabel(stringResource(R.string.settings_app_icon))
+        ChipGroup {
             AppIcon.entries.forEach { icon ->
                 FilterChip(
                     selected = state.appIcon == icon,
@@ -250,12 +215,7 @@ internal fun SettingsContent(
                 )
             }
         }
-        Text(
-            text = stringResource(R.string.settings_app_icon_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-        )
+        SettingsDescription(stringResource(R.string.settings_app_icon_hint))
 
         SwitchRow(
             title = stringResource(R.string.settings_threaded),
@@ -280,13 +240,9 @@ internal fun SettingsContent(
             onCheckedChange = onShowAuthorEmail,
         )
 
-        HorizontalDivider()
-        TextButton(
-            onClick = onOpenAbout,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(stringResource(R.string.about_open))
-        }
+        HorizontalDivider(modifier = Modifier.padding(top = SettingsSpacing.Gap))
+        SettingsTextButton(text = stringResource(R.string.about_open), onClick = onOpenAbout)
+        Spacer(Modifier.height(SettingsSpacing.Gap))
     }
 }
 
@@ -307,7 +263,7 @@ private fun SiteEntry(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = SettingsSpacing.Edge, vertical = SettingsSpacing.Row),
     ) {
         if (instance.displayIconUrl != null) {
             AsyncImage(
