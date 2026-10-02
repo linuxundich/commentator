@@ -1,588 +1,557 @@
 # Changelog
 
-Alle nennenswerten Änderungen an diesem Projekt werden hier festgehalten.
+All notable changes to this project are documented here.
 
-Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
-Versionsnummern folgen [Semantic Versioning](https://semver.org/lang/de/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Version numbers follow [Semantic Versioning](https://semver.org/).
 
-Es werden bewusst keine Versionsnummern für noch nicht veröffentlichte Stände
-vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
+Unreleased states deliberately get no version numbers. Everything unreleased
+is listed under `[Unreleased]`.
 
 ## [Unreleased]
 
 ### Added
 
-**Android-App**
+**Android app**
 
-- Debug-Build: Umleitung eines Blogs auf die lokale Testumgebung, nur über
-  die Systemeigenschaft `debug.commentator.demo` eingeschaltet. Für
-  Screenshots und Videos, die eine echte Blog-Adresse zeigen, ohne den echten
-  Blog zu berühren. Dazu `docker/scripts/seed-screenshots.sh` mit erfundenen
-  Kommentaren und die ersten Screenshots samt Demo-Video unter
-  `docs/screenshots/`.
+- Debug build: redirection of a blog to the local test environment, enabled
+  only via the system property `debug.commentator.demo`. For screenshots and
+  videos that show a real blog address without touching the real blog. Along
+  with it `docker/scripts/seed-screenshots.sh` with made-up comments, and the
+  first screenshots plus a demo video under `docs/screenshots/`.
 
-- Knopf „Testen“ unter „Sofort melden“: Das Plugin schickt einen
-  Testweckruf, und kommt er an, bestätigt das eine Benachrichtigung
-  („Sofortmeldung funktioniert“). Die Zeile sagt, ob der Push-Server ihn
-  angenommen hat – bleibt die Bestätigung trotzdem aus, liegt es an der
-  UnifiedPush-App. Am Emulator kam sie 0,6 s nach dem Tippen. Hat der Admin die
-  Sofortmeldung auf dem Blog abgeschaltet, sagt die App das.
+- "Test" button under "Notify instantly": the plugin sends a test wake-up
+  call, and if it arrives, a notification confirms it ("Instant notifications
+  work"). The row says whether the push server accepted it – if the
+  confirmation still doesn't show up, the UnifiedPush app is to blame. On the
+  emulator it arrived 0.6 s after the tap. If the admin has disabled instant
+  notifications on the blog, the app says so.
 
-- Ist die Sofortmeldung für jeden benachrichtigenden Blog eingerichtet, prüft
-  die App nur noch alle sechs Stunden nach (oder seltener, wenn so
-  eingestellt). Die Prüfung bleibt als Sicherheitsnetz für verlorene
-  Weckrufe. Erst eine beim Plugin hinterlegte Adresse zählt.
-- „Sofort melden“ nennt den Server der Push-Adresse. Beim öffentlichen
-  ntfy.sh steht dazu, wie man auf einen eigenen ntfy-Server wechselt: dort als
-  Standardserver eintragen, dann die Sofortmeldung aus- und wieder einschalten.
+- Once instant notifications are set up for every notifying blog, the app
+  only checks every six hours (or less often, if configured that way). The
+  check remains as a safety net for lost wake-up calls. Only an address
+  registered with the plugin counts.
+- "Notify instantly" names the server of the push address. For the public
+  ntfy.sh, it adds how to switch to your own ntfy server: set it as the
+  default server there, then turn instant notifications off and on again.
 
-- Einrichtung einer WordPress-Verbindung über den Autorisierungs-Flow für
-  Application Passwords, mit manueller Eingabe als Rückfallebene.
-- Kommentar-Posteingang mit Autor, Zeitpunkt, Text, zugehörigem Beitrag und
-  Status.
-- Filter nach Alle, Offen, Genehmigt, Spam und Papierkorb.
-- Seitenweises Nachladen anhand der Kopfzeile `X-WP-TotalPages`.
-- Pull-to-Refresh und Aktualisieren über die Kopfleiste.
-- Moderationsaktionen: genehmigen, zurückstellen, als Spam markieren, in den
-  Papierkorb verschieben, endgültig löschen (mit Rückfrage).
-- Bearbeiten des Kommentartexts, sofern die API es für das Konto zulässt.
-- Rückgängig-Funktion für alle zurücknehmbaren Moderationsaktionen.
-- Detailansicht mit vollständigem Text, Autor, Website, optional
-  E-Mail-Adresse, Datum, Beitrag, Status und vorhandenen Antworten. Der
-  Antwortfaden wird eingerückt und mit einer senkrechten Linie abgesetzt, damit
-  Antworten nicht wie eigenständige Kommentare wirken. Er wird beim Öffnen
-  eigens vom Server geholt und ist damit unabhängig vom Filter der Liste.
-- Antworten auf Kommentare; die Antwort wird als echter WordPress-Kommentar
-  mit Bezug auf den ursprünglichen veröffentlicht.
-- „Spam leeren" und „Papierkorb leeren" in der Kopfleiste, mit Rückfrage vor
-  dem endgültigen Löschen. Mit Plugin eine Anfrage, ohne Plugin eine je
-  Kommentar. Bei vielen Einträgen wird stapelweise gearbeitet; die Meldung
-  nennt dann, wie viele noch übrig sind.
-- „Absender sperren" in der Detailansicht: trägt die Adresse in WordPress'
-  Sperrliste `disallowed_keys` ein, künftige Kommentare landen direkt im
-  Papierkorb. Erscheint nur, wenn das Plugin vorhanden ist und das Konto
-  seitenweite Optionen ändern darf – ein Redakteur darf moderieren, aber
-  keine Optionen ändern.
-- Bildschirm „Über diese App" mit Version, Buildnummer und dem Commit, aus
-  dem der Build entstanden ist, dazu eine Kurzfassung zu Datenverarbeitung
-  und Lizenz.
-- Symbol des Blogs neben seinem Namen, in der Kopfleiste des Posteingangs und
-  in den Einstellungen. Es stammt aus dem REST-Index des eigenen Blogs; es
-  entsteht dadurch keine Verbindung zu einem Dritten.
-- Textbausteine für wiederkehrende Antworten. In den Einstellungen anlegen,
-  bearbeiten und löschen; über dem Antwortfeld erscheint eine Leiste, die sie
-  mit einem Tipp einfügt. Ein Baustein hängt an den vorhandenen Text an, statt
-  ihn zu ersetzen. Die Texte liegen ausschließlich auf dem Gerät.
-- Sprachwahl je App: Die App erscheint in den Systemeinstellungen unter
-  „Sprachen der App" und lässt sich dort unabhängig vom Systemgebietsschema
-  auf Deutsch oder Englisch stellen (ab Android 13). Die Liste der Sprachen
-  wird beim Bauen aus den vorhandenen Ressourcen erzeugt, damit eine neue
-  Übersetzung nicht vergessen werden kann.
-- Anzahl der Kommentare an jedem Filter, etwa „Offen · 3". Mit dem Plugin
-  zwei Abrufe, ohne Plugin fünf, von denen jeweils nur die Kopfzeile
-  `X-WP-Total` ausgewertet wird. Die Zahlen ziehen nach jeder Moderation nach.
-  Lässt sich eine Zahl nicht ermitteln, steht dort nur der Name.
-- Autorenkontext in der Detailansicht: „Kommentiert zum ersten Mal" oder die
-  Zahl der bisher freigeschalteten Kommentare dieser Adresse. Kostet eine
-  Anfrage, von der nur die Kopfzeile `X-WP-Total` ausgewertet wird. Scheitert
-  sie, bleibt der Hinweis aus.
-- Hinweise auf Auffälligkeiten an Kommentaren: Anzahl der Links und Texte, die
-  mehrfach vorkommen. Rein lokal aus dem Zwischenspeicher, ohne zusätzlichen
-  Abruf. Die App kennzeichnet nur und stuft nichts selbsttätig als Spam ein.
-- Hintergrundprüfung auf neue Kommentare über WorkManager, mit einstellbarem
-  Intervall.
-- Benachrichtigungen mit drei getrennten Kanälen, die jeweils tatsächlich
-  bespielt werden: neue Wortbeiträge, Antworten auf bestehende Kommentare und
-  Hinweise zur Synchronisierung. Entdopplung über eine aus der Kommentar-ID
-  abgeleitete Kennung.
-- Deep Link `commentator://comment/<instanceId>/<commentId>` aus der
-  Benachrichtigung direkt in die Detailansicht.
-- Lokaler Room-Cache für Kommentare, Beitragstitel, Zählungen je Filter und
-  Synchronisierungszustand.
-- Die Rollenmarken des Teams stehen sofort da. Wer zum Team gehört, wird
-  ebenfalls gespeichert: Vorher kam die Zuordnung erst nach dem
-  Aktualisieren, die Kommentare des Teams standen beim Start also kurz ohne
-  Marke, und eingeklappte Rollen klappten erst nachträglich zu. Ohne
-  Verbindung gilt jetzt der zuletzt bekannte Stand, statt dass niemand als
-  Team gilt – das betraf auch die Hintergrundprüfung, die sonst ausgerechnet
-  die stummgeschalteten Rollen gemeldet hätte.
-- Der Posteingang öffnet mit dem zuletzt gewählten Filter. Blogübergreifend,
-  wie der Filter selbst: Beim Wechsel des Blogs bleibt er ohnehin stehen, und
-  je Blog gespeichert spränge er beim Umschalten. Geholt wird er, bevor etwas
-  geladen wird – sonst finge die Liste beim Posteingang an und spränge gleich
-  darauf um.
-- Der Posteingang zeigt beim Öffnen sofort den zuletzt bekannten Stand: Die
-  Zahlen der Filterleiste stehen aus dem Zwischenspeicher da, bevor der Server
-  geantwortet hat, und ein Filter, der beim letzten Mal leer war, zeigt den
-  Leerzustand statt sekundenlang Platzhalterkarten. Dafür wird die Anzahl je
-  Filter mitgespeichert: Eine leere Tabelle allein kann „hier ist nichts“ nicht
-  von „hier wurde noch nichts geladen“ unterscheiden, eine festgehaltene 0
-  schon. Aktualisiert wird trotzdem bei jedem Start – der gespeicherte Stand
-  überbrückt nur die Wartezeit, er ersetzt den Abruf nicht.
-- Sichtbare Unterscheidung zwischen gespeichertem und frisch geladenem Stand,
-  einschließlich Offline-Band mit Zeitpunkt der letzten Aktualisierung.
-- Einstellungen für Benachrichtigungen, Prüfintervall, Avatare und die Anzeige
-  von E-Mail-Adressen, mit Verweis in die Android-Systemeinstellungen.
-- Material 3 mit Dynamic Color, hellem und dunklem Modus nach
-  Systemeinstellung.
-- Deutsche und englische Oberfläche.
-- Eigenes App-Symbol als adaptives Icon: eine Sprechblase mit einem W darin.
-  Zwei Farbvarianten, in den Einstellungen umschaltbar - Android-Grün und
-  WordPress-Blau -, umgesetzt über je einen `activity-alias`. Mit monochromer
-  Variante für themenbezogene Symbole ab Android 13; das
-  Benachrichtigungssymbol greift dieselbe Silhouette auf. Es wird keine fremde
-  Wort- oder Bildmarke verwendet.
+- Setup of a WordPress connection via the authorization flow for Application
+  Passwords, with manual entry as a fallback.
+- Comment inbox with author, time, text, associated post and status.
+- Filters for All, Pending, Approved, Spam and Trash.
+- Paginated loading based on the `X-WP-TotalPages` header.
+- Pull-to-refresh and refresh via the top app bar.
+- Moderation actions: approve, unapprove, mark as spam, move to trash, delete
+  permanently (with confirmation).
+- Editing the comment text, where the API allows it for the account.
+- Undo for all reversible moderation actions.
+- Detail view with full text, author, website, optional email address, date,
+  post, status and existing replies. The reply thread is indented and set off
+  by a vertical line so replies don't look like standalone comments. It is
+  fetched from the server separately on opening and is therefore independent
+  of the list filter.
+- Replies to comments; the reply is published as a real WordPress comment
+  referencing the original.
+- "Empty spam" and "Empty trash" in the top app bar, with confirmation before
+  permanent deletion. One request with the plugin, one per comment without
+  it. With many entries the work is done in batches; the message then says
+  how many are left.
+- "Block sender" in the detail view: adds the address to WordPress'
+  blocklist `disallowed_keys`, so future comments go straight to the trash.
+  Appears only if the plugin is present and the account may change site-wide
+  options – an editor may moderate but not change options.
+- "About this app" screen with version, build number and the commit the build
+  was made from, plus a short summary of data processing and licence.
+- Blog icon next to its name, in the inbox top app bar and in the settings. It
+  comes from the blog's own REST index; no connection to a third party is
+  made.
+- Text snippets for recurring replies. Created, edited and deleted in the
+  settings; above the reply field a bar inserts them with one tap. A snippet
+  is appended to the existing text instead of replacing it. The texts are
+  stored only on the device.
+- Per-app language: the app appears in the system settings under "App
+  languages" and can be set to German or English there independently of the
+  system locale (Android 13 and later). The list of languages is generated at
+  build time from the existing resources so a new translation cannot be
+  forgotten.
+- Number of comments on each filter, e.g. "Pending · 3". Two requests with
+  the plugin, five without, each evaluating only the `X-WP-Total` header. The
+  numbers update after every moderation. If a number cannot be determined,
+  only the name is shown.
+- Author context in the detail view: "Commenting for the first time" or the
+  number of previously approved comments from this address. Costs one
+  request, of which only the `X-WP-Total` header is evaluated. If it fails,
+  the hint is omitted.
+- Hints about anomalies in comments: number of links, and texts that appear
+  more than once. Purely local from the cache, without an additional request.
+  The app only flags and never classifies anything as spam on its own.
+- Background check for new comments via WorkManager, with a configurable
+  interval.
+- Notifications with three separate channels, each of which is actually used:
+  new comments, replies to existing comments, and sync notices.
+  Deduplication via an identifier derived from the comment ID.
+- Deep link `commentator://comment/<instanceId>/<commentId>` from the
+  notification straight into the detail view.
+- Local Room cache for comments, post titles, counts per filter and sync
+  state.
+- The team's role badges show up immediately. Team membership is now stored
+  as well: previously the assignment only arrived after refreshing, so team
+  comments briefly appeared without a badge on startup, and collapsed roles
+  only collapsed afterwards. Without a connection the last known state now
+  applies instead of nobody counting as team – this also affected the
+  background check, which would otherwise have reported precisely the muted
+  roles.
+- The inbox opens with the last selected filter. Across blogs, like the
+  filter itself: it stays put when switching blogs anyway, and stored per
+  blog it would jump when switching. It is read before anything is loaded –
+  otherwise the list would start at the inbox and switch right after.
+- The inbox shows the last known state immediately on opening: the filter bar
+  numbers come from the cache before the server has responded, and a filter
+  that was empty last time shows the empty state instead of placeholder cards
+  for seconds. For this the count per filter is stored too: an empty table
+  alone cannot distinguish "there is nothing here" from "nothing has been
+  loaded here yet", a recorded 0 can. It still refreshes on every start – the
+  stored state only bridges the wait, it does not replace the request.
+- Visible distinction between cached and freshly loaded state, including an
+  offline banner with the time of the last refresh.
+- Settings for notifications, check interval, avatars and display of email
+  addresses, with a link to the Android system settings.
+- Material 3 with Dynamic Color, light and dark mode following the system
+  setting.
+- German and English UI.
+- Custom app icon as an adaptive icon: a speech bubble with a W inside. Two
+  colour variants, switchable in the settings - Android green and WordPress
+  blue -, each implemented via an `activity-alias`. With a monochrome variant
+  for themed icons on Android 13 and later; the notification icon uses the
+  same silhouette. No third-party word or figurative mark is used.
 
-- Play-Store-Symbol als 512 × 512 px großes 32-Bit-PNG unter `store/play/`,
-  geprüft gegen die Spezifikationen für das App-Symbol im Play Store.
-- Aktionen in der Benachrichtigung: „Antworten“, „Freigeben“ und „Spam“.
-  Geantwortet wird direkt in der Benachrichtigung über `RemoteInput`; bei
-  einem offenen Kommentar heißt der Knopf „Freigeben und antworten“.
-  „Freigeben“ steht nur an offenen Kommentaren, „Spam“ nicht an Spam. Die
-  Knöpfe erscheinen nur bei Konten mit `moderate_comments`. Der nicht
-  exportierte `NotificationActionReceiver` reicht an den
-  `NotificationActionWorker` weiter – beschleunigte WorkManager-Arbeit, je
-  Kommentar höchstens eine laufende Aktion (`ExistingWorkPolicy.KEEP`) – und
-  der nutzt dieselben Use Cases wie die Oberfläche. Bei einem Fehler wird
-  bewusst nicht wiederholt: Eine später still nachgeholte Moderation könnte
-  eine inzwischen im Web getroffene Entscheidung überschreiben. Stattdessen
-  bleibt die Benachrichtigung stehen und nennt den Grund; eine gescheiterte
-  Antwort steht mit ihrem Text darin, damit nichts Geschriebenes verloren
-  geht. Nach einer Direktantwort hält Android ab Version 15 die Meldung fest
-  (`FLAG_LIFETIME_EXTENDED_BY_DIRECT_REPLY`) und übergeht ein bloßes
-  `cancel()`; sie wird deshalb durch eine kurze Bestätigung „Erledigt“
-  ersetzt, die nach zwei Sekunden über `setTimeoutAfter` verschwindet.
-- Benachrichtigungen räumen sich auf. Wird ein Kommentar in der App
-  moderiert, beantwortet oder geöffnet, verschwindet seine Meldung (Schnittstelle
-  `CommentAlerts`, umgesetzt von `CommentNotifier`). Wurde er im Web
-  moderiert, gleicht die Hintergrundprüfung die offenen Meldungen ab, bevor
-  sie Neues meldet – mit genau einer Anfrage
-  (`include=<ids>&status=any`) und nur, wenn überhaupt Meldungen offen sind.
-  Weg kommt, was gelöscht, Spam oder im Papierkorb ist, und was als offen
-  gemeldet und inzwischen freigegeben wurde. Was schon freigegeben gemeldet
-  wurde, bleibt stehen: Es wartet womöglich noch auf eine Antwort. Den Status
-  zum Meldezeitpunkt trägt die Benachrichtigung in ihren Extras. Eine leer
-  gewordene Sammelmeldung verschwindet mit.
-- Filter „Unbeantwortet“ zwischen „Offen“ und „Genehmigt“: freigegebene
-  Kommentare von Lesern, unter denen keine freigegebene Antwort aus dem Team
-  oder vom eigenen Konto steht. Kommentare des Teams selbst erscheinen dort
-  nicht. WordPress kennt diesen Zustand nicht; die App berechnet ihn per
-  Room-Abfrage über den Zwischenspeicher. Abgerufen wird wie bei „Genehmigt“,
-  ergänzt um eine Anfrage nach den Antworten auf die geladenen Kommentare
-  (`status=approve&parent=<ids>`). Der Filter wirkt deshalb nur über die
-  geladenen Seiten und trägt keine Zahl – der Server kann sie nicht zählen.
-  Vorbild ist der gleichnamige Filter der WordPress-App.
-- Das Symbol des Blogs steht als großes Bild in jeder
-  Kommentar-Benachrichtigung und in der Sammelmeldung. Es kommt über Coil aus
-  demselben Bildspeicher wie in Kopfleiste und Einstellungen
-  (`SiteIconLoader`) und stammt vom eigenen Blog; eine Verbindung zu einem
-  Dritten entsteht nicht.
-- Sofortmeldung über UnifiedPush, je Blog in dessen Einstellungen unter
-  „Sofort melden“ einschaltbar. Die App meldet sich je Blog bei einer
-  UnifiedPush-App auf dem Telefon an, etwa ntfy, und hinterlegt die
-  erhaltene Adresse beim Plugin (`POST /commentator/v1/push`). Beim
-  Ausschalten, beim Entfernen des Blogs, bei einer Abmeldung durch die
-  UnifiedPush-App und beim Ersetzen der Adresse wird sie dort wieder
-  zurückgenommen. Jede eingehende Nachricht stößt eine einmalige,
-  beschleunigte Prüfung aller Blogs an (`CommentSyncWorker`, eindeutig als
-  „commentator-push-sync“); die Nachricht selbst ist bewusst inhaltslos und
-  unverschlüsselt. Die regelmäßige Prüfung läuft weiter und holt verlorene
-  Weckrufe ein. Kein Google, kein Firebase. Die Einstellung nennt ihren
-  Zustand: braucht das Plugin ab 1.5, braucht eine UnifiedPush-App, wird
-  eingerichtet, aktiv über die gewählte App oder der Grund eines Fehlers.
-  Neue Abhängigkeit `org.unifiedpush.android:connector` 3.3.5, die Google Tink
-  mitbringt. Damit ist der Backlog-Punkt „Echtes Push über FCM“ durch eine
-  Lösung ohne Google ersetzt.
+- Play Store icon as a 512 × 512 px 32-bit PNG under `store/play/`, checked
+  against the Play Store app icon specifications.
+- Notification actions: "Reply", "Approve" and "Spam". Replies are written
+  directly in the notification via `RemoteInput`; for a pending comment the
+  button reads "Approve and reply". "Approve" appears only on pending
+  comments, "Spam" not on spam. The buttons appear only for accounts with
+  `moderate_comments`. The non-exported `NotificationActionReceiver` hands
+  off to the `NotificationActionWorker` – expedited WorkManager work, at most
+  one running action per comment (`ExistingWorkPolicy.KEEP`) – which uses the
+  same use cases as the UI. On failure there is deliberately no retry: a
+  moderation silently made up later could overwrite a decision taken on the
+  web in the meantime. Instead the notification stays and names the reason; a
+  failed reply remains in it with its text so nothing written is lost. After
+  a direct reply, Android 15 and later keeps the notification
+  (`FLAG_LIFETIME_EXTENDED_BY_DIRECT_REPLY`) and ignores a plain `cancel()`;
+  it is therefore replaced by a short "Done" confirmation that disappears
+  after two seconds via `setTimeoutAfter`.
+- Notifications clean up after themselves. When a comment is moderated,
+  replied to or opened in the app, its notification disappears (interface
+  `CommentAlerts`, implemented by `CommentNotifier`). If it was moderated on
+  the web, the background check reconciles open notifications before
+  reporting anything new – with exactly one request
+  (`include=<ids>&status=any`) and only if any notifications are open at all.
+  Removed are those that are deleted, spam or in the trash, and those reported
+  as pending and approved since. Those already reported as approved stay: they
+  may still be waiting for a reply. The notification carries the status at
+  the time of reporting in its extras. A summary notification that has become
+  empty disappears too.
+- "Unanswered" filter between "Pending" and "Approved": approved comments
+  from readers with no approved reply from the team or your own account below
+  them. The team's own comments don't appear there. WordPress doesn't know
+  this state; the app computes it with a Room query over the cache. Fetching
+  works as for "Approved", plus one request for the replies to the loaded
+  comments (`status=approve&parent=<ids>`). The filter therefore only covers
+  the loaded pages and shows no number – the server cannot count it. Modelled
+  on the filter of the same name in the WordPress app.
+- The blog icon appears as a large image in every comment notification and in
+  the summary notification. It comes via Coil from the same image cache as in
+  the top app bar and settings (`SiteIconLoader`) and originates from the
+  blog itself; no connection to a third party is made.
+- Instant notifications via UnifiedPush, switchable per blog in its settings
+  under "Notify instantly". The app registers per blog with a UnifiedPush app
+  on the phone, such as ntfy, and registers the received address with the
+  plugin (`POST /commentator/v1/push`). On disabling, on removing the blog, on
+  unregistration by the UnifiedPush app and on replacing the address, it is
+  withdrawn there again. Every incoming message triggers a one-off expedited
+  check of all blogs (`CommentSyncWorker`, unique as
+  "commentator-push-sync"); the message itself is deliberately empty and
+  unencrypted. The regular check keeps running and catches lost wake-up
+  calls. No Google, no Firebase. The setting states its status: needs plugin
+  1.5 or later, needs a UnifiedPush app, being set up, active via the chosen
+  app, or the reason for an error. New dependency
+  `org.unifiedpush.android:connector` 3.3.5, which brings in Google Tink. This
+  replaces the backlog item "Real push via FCM" with a solution without
+  Google.
 
-**Behoben nach dem ersten Lauf auf einem Gerät**
+**Fixed after the first run on a device**
 
-- Die Detailansicht lud den Avatar eines Kommentators, ohne die Einstellung
-  „Avatare anzeigen" zu beachten. Damit entstand eine Anfrage an Gravatar,
-  obwohl sie abgelehnt war. Die Listenansicht war davon nicht betroffen.
-- Eine soeben veröffentlichte Antwort zeigte „Vor 0 Min.". Unterhalb einer
-  Minute steht jetzt „Gerade eben".
-- `seed.sh` hängte die Testkommentare an WordPress' Standardbeitrag
-  „Hello world!" statt an die selbst angelegten Beiträge.
-- Der Hintergrunddienst leitete „erster Lauf" aus einem Datenbankfeld ab, das
-  die Kommentarquelle nebenbei beschrieb - ein Vertrag, der nicht in der
-  Schnittstelle stand. `NewCommentSource.hasBaseline` macht ihn jetzt
-  ausdrücklich. Dabei fiel auf: Lief die Prüfung zum ersten Mal, während nichts
-  offen war, entstand gar kein Ausgangszustand, und die erste echte
-  Benachrichtigung blieb aus.
-- Die Beschriftungsspalte der Detailansicht war mit 96 dp rund doppelt so breit
-  wie nötig und riss eine Lücke zwischen Bezeichnung und Wert.
-- Die blaue Symbolvariante erreichte auf dem dunklen Grund nur 3,3:1 Kontrast.
-  Sie ist jetzt umgekehrt eingefärbt - weisse Blase auf WordPress-Blau - und
-  kommt auf 5,6:1.
-- Die Marke sitzt in allen Symbolebenen optisch statt geometrisch zentriert.
-  Der Blasenkörper trägt fast die gesamte Fläche, weshalb die am Rahmen
-  ausgerichtete Zeichnung nach oben gerutscht wirkte.
+- The detail view loaded a commenter's avatar without respecting the "Show
+  avatars" setting. This caused a request to Gravatar even though it had been
+  declined. The list view was not affected.
+- A just-published reply showed "0 min. ago". Under one minute it now shows
+  "Just now".
+- `seed.sh` attached the test comments to WordPress' default post "Hello
+  world!" instead of the posts it had created.
+- The background service derived "first run" from a database field that the
+  comment source wrote as a side effect - a contract not stated in the
+  interface. `NewCommentSource.hasBaseline` now makes it explicit. This
+  revealed: if the check ran for the first time while nothing was pending, no
+  baseline was created at all, and the first real notification never came.
+- The label column of the detail view was 96 dp, about twice as wide as
+  needed, and left a gap between label and value.
+- The blue icon variant reached only 3.3:1 contrast on the dark background.
+  It is now coloured inversely - white bubble on WordPress blue - and reaches
+  5.6:1.
+- The mark is centred optically instead of geometrically in all icon layers.
+  The bubble body takes up almost the entire area, which made the drawing,
+  aligned to the frame, appear to have slipped upwards.
 
-**WordPress-Plugin**
+**WordPress plugin**
 
-- Version 1.7.0: `POST commentator/v1/push/test` schickt einen Testweckruf an
-  die eigenen Adressen und meldet, wie viele der Push-Server angenommen hat.
-  Das Benutzerprofil zeigt im Abschnitt „Commentator: Sofortmeldung“ die
-  hinterlegten Adressen (Server und Ende des Themas, nicht die ganze Adresse)
-  mit „Entfernen“ und „Testweckruf senden“. Weckrufe wegen Statusänderungen
-  gehen an eine Adresse höchstens alle 30 Sekunden; neue Kommentare wecken
-  immer. Für Admins ohne Einstellungsseite: `COMMENTATOR_BRIDGE_DISABLE_PUSH`
-  schaltet die Sofortmeldung ab, die Filter
-  `commentator_bridge_push_allow_local` und
-  `commentator_bridge_push_endpoint_allowed` erlauben Push-Server im eigenen
-  Netz beziehungsweise schränken Adressen ein.
-- Version 1.6.0: Auch eine Statusänderung (`transition_comment_status`) weckt
-  die App, mit dem Rumpf „status“ und `Urgency: normal`. Eine im Backend
-  erledigte Moderation nimmt die Benachrichtigung damit sofort zurück statt
-  erst bei der nächsten regelmäßigen Prüfung; am Emulator gemessen 0,6 s.
-  Änderungen aus der App selbst wecken nicht – sie hat die Meldung schon
-  zurückgenommen; erkannt wird das an ihrem User-Agent `Commentator/`.
-- Version 1.5.0: `commentator/v1/push` nimmt Push-Adressen entgegen (`POST`)
-  und gibt sie wieder frei (`DELETE`). Bei jedem neuen Kommentar
-  (`wp_insert_comment`) geht an jede hinterlegte Adresse aller Konten mit
-  `moderate_comments` ein nicht blockierender Weckruf mit dem Rumpf „new“ –
-  kein Name, kein Text, keine Kennung –, mit den Kopfzeilen `TTL: 3600` und
-  `Urgency: high`. Als Spam oder Papierkorb eingegangene Kommentare wecken
-  niemanden. Angenommen werden nur öffentliche HTTPS-Adressen
-  (`wp_http_validate_url`, Versand über `wp_safe_remote_post`), höchstens
-  fünf je Konto; die älteste fällt heraus. Abgelegt werden sie in der
-  Benutzermeta `commentator_push_endpoints`. Ohne hinterlegte Adresse sendet
-  das Plugin nichts nach außen.
-- `commentator-bridge` mit den Leseendpunkten `commentator/v1/status` und
-  `commentator/v1/summary`, beide abgesichert über `moderate_comments`.
+- Version 1.7.0: `POST commentator/v1/push/test` sends a test wake-up call to
+  your own addresses and reports how many the push server accepted. The user
+  profile shows the registered addresses (server and end of the topic, not
+  the full address) in the "Commentator: Sofortmeldung" (instant
+  notifications) section, with "Entfernen" (remove) and "Testweckruf senden"
+  (send test wake-up call). Wake-up calls for status changes go to
+  an address at most every 30 seconds; new comments always wake. For admins
+  without a settings page: `COMMENTATOR_BRIDGE_DISABLE_PUSH` disables instant
+  notifications, the filters `commentator_bridge_push_allow_local` and
+  `commentator_bridge_push_endpoint_allowed` allow push servers on the local
+  network or restrict addresses, respectively.
+- Version 1.6.0: a status change (`transition_comment_status`) also wakes the
+  app, with the body "status" and `Urgency: normal`. A moderation done in the
+  backend thus withdraws the notification immediately instead of at the next
+  regular check; measured on the emulator at 0.6 s. Changes made from the app
+  itself don't wake it – it has already withdrawn the notification; this is
+  detected by its user agent `Commentator/`.
+- Version 1.5.0: `commentator/v1/push` accepts push addresses (`POST`) and
+  releases them (`DELETE`). On every new comment (`wp_insert_comment`) a
+  non-blocking wake-up call with the body "new" – no name, no text, no
+  identifier – goes to every registered address of all accounts with
+  `moderate_comments`, with the headers `TTL: 3600` and `Urgency: high`.
+  Comments arriving as spam or in the trash wake no one. Only public HTTPS
+  addresses are accepted (`wp_http_validate_url`, sent via
+  `wp_safe_remote_post`), at most five per account; the oldest drops out.
+  They are stored in the user meta `commentator_push_endpoints`. Without a
+  registered address the plugin sends nothing outbound.
+- `commentator-bridge` with the read endpoints `commentator/v1/status` and
+  `commentator/v1/summary`, both protected by `moderate_comments`.
 
-**Entwicklung und Tests**
+**Development and testing**
 
-- Room exportiert sein Schema nach `android/app/schemas/`, damit spätere
-  Migrationen automatisiert geprüft werden können.
-- `DebugSyncReceiver` stößt die Hintergrundprüfung über `adb` sofort an.
-  WorkManager zieht periodische Arbeit nicht vor; ohne den Empfänger hieß
-  Testen, bis zu 15 Minuten zu warten. Er existiert nur im Debug-Build und ist
-  mit `android.permission.DUMP` geschützt.
-- README: Einrichtung eines Emulators ohne Android Studio, Betrieb der
-  Testumgebung mit Podman statt Docker und Zugriff aus dem Emulator über
+- Room exports its schema to `android/app/schemas/` so later migrations can be
+  verified automatically.
+- `DebugSyncReceiver` triggers the background check immediately via `adb`.
+  WorkManager does not bring periodic work forward; without the receiver,
+  testing meant waiting up to 15 minutes. It exists only in the debug build
+  and is protected by `android.permission.DUMP`.
+- README: setting up an emulator without Android Studio, running the test
+  environment with Podman instead of Docker, and access from the emulator via
   `adb reverse`.
 
-- Lokale WordPress-Testumgebung über Docker Compose, einschließlich
-  TLS-Proxy, Zertifikatsskript und Skript für reproduzierbare Testdaten.
-- Unit-Tests für Statuslogik, Fehlerzuordnung, DTO-Mapping, Use Cases und
+- Local WordPress test environment via Docker Compose, including TLS proxy,
+  certificate script and a script for reproducible test data.
+- Unit tests for status logic, error mapping, DTO mapping, use cases and
   ViewModels.
-- Netzwerktests gegen MockWebServer für Abfrageparameter, Paginierung,
-  Authentifizierungs-Kopfzeile und die vollständige Fehlerbehandlung.
-- Dokumentation: Architekturentscheidungen, verwendete API-Endpunkte,
-  Datenverarbeitung.
+- Network tests against MockWebServer for query parameters, pagination,
+  authentication header and complete error handling.
+- Documentation: architecture decisions, API endpoints used, data
+  processing.
 
 ### Fixed
 
-**Android-App**
+**Android app**
 
-- Im Web gelöschte oder umgestufte Kommentare blieben im Zwischenspeicher
-  liegen, wenn sie älter waren als die geladene erste Seite. Sie standen dann
-  weiter unter „Unbeantwortet“, und „Text kommt mehrfach vor“ zählte sie mit.
-  Jetzt prüft die App solche Einträge nach dem Aktualisieren mit einer Anfrage
-  gegen, höchstens alle zehn Minuten je Blog und Filter.
+- Comments deleted or reclassified on the web stayed in the cache if they were
+  older than the loaded first page. They then kept appearing under
+  "Unanswered", and "Text appears more than once" counted them. Now the app
+  cross-checks such entries with one request after refreshing, at most every
+  ten minutes per blog and filter.
 
-- Ein Weckruf bei beendetem App-Prozess blieb wirkungslos: Die Verarbeitung
-  hing am Lebenszyklus des Push-Dienstes, den der UnifiedPush-Connector
-  unmittelbar nach der Zustellung beendet. Jetzt wird die Prüfung ohne Umweg
-  eingeplant, und die Bestätigung des Testweckrufs läuft unabhängig vom Dienst.
+- A wake-up call while the app process was stopped had no effect: processing
+  was tied to the lifecycle of the push service, which the UnifiedPush
+  connector stops immediately after delivery. Now the check is scheduled
+  directly, and the test wake-up confirmation runs independently of the
+  service.
 
-- Eine Antwort auf einen offenen Kommentar blieb auf der Website unsichtbar:
-  Der Elternkommentar stand weiter auf „ausstehend“, und WordPress zeigt
-  Antworten darunter nicht an – gegen eine lokale WordPress-Installation
-  nachgeprüft. Die App gibt einen offenen Kommentar jetzt zuerst frei und
-  antwortet dann, wie das WordPress-Backend. Der Knopf in der Detailansicht
-  heißt in diesem Fall „Freigeben und antworten“. Die Reihenfolge ist
-  Absicht: Scheitert die Freigabe, ist noch nichts geschehen, und ein zweiter
-  Versuch erzeugt keine doppelte Antwort.
-- Die Auswahl des Prüfintervalls stand in einer einzeiligen Reihe. Für die
-  fünfte Option blieben nur 39 dp Breite, ihr Text brach senkrecht um und riss
-  eine hohe leere Fläche in die Einstellungen; bedienbar war sie damit auch
-  nicht mehr. Die Chips brechen jetzt um.
-- Ein nachträglich installiertes Plugin `commentator-bridge` wurde nie
-  bemerkt. Bridge-Erkennung, Moderationsrecht und Blogname stammten
-  ausschließlich aus dem Moment der Anmeldung und wurden danach nie wieder
-  gelesen. Sie werden jetzt beim Aktualisieren des Posteingangs und beim
-  Öffnen der Einstellungen neu bewertet.
+- A reply to a pending comment remained invisible on the website: the parent
+  comment stayed "pending", and WordPress doesn't show replies below it –
+  verified against a local WordPress installation. The app now approves a
+  pending comment first and then replies, like the WordPress backend. In this
+  case the button in the detail view reads "Approve and reply". The order is
+  intentional: if approval fails, nothing has happened yet, and a second
+  attempt creates no duplicate reply.
+- The check interval selection sat in a single-line row. The fifth option got
+  only 39 dp of width, its text wrapped vertically and tore a tall empty area
+  into the settings; it was no longer usable either. The chips now wrap.
+- A `commentator-bridge` plugin installed later was never noticed. Bridge
+  detection, moderation permission and blog name came exclusively from the
+  moment of sign-in and were never read again. They are now re-evaluated when
+  refreshing the inbox and when opening the settings.
 
-**WordPress-Plugin**
+**WordPress plugin**
 
-- Version 1.4.0: `commentator/v1/team` nennt die Rollen des Blogs und ihre
-  Mitglieder. Ohne diesen Endpunkt kann die App das Team nicht erkennen –
-  `wp/v2/users` mit `context=edit` verlangt `list_users`, und das hat ein
-  Redakteur nicht. Geliefert werden nur Rollen, die Beiträge schreiben oder
-  moderieren dürfen; Abonnenten gehören nicht dazu.
-- Version 1.3.0: `commentator/v1/status` meldet zusätzlich den neuesten
-  Kommentar unabhängig vom Status. Ohne dieses Feld könnte die App auf Blogs
-  mit automatischer Freischaltung nicht abkürzen. Ältere Fassungen sind
-  weiterhin nutzbar; die App fragt dann regulär über die Kern-API.
-- Der neueste Kommentar wird nach Kennung statt nach Datum bestimmt. Die App
-  vergleicht Kennungen; ein zurückdatierter Kommentar – beim Import keine
-  Seltenheit – wäre sonst der „neueste“ gewesen und hätte die Prüfung
-  fälschlich abbrechen lassen.
-- Zwei neue Endpunkte in Version 1.2.0: `/empty` leert Spam oder Papierkorb
-  in Stapeln, `/blocklist` pflegt `disallowed_keys`. Beide tun nur das, was im
-  Backend ohnehin möglich ist, und prüfen dieselben Rechte – `/empty`
+- Version 1.4.0: `commentator/v1/team` lists the blog's roles and their
+  members. Without this endpoint the app cannot detect the team –
+  `wp/v2/users` with `context=edit` requires `list_users`, which an editor
+  doesn't have. Only roles that may write posts or moderate are returned;
+  subscribers are not included.
+- Version 1.3.0: `commentator/v1/status` additionally reports the newest
+  comment regardless of status. Without this field the app could not take the
+  shortcut on blogs with automatic approval. Older versions remain usable; the
+  app then queries the core API as usual.
+- The newest comment is determined by ID instead of date. The app compares
+  IDs; a backdated comment – not unusual with imports – would otherwise have
+  been the "newest" and wrongly made the check stop early.
+- Two new endpoints in version 1.2.0: `/empty` empties spam or trash in
+  batches, `/blocklist` maintains `disallowed_keys`. Both only do what is
+  possible in the backend anyway and check the same permissions – `/empty`
   `moderate_comments`, `/blocklist` `manage_options`.
-- `commentator/v1/summary` meldete unter `all` die Zahl `total_comments`, die
-  Spam mitzählt. Die REST-API listet bei `status=all` aber nur Genehmigtes und
-  Offenes auf – die Zahl passte damit nicht zu der Liste, die sie beschreibt.
-  Jetzt genehmigt plus offen. Plugin-Version 1.1.0.
+- `commentator/v1/summary` reported the number `total_comments` under `all`,
+  which counts spam. With `status=all`, however, the REST API lists only
+  approved and pending comments – so the number didn't match the list it
+  describes. Now approved plus pending. Plugin version 1.1.0.
 
 ### Changed
 
-**Android-App**
+**Android app**
 
-- Rollenmarke und Statuskennzeichen stehen nebeneinander auf einer Linie,
-  mit gleicher Höhe und Form. Zuvor saßen sie versetzt übereinander und waren
-  unterschiedlich hoch.
-- Die Rollenmarke steht jetzt unter dem Namen statt daneben. Neben Marke und
-  Statuskennzeichen blieben für den Namen kaum 80 dp – „Christoph Langner"
-  wurde zu „Christop…".
+- Role badge and status indicator sit side by side on one line, with the same
+  height and shape. Previously they were offset one above the other and had
+  different heights.
+- The role badge now sits below the name instead of next to it. Next to badge
+  and status indicator barely 80 dp were left for the name – "Christoph
+  Langner" became "Christop…".
 
-- Erste Datenbankmigration des Projekts: Die Kommentartabelle bekommt die
-  Nutzer-ID des Verfassers. Bewusst eine Migration statt eines Neuaufbaus –
-  mit dem Cache ginge der Ausgangszustand der Benachrichtigungen verloren, und
-  beim nächsten Lauf käme ein Schwall über alle vorhandenen Kommentare.
+- The project's first database migration: the comment table gains the
+  author's user ID. Deliberately a migration rather than a rebuild – with the
+  cache the notification baseline would be lost, and the next run would bring
+  a flood covering all existing comments.
 
-- Kommentare aus dem eigenen Team werden abgesetzt dargestellt, nach Rolle
-  unterschieden. Jede Rolle hat einen eigenen Farbton aus einer abgestimmten
-  Auswahl – alle bewusst blass, damit eine Wortmeldung der eigenen Redaktion
-  nicht nach Warnung aussieht. Die Marke nennt die Rolle beim Namen, der
-  Unterschied hängt damit nicht allein an der Farbe. Welche Rollen als Team
-  zählen, ist in den Einstellungen wählbar; voreingestellt sind Administrator
-  und Redakteur. Das eigene Konto zählt immer dazu.
-- Ein Einstellungsdialog je Rolle: ob sie als Team gilt, welchen Farbton sie
-  bekommt und ob sie überhaupt eingefärbt wird, ob ihre Kommentare einzeln in
-  der Liste stehen und ob sie auf dem Gerät benachrichtigen. Die vier
-  Standardrollen – Administrator, Redakteur, Autor, Mitarbeiter – stehen auch
-  ohne das Bridge-Plugin zur Auswahl.
-- Rollen, die nicht einzeln in der Liste stehen sollen, werden dort
-  eingeklappt statt ausgeblendet: Aufeinanderfolgende Beiträge stehen als eine
-  Zeile da, die Anzahl und Rollen nennt und sich antippen lässt. Dass es
-  Wortmeldungen aus dem Team gab, bleibt damit sichtbar – ganz zu verschwinden
-  wäre schlechter als jede Filterung, man wüsste nicht einmal, dass etwas
-  fehlt. Der Kommentar, auf den eine Antwort sich bezieht, bleibt immer
-  sichtbar; eingeklappt fehlte genau der Bezug, dessentwegen er geladen wurde.
-- Benachrichtigungen je Rolle abschaltbar. Stummgeschaltete Kommentare werden
-  trotzdem vermerkt, sonst holte sie der Hintergrunddienst bei jedem Lauf
-  erneut vom Blog.
-- Über die eigenen Beiträge meldet die App voreingestellt nicht: Wer gerade
-  geantwortet hat, weiß davon, und die Meldung käme erst mit der nächsten
-  Hintergrundprüfung. Einschalten lässt sich das im Dialog „Eigenes Konto“.
-  Die eigenen Beiträge entscheiden sich immer an diesem Eintrag, auch wenn das
-  Plugin die tatsächliche Rolle kennt – sonst wäre der Schalter ausgerechnet
-  dort wirkungslos, und die eigenen Antworten ließen sich nur zusammen mit
-  denen aller anderen Administratoren stummschalten.
-- Wischgesten in der Liste: nach rechts genehmigen, nach links als Spam
-  markieren. Beides ist rücknehmbar, und die Schaltflächen auf der Karte
-  bleiben erhalten – eine Geste ist nie der einzige Weg zu einer Aktion.
-  Endgültiges Löschen ist bewusst nicht dabei. Unter der Karte wird ab der
-  ersten Bewegung farbig angezeigt, was die Geste auslösen würde. Symbol und
-  Beschriftung blenden auf, sobald sie vollständig neben die Karte passen –
-  ein angeschnittenes Symbol oder ein mitten im Wort abgeschnittenes Wort sagt
-  weniger als gar keines. Ist weit genug gezogen, damit das Loslassen die
-  Aktion auslöst, gibt es einen kurzen Impuls, und die Anzeige wächst leicht.
-- Blog-Symbol und Blogname sitzen jetzt auf einer Linie. Zentriert wurde
-  zuvor nicht die Schrift, sondern ihr Kasten – und der enthält den
-  Zeilenabstand und Platz für Unterlängen, die ein Blogname oft gar nicht
-  hat. Am Gerät nachgemessen: aus 2 px Versatz wurde 1 px.
-- Das Blog-Symbol wird auch dann angezeigt, wenn der Blog kein
-  WordPress-Site-Icon gesetzt hat. Viele Blogs bringen ihr Symbol im Theme
-  mit und tragen es nur als `<link rel="icon">` in den Seitenkopf ein – für
-  die REST-API ist es dann unsichtbar, obwohl es im Browser überall
-  auftaucht. Gesucht wird nur, wenn kein Site-Icon gesetzt ist, und genommen
-  wird nur ein Bild auf demselben Rechner wie der Blog: Ein Symbol von einem
-  Auslieferungsnetz wäre eine Verbindung zu einem Dritten. `.ico` und `.svg`
-  scheiden aus, weil Android sie nicht zeichnen kann.
-- Die Liste im Posteingang steht als Gesprächsfaden: Antworten stehen
-  eingerückt unter dem Kommentar, auf den sie sich beziehen, und Fäden mit
-  neuen Beiträgen stehen oben. Weil beim Filter „Offen" der Kommentar davor
-  meist längst genehmigt ist und dort gar nicht auftauchen würde, wird er
-  eigens nachgeholt und gedämpft als Zusammenhang gezeigt – ohne
-  Schaltflächen, denn er gehört nicht zum Filter. Abschaltbar in den
-  Einstellungen; dann bleibt es bei der rein chronologischen Liste. Die
-  Trefferliste einer Suche bleibt immer flach.
-- Kommentarsuche über die Kopfleiste. Gesucht wird auf dem Server über den
-  `search`-Parameter der WordPress-API und innerhalb des gewählten Filters –
-  die Filterleiste behält damit ihre Bedeutung. Lokal zu suchen wäre
-  schneller, durchsuchte aber nur, was zufällig im Zwischenspeicher liegt.
-  Gesucht wird erst, wenn die Eingabe kurz steht, und ab zwei Zeichen; sonst
-  wäre jeder Tastendruck eine eigene Anfrage. Die Treffer kommen wie die
-  Liste aus dem Zwischenspeicher, deshalb wirkt eine Moderation auch in der
-  Trefferliste sofort.
-- Mehrere Blogs in einer App. Die Datenhaltung war darauf von Anfang an
-  angelegt – jede Zeile trägt eine `instanceId`, Zugangsdaten liegen je Blog,
-  der HTTP-Client wird je Blog erzeugt –, deshalb kam die Erweiterung ohne
-  Datenmigration aus.
-  - Umschalter in der Kopfleiste des Posteingangs. Er erscheint erst ab dem
-    zweiten Blog; bei einem wäre ein Pfeil über einer Liste mit einem Eintrag
-    ein Versprechen ohne Inhalt. Das Blatt nennt zu jedem Blog Symbol, Name
-    und Adresse – zwei Blogs können denselben Namen tragen, die Adresse
-    unterscheidet sie immer – und die Anzahl offener Kommentare aus dem
-    Zwischenspeicher. Ein Blog, der noch nie geladen wurde, zeigt keine Zahl
-    statt einer falschen Null.
-  - Liste aller eingerichteten Blogs in den Einstellungen, mit Weg zum
-    Hinzufügen weiterer. Dieselbe Einrichtung wie beim ersten Blog, nur mit
-    einem Zurück – beim ersten liegt dahinter nichts.
-  - Eigener Einstellungsbildschirm je Blog: Adresse, Konto, Plugin-Erkennung,
-    ob der Blog meldet und worüber, seine Rollen und Farben, seine
-    Textbausteine, und das Entfernen genau dieses Blogs. Alles zusammen auf
-    einem Bildschirm hätte bei jeder Zeile die Frage offen gelassen, für
-    welchen Blog sie gilt.
-  - Benachrichtigungen je Blog abschaltbar, mit eigenem Umfang. Ein
-    Nebenprojekt darf still bleiben, während der Hauptblog meldet. Der
-    Hauptschalter und der Prüftakt gelten weiterhin für alle.
-  - Die Hintergrundprüfung geht in einem Durchgang alle Blogs durch, statt je
-    Blog eine eigene Arbeit zu planen: Das Gerät wacht einmal auf statt n-mal.
-    Fehler werden je Blog behandelt – ein Blog mit abgelehnten Zugangsdaten
-    oder ohne Verbindung hält die Meldungen der übrigen nicht auf.
-  - Rollen, Farben und Textbausteine gelten je Blog: Die Rollen einer
-    Redaktion sind nicht die eines Kundenprojekts, und der Ton auch nicht.
-    Was vor dem Umstieg blogübergreifend eingestellt war, gilt weiter – die
-    alten Schlüssel werden gelesen, geschrieben wird von da an je Blog.
-  - Eine erneute Anmeldung bei einem bereits eingerichteten Blog aktualisiert
-    dessen Eintrag, statt einen zweiten anzulegen. Ein zweiter Eintrag würde
-    nicht nur doppelt in der Liste stehen, er würde auch jeden vorhandenen
-    Kommentar noch einmal als neu melden.
-  - Benachrichtigungen tragen den Blog als Marke neben der aus der
-    Kommentar-ID abgeleiteten Kennung. IDs sind nur innerhalb eines Blogs
-    eindeutig; ohne diese zweite Dimension hätte der Kommentar 5 des einen
-    Blogs die Meldung zum Kommentar 5 des anderen ersetzt. Bei mehreren Blogs
-    nennt die Unterzeile auch den Blog, bei einem bleibt sie, wie sie war.
-  - Eine angetippte Benachrichtigung wechselt zum betreffenden Blog. Sonst
-    stünde hinter dem geöffneten Kommentar der Posteingang eines anderen.
-- Die Oberfläche folgt Material 3 Expressive.
-  - **Bewegung** als Federphysik statt fester Dauern. Eine Feder kennt die
-    Geschwindigkeit, mit der eine Bewegung ankommt, und läuft daraus weiter;
-    eine Kurve über 200 ms beginnt immer bei Null, auch wenn der Finger das
-    Element gerade noch geschoben hat. Getrennt nach räumlich (Platz und
-    Größe, schwingt leicht über) und Effekt (Deckkraft und Farbe, schwingt
-    nicht über - eine überschwingende Deckkraft müsste über 100 % hinaus und
-    flackerte nur). Das Schema kommt aus dem Theme, nicht aus Konstanten in
-    den Komponenten, damit keine Stelle bei ihrer eigenen Zeitangabe bleibt.
-  - **Filterleiste als verbundene Gruppe** aus `ToggleButton`: außen rund,
-    innen fast gerade, und damit als ein Ding erkennbar statt als fünf
-    einzelne Marken. Jeder Schalter hat drei Formen - ruhend, unter dem
-    Finger, ausgewählt - und wandelt zwischen ihnen, statt sie zu tauschen.
-    Die Auswahl trägt damit ihre Form und nicht nur ihre Farbe; wer Farben
-    schlecht unterscheidet, sieht an einer eingefärbten Marke nichts, an einer
-    runden schon.
-  - **Formenskala** mit größerer Spannweite: zurückhaltend dort, wo viele
-    Elemente nebeneinanderliegen, rund dort, wo eine Fläche für sich steht.
-    Die Kommentarliste bleibt bewusst dicht - sie ist der Arbeitsbereich, und
-    jeder Millimeter Radius kostet dort nutzbare Breite.
-  - **Betonte Typografie**: mehr Gewicht auf Titeln, Überschriften und
-    Beschriftungen, damit die Gliederung beim Überfliegen erkennbar ist. Der
-    Kommentartext selbst bleibt unberührt - er wird gelesen, nicht
-    überflogen.
-  - **Ladeanzeige** als Folge wandelnder Formen statt eines sich drehenden
-    Kreises.
-  - Das Auf- und Zuklappen zusammengefasster Team-Beiträge ist animiert; es
-    wechselte zuvor ohne Übergang, und es war nicht zu sehen, woher die neuen
-    Karten kamen. Der Pfeil dreht sich, statt gegen ein zweites Zeichen
-    getauscht zu werden.
-  - Dafür hängt `compose-material3` als einziges Compose-Artefakt an einer
-    eigenen Version (1.5.0-alpha29) statt an der BOM. In der stabilen Linie
-    1.4.0 ist die gesamte Expressive-API Kotlin-`internal` und aus App-Code
-    nicht aufrufbar; die neuen Komponenten fehlen dort ganz. Begründung und
-    Preis stehen in `docs/architecture.md`.
-- Beschriftungsspalten richten sich nach der gemessenen Textbreite statt nach
-  einer festen Angabe. Bei 200 % Systemschriftgröße wurde aus „Beitrag" zuvor
-  ein „Beitr / ag" – ein Umbruch mitten im Wort. Ein Test hält das für die
-  Detailansicht fest.
-- Beschriftung und Wert werden für Bildschirmleser zusammen vorgelesen
-  („Beitrag Hello world!") statt als zwei Stationen, von denen die erste für
-  sich nichts aussagt.
-- Die Filtermarken sagen Bildschirmlesern die Zahl ausgeschrieben an („Alle,
-  7 Kommentare"); auf dem Bildschirm steht weiterhin „Alle · 7". Der
-  Mittelpunkt trennt fürs Auge, vorgelesen ergibt er nichts.
-- Die Blog-Zeile in den Einstellungen steht wie die Zeilen darunter mit der
-  Beschriftung über dem Wert.
-- Adressen, die unverlinkt im Text stehen, zählen jetzt als Verweis mit.
-  Zuvor wurde nur das Markup betrachtet – WordPress verlinkt aber nicht jede
-  Adresse, und ein Kommentar mit ausgeschriebener URL blieb damit unauffällig.
-  Eine verlinkte Adresse zählt weiterhin nur einmal.
-- Beim Erstaufbau der Liste liefen zwei Ladeanzeigen gleichzeitig: die des
-  Herunterziehens und die der Liste. Statt eines Kreises im Leeren stehen
-  jetzt Platzhalterkarten in der Form der späteren Inhalte; die Liste springt
-  dadurch beim Eintreffen der Daten nicht mehr.
-- Die Aktionen auf einer Kommentarkarte standen als vier beschriftete
-  Schaltflächen auf zwei Zeilen. Jetzt trägt eine hervorgehobene Hauptaktion
-  die Beschriftung – genehmigen, bei bereits genehmigten Kommentaren
-  antworten –, die übrigen stehen als Symbole daneben. Auf denselben
-  Bildschirm passen dadurch drei Kommentare statt zweieinhalb.
-- Die Kopfleiste des Posteingangs weicht beim Scrollen nach oben und kommt
-  beim Zurückscrollen sofort wieder.
-- Das Symbol in der Statusleiste füllte nur rund die Hälfte seiner Fläche und
-  erschien neben den Symbolen anderer Apps als kaum erkennbarer Punkt. Es
-  füllt jetzt gut 90 Prozent, wie für Statusleistensymbole vorgesehen, und
-  zeigt dieselbe Blasenform wie das App-Symbol.
-- App-Symbol nach dem Muster gängiger Messenger überarbeitet: fast
-  quadratischer Blasenkörper mit großem Eckradius statt eines länglichen, und
-  ein kurzer angewachsener Schweif statt eines dünnen Stachels. Die Marke hält
-  jetzt rund 5 Einheiten Abstand zur Sicherheitszone statt 1,8.
+- Comments from your own team are visually set apart, distinguished by role.
+  Each role has its own tint from a coordinated palette – all deliberately
+  pale so that a comment from your own editorial team doesn't look like a
+  warning. The badge names the role, so the distinction doesn't rely on colour
+  alone. Which roles count as team can be chosen in the settings; the
+  defaults are Administrator and Editor. Your own account always counts.
+- A settings dialog per role: whether it counts as team, which tint it gets
+  and whether it is tinted at all, whether its comments appear individually
+  in the list and whether it notifies on the device. The four default roles –
+  Administrator, Editor, Author, Contributor – are available even without the
+  bridge plugin.
+- Roles that should not appear individually in the list are collapsed there
+  instead of hidden: consecutive comments appear as one row that states count
+  and roles and can be tapped. That the team commented thus stays visible –
+  disappearing entirely would be worse than any filtering, you wouldn't even
+  know something was missing. The comment a reply refers to always stays
+  visible; collapsed, it would lack exactly the context it was loaded for.
+- Notifications can be turned off per role. Muted comments are still
+  recorded, otherwise the background service would fetch them from the blog
+  again on every run.
+- By default the app does not notify about your own comments: whoever just
+  replied knows about it, and the notification would only come with the next
+  background check. This can be turned on in the "Your own account" dialog.
+  Your own comments are always governed by this entry, even if the plugin
+  knows your actual role – otherwise the switch would be ineffective precisely
+  there, and your own replies could only be muted together with those of all
+  other administrators.
+- Swipe gestures in the list: right to approve, left to mark as spam. Both
+  are reversible, and the buttons on the card remain – a gesture is never the
+  only way to an action. Permanent deletion is deliberately not included.
+  From the first movement, the area under the card shows in colour what the
+  gesture would trigger. Icon and label fade in as soon as they fit fully
+  beside the card – a clipped icon or a word cut off mid-word says less than
+  none at all. Once dragged far enough for release to trigger the action,
+  there is a short haptic pulse and the indicator grows slightly.
+- Blog icon and blog name now sit on one line. Previously it was not the text
+  that was centred but its box – which includes line spacing and room for
+  descenders that a blog name often doesn't have. Measured on the device: an
+  offset of 2 px became 1 px.
+- The blog icon is shown even if the blog has no WordPress site icon set.
+  Many blogs ship their icon with the theme and only add it to the page head
+  as `<link rel="icon">` – it is then invisible to the REST API, even though
+  it shows up everywhere in the browser. The search happens only if no site
+  icon is set, and only an image on the same host as the blog is used: an
+  icon from a content delivery network would be a connection to a third
+  party. `.ico` and `.svg` are excluded because Android cannot draw them.
+- The inbox list is shown as a conversation thread: replies appear indented
+  below the comment they refer to, and threads with new comments come first.
+  Since with the "Pending" filter the preceding comment has usually long been
+  approved and wouldn't appear there at all, it is fetched separately and
+  shown dimmed as context – without buttons, because it doesn't belong to the
+  filter. Can be turned off in the settings; the list then stays purely
+  chronological. Search results always remain flat.
+- Comment search via the top app bar. The search runs on the server via the
+  WordPress API's `search` parameter and within the selected filter – so the
+  filter bar keeps its meaning. Searching locally would be faster but would
+  only search what happens to be in the cache. The search starts only once
+  the input settles, and from two characters; otherwise every keystroke would
+  be a request of its own. Results come from the cache like the list, so a
+  moderation takes effect in the results immediately too.
+- Multiple blogs in one app. The data layer was designed for this from the
+  start – every row carries an `instanceId`, credentials are stored per blog,
+  the HTTP client is created per blog –, so the extension needed no data
+  migration.
+  - Switcher in the inbox top app bar. It appears only from the second blog
+    on; with one, an arrow above a single-entry list would be a promise
+    without substance. The sheet shows each blog's icon, name and address –
+    two blogs can share a name, the address always tells them apart – and the
+    number of pending comments from the cache. A blog that has never been
+    loaded shows no number rather than a wrong zero.
+  - List of all configured blogs in the settings, with a way to add more. The
+    same setup as for the first blog, just with a back button – behind the
+    first there is nothing.
+  - Separate settings screen per blog: address, account, plugin detection,
+    whether the blog notifies and via what, its roles and colours, its text
+    snippets, and removal of exactly this blog. Everything together on one
+    screen would have left open, for every row, which blog it applies to.
+  - Notifications can be turned off per blog, with their own scope. A side
+    project may stay quiet while the main blog notifies. The main switch and
+    the check interval still apply to all.
+  - The background check goes through all blogs in one pass instead of
+    scheduling separate work per blog: the device wakes once instead of n
+    times. Errors are handled per blog – a blog with rejected credentials or
+    no connection doesn't hold up the notifications of the others.
+  - Roles, colours and text snippets apply per blog: the roles of an
+    editorial team are not those of a client project, and neither is the
+    tone. What was configured across blogs before the switch still applies –
+    the old keys are read, and from then on writes are per blog.
+  - Signing in again to an already configured blog updates its entry instead
+    of creating a second one. A second entry would not only appear twice in
+    the list, it would also report every existing comment as new once more.
+  - Notifications carry the blog as a tag alongside the identifier derived
+    from the comment ID. IDs are only unique within a blog; without this
+    second dimension, comment 5 of one blog would have replaced the
+    notification for comment 5 of the other. With multiple blogs the subtext
+    also names the blog; with one it stays as it was.
+  - Tapping a notification switches to the blog concerned. Otherwise the
+    opened comment would sit on top of another blog's inbox.
+- The UI follows Material 3 Expressive.
+  - **Motion** as spring physics instead of fixed durations. A spring knows
+    the velocity with which a movement arrives and continues from it; a curve
+    over 200 ms always starts at zero, even if the finger was just pushing
+    the element. Split into spatial (position and size, overshoots slightly)
+    and effects (opacity and colour, doesn't overshoot - an overshooting
+    opacity would have to exceed 100 % and would only flicker). The scheme
+    comes from the theme, not from constants in the components, so no place
+    sticks to its own timing.
+  - **Filter bar as a connected group** of `ToggleButton`s: round on the
+    outside, almost straight on the inside, and thus recognisable as one
+    thing instead of five separate chips. Each toggle has three shapes -
+    resting, pressed, selected - and morphs between them instead of swapping
+    them. The selection thus carries its shape and not just its colour;
+    someone who has trouble telling colours apart sees nothing in a tinted
+    chip, but does in a round one.
+  - **Shape scale** with a wider range: restrained where many elements sit
+    next to each other, round where a surface stands on its own. The comment
+    list deliberately stays dense - it is the workspace, and every millimetre
+    of radius costs usable width there.
+  - **Emphasised typography**: more weight on titles, headings and labels so
+    the structure is recognisable when skimming. The comment text itself is
+    left untouched - it is read, not skimmed.
+  - **Loading indicator** as a sequence of morphing shapes instead of a
+    spinning circle.
+  - Expanding and collapsing grouped team comments is animated; it previously
+    switched without transition, and you couldn't see where the new cards
+    came from. The arrow rotates instead of being swapped for a second
+    glyph.
+  - For this, `compose-material3` is the only Compose artifact pinned to its
+    own version (1.5.0-alpha29) instead of the BOM. In the stable 1.4.0 line
+    the entire Expressive API is Kotlin-`internal` and not callable from app
+    code; the new components are missing there entirely. Rationale and cost
+    are in `docs/architecture.md`.
+- Label columns adapt to the measured text width instead of a fixed value. At
+  200 % system font size, "Post" previously became "Po / st" – a break in
+  the middle of the word. A test pins this down for the detail view.
+- Label and value are read out together by screen readers ("Post Hello
+  world!") instead of as two stops, the first of which means nothing on its
+  own.
+- The filter chips announce the number spelled out to screen readers ("All,
+  7 comments"); on screen it still reads "All · 7". The middle dot separates
+  for the eye; read aloud it means nothing.
+- The blog row in the settings shows the label above the value, like the rows
+  below it.
+- Addresses that appear unlinked in the text now count as links too.
+  Previously only the markup was considered – but WordPress doesn't link
+  every address, so a comment with a spelled-out URL went unnoticed. A linked
+  address still counts only once.
+- When the list was first built, two loading indicators ran at the same time:
+  the pull-to-refresh one and the list's. Instead of a circle in empty space
+  there are now placeholder cards shaped like the later content; the list no
+  longer jumps when the data arrives.
+- The actions on a comment card were four labelled buttons on two rows. Now a
+  highlighted primary action carries the label – approve, or reply for
+  already approved comments –, the others sit next to it as icons. The same
+  screen thus fits three comments instead of two and a half.
+- The inbox top app bar moves away when scrolling up and comes back
+  immediately when scrolling back.
+- The status bar icon filled only about half of its area and appeared as a
+  barely recognisable dot next to other apps' icons. It now fills a good 90
+  percent, as intended for status bar icons, and shows the same bubble shape
+  as the app icon.
+- App icon reworked along the lines of common messengers: an almost square
+  bubble body with a large corner radius instead of an elongated one, and a
+  short attached tail instead of a thin spike. The mark now keeps about 5
+  units of distance from the safe zone instead of 1.8.
 
-- Benachrichtigungen lassen sich in drei Stufen einstellen: nur was auf
-  Moderation wartet, jeder neue Kommentar (Voreinstellung), oder zusätzlich
-  Spam und Papierkorb. Zuvor wurde nur die Moderationswarteschlange geprüft –
-  auf Blogs, die Kommentare automatisch freischalten, kam deshalb nie eine
-  Benachrichtigung an. Was ein Spamfilter aussortiert hat, bleibt in der
-  Voreinstellung außen vor; die dritte Stufe macht Fehleinstufungen sichtbar.
-- Kommentatoren ohne Gravatar bekommen ein eigenes Platzhaltersymbol statt der
-  Silhouette von Gravatar. Dafür fragt die App `d=404` statt `d=mm` an.
-  Avatar-Adressen anderer Dienste bleiben unangetastet.
-- Umschalten zwischen den Filtern kostet keine Netzanfragen mehr, solange der
-  Stand jünger als zwei Minuten ist. Zuvor löste jeder Tipp auf einen Filter
-  bis zu neun Anfragen aus – Liste, Beitragstitel, Rechteabfrage und
-  Zählungen –, obwohl sich beim reinen Umschalten nichts davon ändern kann.
-  Gemessen: vorher 7 bis 9 Anfragen je Wechsel, jetzt 2 beim ersten Besuch
-  eines Filters und 0 bei jedem weiteren. Ausdrückliches Aktualisieren holt
-  weiterhin alles.
-- Bilder werden auf der Platte zwischengespeichert. Blog-Symbol und Avatare
-  wurden zuvor nach jedem Neustart neu geladen.
-- Version und Buildnummer kommen aus Git statt aus fest eingetragenen Werten:
-  die Buildnummer aus der Anzahl der Commits, der Versionsname aus dem
-  jüngsten Tag beziehungsweise aus Basisversion und Commit. Ohne Git greifen
-  Rückfallwerte, damit ein Build aus einem Quellarchiv nicht scheitert.
+- Notifications can be configured in three levels: only what awaits
+  moderation, every new comment (default), or additionally spam and trash.
+  Previously only the moderation queue was checked – on blogs that approve
+  comments automatically, a notification therefore never arrived. What a spam
+  filter has sorted out stays excluded by default; the third level makes
+  misclassifications visible.
+- Commenters without a Gravatar get a custom placeholder icon instead of
+  Gravatar's silhouette. For this the app requests `d=404` instead of
+  `d=mm`. Avatar URLs of other services are left untouched.
+- Switching between filters no longer costs network requests as long as the
+  state is younger than two minutes. Previously every tap on a filter
+  triggered up to nine requests – list, post titles, permission check and
+  counts – even though none of that can change from merely switching.
+  Measured: previously 7 to 9 requests per switch, now 2 on the first visit
+  to a filter and 0 on every subsequent one. An explicit refresh still
+  fetches everything.
+- Images are cached on disk. Blog icon and avatars were previously reloaded
+  after every restart.
+- Version and build number come from Git instead of hard-coded values: the
+  build number from the commit count, the version name from the latest tag
+  or from the base version and commit. Without Git, fallback values apply so
+  a build from a source archive doesn't fail.
 
 ### Security
 
-- Zugangsdaten werden mit AES-256-GCM verschlüsselt abgelegt; der Schlüssel
-  liegt im Android Keystore und verlässt ihn nicht.
-- `androidx.security:security-crypto` wird bewusst nicht verwendet: Die
-  Bibliothek ist seit 1.1.0-beta01 (Juni 2025) vollständig deprecated.
-- Klartextverkehr ist auf drei Ebenen unterbunden: Netzwerkkonfiguration,
-  Manifest und ein eigener Interceptor.
-- HTTP-Logging existiert ausschließlich in Debug-Builds und redigiert dort die
-  Kopfzeile `Authorization`; in Release-Builds ist die Bibliothek nicht Teil
-  der Anwendung.
-- Typen für Zugangsdaten geben ihren Wert über `toString()` nicht preis, was
-  durch Unit-Tests abgesichert ist.
-- `FLAG_SECURE` im Schritt zur manuellen Eingabe des Application Passwords,
-  gekapselt in `ScreenshotProtection` und durch Tests abgesichert - auch
-  dahingehend, dass das Flag beim Verlassen wieder entfernt wird.
-- `allowBackup="false"` und leere Extraktionsregeln verhindern, dass
-  Zugangsdaten in Cloud-Backups oder auf ein neues Gerät gelangen.
-- Das Application Password wird nicht als Navigationsargument weitergereicht,
-  damit es nicht im Backstack oder im gespeicherten Zustand landet.
-- Die App fordert selbst drei Berechtigungen an. Drei weitere steuert
-  `androidx.work` beim Zusammenführen der Manifeste bei; alle sechs sind in
-  `docs/privacy.md` einzeln aufgeführt.
-- Die Signaturkonfiguration für Release-Builds liest ausschließlich
-  Gradle-Properties von außerhalb des Projekts. Weder Keystore noch Passwörter
-  liegen im Repository, und ohne sie entsteht ein unsigniertes Release statt
-  eines Build-Fehlers.
-- Sicherungsregeln greifen auch auf Android 11 und älter (`fullBackupContent`),
-  nicht nur über `dataExtractionRules` ab Android 12.
-- Die Laufzeitberechtigung für Benachrichtigungen wird nur dort abgefragt, wo
-  es sie gibt (ab Android 13). Eine ungeprüfte Abfrage auf älteren Versionen
-  hätte Benachrichtigungen dort vollständig unterdrückt.
+- Credentials are stored encrypted with AES-256-GCM; the key lives in the
+  Android Keystore and never leaves it.
+- `androidx.security:security-crypto` is deliberately not used: the library
+  has been fully deprecated since 1.1.0-beta01 (June 2025).
+- Cleartext traffic is blocked at three levels: network security config,
+  manifest and a custom interceptor.
+- HTTP logging exists only in debug builds and redacts the `Authorization`
+  header there; in release builds the library is not part of the app.
+- Credential types don't reveal their value via `toString()`, which is
+  covered by unit tests.
+- `FLAG_SECURE` in the step for manually entering the Application Password,
+  encapsulated in `ScreenshotProtection` and covered by tests - including
+  that the flag is removed again on leaving.
+- `allowBackup="false"` and empty extraction rules prevent credentials from
+  ending up in cloud backups or on a new device.
+- The Application Password is not passed on as a navigation argument, so it
+  doesn't end up in the back stack or in saved state.
+- The app itself requests three permissions. Three more are contributed by
+  `androidx.work` during manifest merging; all six are listed individually in
+  `docs/privacy.md`.
+- The signing configuration for release builds reads only Gradle properties
+  from outside the project. Neither keystore nor passwords are in the
+  repository, and without them an unsigned release is produced instead of a
+  build error.
+- Backup rules also apply on Android 11 and older (`fullBackupContent`), not
+  only via `dataExtractionRules` on Android 12 and later.
+- The runtime permission for notifications is only requested where it exists
+  (Android 13 and later). An unchecked request on older versions would have
+  suppressed notifications there completely.
 
 ### Notes
 
-- Keine Analytics, keine Absturzberichte, keine Telemetrie, keine Werbung.
-- Keine Firebase- oder Google-Play-Services-Abhängigkeit. Die Erkennung neuer
-  Kommentare liegt hinter der Schnittstelle `NewCommentSource`. Die optionale
-  Sofortmeldung über UnifiedPush stößt nur diese Prüfung früher an und kam
-  deshalb ohne Eingriff in die Benachrichtigungslogik aus.
+- No analytics, no crash reports, no telemetry, no ads.
+- No Firebase or Google Play Services dependency. Detection of new comments
+  sits behind the `NewCommentSource` interface. The optional instant
+  notifications via UnifiedPush only trigger this check earlier and therefore
+  required no change to the notification logic.

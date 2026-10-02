@@ -1,70 +1,69 @@
-# WordPress-REST-API: verwendete Endpunkte
+# WordPress REST API: endpoints used
 
-Alle Aufrufe gehen gegen `https://<site>/wp-json/`. Es wird ausschließlich die
-offizielle Kern-API verwendet; die Endpunkte unter `commentator/v1` stammen
-aus dem optionalen Plugin und ersetzen keine Kernfunktion.
+All requests go to `https://<site>/wp-json/`. Only the official core API is
+used; the endpoints under `commentator/v1` come from the optional plugin and
+do not replace any core functionality.
 
-Authentifizierung: HTTP Basic mit Benutzername und Application Password,
-ausschließlich über HTTPS.
+Authentication: HTTP Basic with username and Application Password, over HTTPS
+only.
 
 ---
 
-## Erkennung der Installation
+## Detecting the installation
 
 ```
 GET /wp-json/
 ```
 
-Ausgewertet werden:
+The app evaluates:
 
-| Feld | Bedeutung für die App |
+| Field | Meaning for the app |
 |---|---|
-| `name` | Anzeigename des Blogs |
-| `namespaces` enthält `wp/v2` | Es handelt sich um eine nutzbare WordPress-REST-API |
-| `namespaces` enthält `commentator/v1` | Das Bridge-Plugin ist installiert |
-| `authentication["application-passwords"].endpoints.authorization` | Autorisierungs-Flow ist verfügbar |
+| `name` | Display name of the blog |
+| `namespaces` contains `wp/v2` | This is a usable WordPress REST API |
+| `namespaces` contains `commentator/v1` | The bridge plugin is installed |
+| `authentication["application-passwords"].endpoints.authorization` | The authorization flow is available |
 
-Fehlt der letzte Eintrag, sind Application Passwords nicht nutzbar. In der
-Praxis liegt das fast immer daran, dass die Installation nicht über HTTPS
-läuft – WordPress bietet die Funktion dann bewusst nicht an.
+If the last entry is missing, Application Passwords cannot be used. In
+practice this is almost always because the installation is not running over
+HTTPS – WordPress then deliberately does not offer the feature.
 
 ---
 
-## Anmeldung
+## Sign-in
 
-### Autorisierungs-Flow
+### Authorization flow
 
 ```
 GET <authorization endpoint>
     ?app_name=Commentator
-    &app_id=<feste UUID der App>
+    &app_id=<fixed UUID of the app>
     &success_url=commentator://auth-callback
     &reject_url=commentator://auth-rejected
 ```
 
-Der Aufruf erfolgt in einem Custom Tab, also im Browser des Benutzers. Nach
-der Bestätigung ruft WordPress auf:
+The request is made in a Custom Tab, i.e. in the user's browser. After
+confirmation, WordPress calls:
 
 ```
 commentator://auth-callback?site_url=…&user_login=…&password=…
 ```
 
-WordPress erlaubt an dieser Stelle App-Schemata; abgelehnt wird lediglich
-`http://`.
+WordPress allows app schemes at this point; only `http://` is rejected.
 
-### Prüfung der Zugangsdaten
+### Verifying the credentials
 
 ```
 GET /wp-json/wp/v2/users/me?context=edit
 ```
 
-Ausgewertet werden `id` und `capabilities.moderate_comments`. Ohne diese
-Berechtigung richtet die App die Verbindung zwar ein, sperrt aber alle
-Moderationsaktionen und weist darauf hin.
+The app evaluates `id` and `capabilities.moderate_comments`. Without this
+capability, the app still sets up the connection, but locks all moderation
+actions and says so.
 
 ---
 
-## Kommentare lesen
+## Reading comments
 
 ```
 GET /wp-json/wp/v2/comments
@@ -77,75 +76,74 @@ GET /wp-json/wp/v2/comments
     &type=comment
 ```
 
-Wichtige Eigenheiten:
+Important quirks:
 
-* **`context=edit` ist Pflicht.** Ohne ihn liefert WordPress weder `status`
-  noch `author_email`, und die Filter wären wertlos.
-* **Der Statuswert unterscheidet sich je nach Richtung.** Beim Auflisten heißt
-  „genehmigt“ `approve`, im zurückgelieferten Objekt dagegen `approved`. Die
-  App bildet das an einer Stelle ab (`CommentStatus`).
-* **`spam` und `trash` erfordern `moderate_comments`.**
-* **`author_avatar_urls` ist nicht immer ein Objekt.** Sind Avatare in
-  WordPress deaktiviert, steht dort `false`. Die App liest das Feld deshalb
-  unspezifisch ein.
+* **`context=edit` is mandatory.** Without it, WordPress returns neither
+  `status` nor `author_email`, and the filters would be worthless.
+* **The status value differs depending on direction.** When listing,
+  "approved" is `approve`, while in the returned object it is `approved`. The
+  app maps this in one place (`CommentStatus`).
+* **`spam` and `trash` require `moderate_comments`.**
+* **`author_avatar_urls` is not always an object.** If avatars are disabled
+  in WordPress, it contains `false`. The app therefore reads the field
+  loosely.
 
-### Paginierung
+### Pagination
 
-Die Seitenzahl steht nicht im Antwortkörper, sondern in den Kopfzeilen:
+The page count is not in the response body but in the headers:
 
-| Kopfzeile | Bedeutung |
+| Header | Meaning |
 |---|---|
-| `X-WP-Total` | Gesamtzahl der Treffer |
-| `X-WP-TotalPages` | Anzahl der Seiten |
+| `X-WP-Total` | Total number of results |
+| `X-WP-TotalPages` | Number of pages |
 
-Fehlen sie, geht die App von einer einzigen Seite aus.
+If they are missing, the app assumes a single page.
 
-### Einzelner Kommentar und Antworten
+### Single comment and replies
 
 ```
 GET /wp-json/wp/v2/comments/<id>?context=edit
 GET /wp-json/wp/v2/comments?parent=<id>&status=all&order=asc&context=edit
 ```
 
-### Antworten auf mehrere Kommentare (Filter „Unbeantwortet“)
+### Replies to multiple comments ("Unanswered" filter)
 
 ```
 GET /wp-json/wp/v2/comments
     ?status=approve
-    &parent=<ids, kommagetrennt>
+    &parent=<ids, comma-separated>
     &per_page=100
     &context=edit
 ```
 
-Der Filter „Unbeantwortet“ ruft dieselbe Liste ab wie „Genehmigt“ und fragt
-danach in einer Anfrage nach den freigegebenen Antworten auf die geladenen
-Kommentare. Ob darunter eine Antwort aus dem Team steht, entscheidet die App
-lokal im Zwischenspeicher; WordPress kennt diesen Zustand nicht und kann ihn
-auch nicht zählen.
+The "Unanswered" filter fetches the same list as "Approved" and then asks, in
+a single request, for the approved replies to the loaded comments. Whether
+one of them is a reply from the team is decided by the app locally in its
+cache; WordPress does not know this state and cannot count it either.
 
-`parent` und `include` werden kommagetrennt als ein Wert übergeben, nicht als
-wiederholter Parameter: Von wiederholten Parametern wertet WordPress nur den
-letzten aus.
+`parent` and `include` are passed comma-separated as a single value, not as a
+repeated parameter: for repeated parameters, WordPress only evaluates the
+last one.
 
-### Abgleich offener Benachrichtigungen
+### Reconciling open notifications
 
 ```
 GET /wp-json/wp/v2/comments?include=<ids>&status=any&context=edit
 ```
 
-Die Hintergrundprüfung fragt damit nach den Kommentaren, zu denen noch eine
-Benachrichtigung steht – nur wenn es solche gibt, und bevor sie Neues meldet.
-Wichtig ist `status=any`: Es schließt Spam und Papierkorb ein, `status=all`
-dagegen nicht. Ein Kommentar, der in der Antwort fehlt, ist damit endgültig
-gelöscht und nicht bloß woanders einsortiert.
+The background check uses this to ask for the comments that still have a
+notification showing – only if there are any, and before it reports anything
+new. `status=any` is important: it includes spam and trash, whereas
+`status=all` does not. A comment missing from the response has therefore
+been permanently deleted and not merely moved somewhere else.
 
 ---
 
-## Beitragstitel
+## Post titles
 
-Kommentare verweisen nur über `post` auf eine Kennung. Da Kommentare sowohl an
-Beiträgen als auch an Seiten hängen können, fragt die App beide Endpunkte ab –
-aber nur für Kennungen, die noch nicht im lokalen Cache stehen:
+Comments only refer to an ID via `post`. Since comments can be attached to
+both posts and pages, the app queries both endpoints – but only for IDs that
+are not yet in the local cache:
 
 ```
 GET /wp-json/wp/v2/posts?include=<ids>&_fields=id,title,link
@@ -156,7 +154,7 @@ GET /wp-json/wp/v2/pages?include=<ids>&_fields=id,title,link
 
 ## Moderation
 
-### Status ändern
+### Changing the status
 
 ```
 POST /wp-json/wp/v2/comments/<id>
@@ -165,69 +163,67 @@ Content-Type: application/json
 {"status": "approved" | "hold" | "spam" | "trash"}
 ```
 
-Nicht gesetzte Felder werden nicht übertragen, damit eine Teilaktualisierung
-keine anderen Werte überschreibt.
+Fields that are not set are not transmitted, so that a partial update does
+not overwrite other values.
 
-### Inhalt bearbeiten
+### Editing the content
 
 ```
 POST /wp-json/wp/v2/comments/<id>
 
-{"content": "<neuer Text>"}
+{"content": "<new text>"}
 ```
 
-Ob das erlaubt ist, entscheidet WordPress anhand der Berechtigungen des
-angemeldeten Kontos. Die App bietet die Aktion an und stellt eine Ablehnung
-verständlich dar.
+Whether this is allowed is decided by WordPress based on the capabilities of
+the signed-in account. The app offers the action and presents a rejection in
+an understandable way.
 
-### Papierkorb und endgültiges Löschen
+### Trash and permanent deletion
 
 ```
-DELETE /wp-json/wp/v2/comments/<id>              → Papierkorb
-DELETE /wp-json/wp/v2/comments/<id>?force=true   → endgültig
+DELETE /wp-json/wp/v2/comments/<id>              → trash
+DELETE /wp-json/wp/v2/comments/<id>?force=true   → permanent
 ```
 
-Ist der Papierkorb in der Installation deaktiviert (`EMPTY_TRASH_DAYS = 0`),
-löscht bereits der erste Aufruf endgültig. Die App kann diese Einstellung
-nicht auslesen und weist deshalb vor dem endgültigen Löschen ausdrücklich
-darauf hin.
+If the trash is disabled in the installation (`EMPTY_TRASH_DAYS = 0`), the
+first request already deletes permanently. The app cannot read this setting
+and therefore explicitly warns about it before deleting permanently.
 
 ---
 
-## Antworten
+## Replies
 
 ```
 POST /wp-json/wp/v2/comments
 
 {
-  "post": <Beitrags-ID>,
-  "parent": <ID des beantworteten Kommentars>,
-  "content": "<Text>",
+  "post": <post ID>,
+  "parent": <ID of the comment being replied to>,
+  "content": "<text>",
   "status": "approved"
 }
 ```
 
-Die Antwort wird als echter Kommentar des angemeldeten Benutzers
-veröffentlicht und verweist über `parent` auf den ursprünglichen Kommentar.
-`status: approved` wird bewusst mitgesendet: Eine Antwort des Moderators soll
-nicht selbst in der Moderationswarteschlange landen.
+The reply is published as a real comment by the signed-in user and refers to
+the original comment via `parent`. `status: approved` is sent deliberately: a
+moderator's reply should not end up in the moderation queue itself.
 
-Ist der ursprüngliche Kommentar noch offen (`hold`), gibt die App ihn vorher
-mit `POST /wp-json/wp/v2/comments/<id>` und `{"status": "approved"}` frei –
-wie das WordPress-Backend. Ohne Freigabe bleibt der Elternkommentar offen, und
-WordPress zeigt die Antwort darunter auf der Website nicht an. Die Reihenfolge
-ist Absicht: Scheitert die Freigabe, ist nichts geschehen, und ein zweiter
-Versuch erzeugt keine doppelte Antwort.
+If the original comment is still pending (`hold`), the app first approves it
+with `POST /wp-json/wp/v2/comments/<id>` and `{"status": "approved"}` – just
+like the WordPress admin. Without approval, the parent comment stays pending,
+and WordPress does not show the reply beneath it on the website. The order is
+intentional: if the approval fails, nothing has happened, and a second
+attempt does not create a duplicate reply.
 
 ---
 
-## Endpunkte des optionalen Plugins
+## Endpoints of the optional plugin
 
-Alle verlangen dieselbe Authentifizierung wie die Kern-API. Das nötige Recht
-steht jeweils dabei; es ist dasselbe, das die entsprechende Aktion im Backend
-verlangt.
+All of them require the same authentication as the core API. The required
+capability is listed for each; it is the same one the corresponding action
+requires in the admin.
 
-| Route | Recht | Seit |
+| Route | Capability | Since |
 |---|---|---|
 | `GET /commentator/v1/status` | `moderate_comments` | 1.0.0 |
 | `GET /commentator/v1/summary` | `moderate_comments` | 1.0.0 |
@@ -236,7 +232,7 @@ verlangt.
 | `GET /commentator/v1/team` | `moderate_comments` | 1.4.0 |
 | `POST`, `DELETE /commentator/v1/push` | `moderate_comments` | 1.5.0 |
 
-### Zustand
+### Status
 
 ```
 GET /wp-json/commentator/v1/status
@@ -253,15 +249,14 @@ GET /wp-json/commentator/v1/status
 }
 ```
 
-`latest_comment_id` bezeichnet den neuesten Kommentar, der auf Moderation
-wartet, `latest_any_comment_id` (seit 1.3.0) den neuesten unabhängig vom
-Status – ohne ihn bemerkte die App auf Blogs mit automatischer Freischaltung
-nie etwas. Beide werden nach Kennung bestimmt, nicht nach Datum. Die App
-vergleicht sie mit dem zuletzt gemeldeten Wert und lädt nur dann tatsächlich
-Kommentare nach, wenn sich etwas geändert hat. Ohne die Felder ab 1.3.0 fragt
-sie regulär über die Kern-API.
+`latest_comment_id` refers to the newest comment awaiting moderation,
+`latest_any_comment_id` (since 1.3.0) to the newest one regardless of status
+– without it, the app never noticed anything on blogs with automatic
+approval. Both are determined by ID, not by date. The app compares them with
+the last reported value and only actually loads comments if something has
+changed. Without the fields added in 1.3.0, it queries the core API as usual.
 
-### Zusammenfassung
+### Summary
 
 ```
 GET /wp-json/commentator/v1/summary
@@ -271,9 +266,9 @@ GET /wp-json/commentator/v1/summary
 { "counts": { "approve": 120, "hold": 4, "spam": 17, "trash": 2, "all": 124 } }
 ```
 
-Ohne Plugin bräuchte die Filterleiste fünf getrennte Abfragen, nur um Zahlen
-anzuzeigen. `all` ist genehmigt plus offen – genau das, was die REST-API bei
-`status=all` auflistet.
+Without the plugin, the filter bar would need five separate queries just to
+display numbers. `all` is approved plus pending – exactly what the REST API
+lists for `status=all`.
 
 ### Team
 
@@ -289,12 +284,11 @@ GET /wp-json/commentator/v1/team
 }
 ```
 
-Geliefert werden nur Rollen, die Beiträge schreiben oder Kommentare moderieren
-dürfen, und höchstens 200 Mitglieder. Die Kern-API taugt dafür nicht:
-`wp/v2/users` mit `context=edit` verlangt `list_users`, und das hat ein
-Redakteur nicht.
+Only roles that may write posts or moderate comments are returned, and at
+most 200 members. The core API is not suitable for this: `wp/v2/users` with
+`context=edit` requires `list_users`, which an editor does not have.
 
-### Spam oder Papierkorb leeren
+### Emptying spam or trash
 
 ```
 POST /wp-json/commentator/v1/empty
@@ -306,28 +300,28 @@ POST /wp-json/commentator/v1/empty
 { "deleted": 200, "remaining": 1340 }
 ```
 
-Löscht endgültig, in Stapeln von höchstens 200 Kommentaren. Ist `remaining`
-größer als null, fragt die App erneut. Ohne Plugin löscht sie mit einer
-Anfrage je Kommentar.
+Deletes permanently, in batches of at most 200 comments. If `remaining` is
+greater than zero, the app asks again. Without the plugin, it deletes with
+one request per comment.
 
-### Sperrliste
+### Blocklist
 
 ```
 GET    /wp-json/commentator/v1/blocklist
-POST   /wp-json/commentator/v1/blocklist           {"value": "<Eintrag>"}
-DELETE /wp-json/commentator/v1/blocklist?value=<Eintrag>
+POST   /wp-json/commentator/v1/blocklist           {"value": "<entry>"}
+DELETE /wp-json/commentator/v1/blocklist?value=<entry>
 ```
 
 ```json
 { "entries": ["spam@example.com", "example.net"] }
 ```
 
-Pflegt die Option `disallowed_keys`, dieselbe Liste wie unter Einstellungen →
-Diskussion. Ein leerer Eintrag wird mit 400 abgelehnt – er träfe jeden
-Kommentar. Die App nutzt heute nur `POST` („Absender sperren“) und bietet die
-Aktion nur an, wenn das Konto `manage_options` hat.
+Maintains the `disallowed_keys` option, the same list as under Settings →
+Discussion. An empty entry is rejected with 400 – it would match every
+comment. The app currently only uses `POST` ("Block sender") and only offers
+the action if the account has `manage_options`.
 
-### Push-Adresse für die Sofortmeldung
+### Push address for instant notifications
 
 ```
 POST   /wp-json/commentator/v1/push                {"endpoint": "https://…"}
@@ -339,17 +333,16 @@ DELETE /wp-json/commentator/v1/push?endpoint=https://…
 { "removed": true }
 ```
 
-Hinterlegt beziehungsweise entfernt die Endpoint-Adresse, die die App von der
-UnifiedPush-App auf dem Telefon bekommen hat, für das angemeldete Konto.
-Angenommen werden nur öffentlich erreichbare HTTPS-Adressen
-(`wp_http_validate_url`); eine private Adresse wird mit 400
-(`commentator_invalid_endpoint`) abgelehnt. Je Konto gelten höchstens fünf
-Adressen, die älteste fällt heraus. Gespeichert werden sie in der Benutzermeta
-`commentator_push_endpoints`.
+Stores or removes, for the signed-in account, the endpoint address the app
+received from the UnifiedPush app on the phone. Only publicly reachable HTTPS
+addresses are accepted (`wp_http_validate_url`); a private address is
+rejected with 400 (`commentator_invalid_endpoint`). At most five addresses
+apply per account; the oldest one is dropped. They are stored in the user
+meta `commentator_push_endpoints`.
 
-Antwortet `POST` mit 404, ist das Plugin älter als 1.5.0; die App zeigt das in
-den Einstellungen des Blogs an. Mit 403 (`commentator_push_disabled`) ist die
-Sofortmeldung auf dem Blog abgeschaltet (seit 1.7.0, siehe unten).
+If `POST` responds with 404, the plugin is older than 1.5.0; the app shows
+this in the blog's settings. With 403 (`commentator_push_disabled`), instant
+notifications are disabled on the blog (since 1.7.0, see below).
 
 ```
 POST /wp-json/commentator/v1/push/test
@@ -359,24 +352,25 @@ POST /wp-json/commentator/v1/push/test
 { "sent": 1, "failed": 0 }
 ```
 
-Seit 1.7.0. Schickt an alle Adressen des angemeldeten Kontos einen Weckruf mit
-dem Rumpf `test` und wartet – anders als im Betrieb – auf die Antwort des
-Push-Servers. `sent` zählt die Adressen, die mit 2xx angenommen haben. Die App
-erkennt den Rumpf `test` und bestätigt mit einer eigenen Benachrichtigung,
-statt nach Kommentaren zu sehen.
+Since 1.7.0. Sends a wake-up with the body `test` to all addresses of the
+signed-in account and – unlike in normal operation – waits for the push
+server's response. `sent` counts the addresses that accepted with 2xx. The
+app recognizes the `test` body and confirms with a notification of its own
+instead of checking for comments.
 
-Für Admins, ohne Einstellungsseite:
+For admins, without a settings page:
 
 * `define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true );` in `wp-config.php`
-  schaltet die Sofortmeldung ab: keine neuen Adressen, kein Versand.
-* Filter `commentator_bridge_push_allow_local` (`bool`, Vorgabe `false`)
-  erlaubt Push-Server im eigenen Netz; versendet wird dann über
-  `wp_remote_post` statt `wp_safe_remote_post`.
-* Filter `commentator_bridge_push_endpoint_allowed` (`bool $allowed, string
-  $endpoint`) schränkt Adressen weiter ein, etwa auf den eigenen ntfy-Server.
+  disables instant notifications: no new addresses, no sending.
+* The filter `commentator_bridge_push_allow_local` (`bool`, default `false`)
+  allows push servers on the local network; sending then uses
+  `wp_remote_post` instead of `wp_safe_remote_post`.
+* The filter `commentator_bridge_push_endpoint_allowed` (`bool $allowed,
+  string $endpoint`) restricts addresses further, for example to your own
+  ntfy server.
 
-Bei jedem neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, sendet
-das Plugin an jede hinterlegte Adresse aller Konten mit `moderate_comments`:
+For every new comment that does not arrive as spam or trash, the plugin sends
+to every stored address of all accounts with `moderate_comments`:
 
 ```
 POST <endpoint>
@@ -387,27 +381,27 @@ Urgency: high
 new
 ```
 
-Der Versand ist nicht blockierend und läuft über `wp_safe_remote_post`. Der
-Rumpf enthält bewusst nichts – keinen Namen, keinen Text, keine Kennung. Die
-App prüft daraufhin selbst über die oben beschriebenen Endpunkte.
+Sending is non-blocking and uses `wp_safe_remote_post`. The body deliberately
+contains nothing – no name, no text, no ID. The app then checks on its own
+via the endpoints described above.
 
 ---
 
-## Fehlerantworten
+## Error responses
 
-WordPress antwortet einheitlich:
+WordPress responds uniformly:
 
 ```json
 {"code": "rest_comment_invalid_id", "message": "…", "data": {"status": 404}}
 ```
 
-Die App liest `code` aus und ordnet ihn zu. Angezeigt wird nie die Rohmeldung,
-sondern ein eigener Text – siehe `AppError` und `ErrorTexts`.
+The app reads `code` and maps it. The raw message is never shown; instead,
+the app uses its own text – see `AppError` and `ErrorTexts`.
 
-| Situation | HTTP | Behandlung in der App |
+| Situation | HTTP | Handling in the app |
 |---|---|---|
-| Application Password ungültig oder widerrufen | 401 | Sitzung als ungültig markieren, erneute Anmeldung anbieten |
-| Konto ohne `moderate_comments` | 403 | Moderationsaktionen sperren, Grund nennen |
-| Kommentar existiert nicht mehr | 404 | Detailansicht verlassen, Cache bereinigen |
-| Zu viele Anfragen | 429 | `Retry-After` auswerten und anzeigen |
-| Serverproblem | 5xx | Hintergrundprüfung wiederholen, Anzeige mit Wiederholung |
+| Application Password invalid or revoked | 401 | Mark session as invalid, offer to sign in again |
+| Account without `moderate_comments` | 403 | Lock moderation actions, state the reason |
+| Comment no longer exists | 404 | Leave the detail view, clean up the cache |
+| Too many requests | 429 | Evaluate and display `Retry-After` |
+| Server problem | 5xx | Retry the background check, show with retry option |

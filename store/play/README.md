@@ -1,59 +1,58 @@
-# Store-Assets
+# Store assets
 
-Grafiken für einen Eintrag im Google Play Store. Sie werden **nicht** ins APK
-gepackt und liegen deshalb außerhalb des Android-Moduls.
+Graphics for a Google Play Store listing. They are **not** packaged into the
+APK and therefore live outside the Android module.
 
-## App-Symbol
+## App icon
 
-| Datei | Variante |
+| File | Variant |
 |---|---|
-| `icon-512.png` | Android-Grün, entspricht dem Standard-Startsymbol |
-| `icon-512-blau.png` | WordPress-Blau – weisse Blase auf blauem Grund, siehe unten |
+| `icon-512.png` | Android green, matches the default launcher icon |
+| `icon-512-blau.png` | WordPress blue – white bubble on a blue background, see below |
 
-Erzeugt aus derselben Zeichnung wie das Launcher-Symbol
+Generated from the same drawing as the launcher icon
 (`android/app/src/main/res/drawable/ic_launcher_foreground.xml`).
 
-### Einhaltung der Spezifikation
+### Compliance with the specification
 
-Google Play stellt an das Symbol andere Anforderungen als Android an das
-Startsymbol. Geprüft wurde gegen
-[Spezifikationen für das App-Symbol](https://developer.android.com/distribute/google-play/resources/icon-design-specifications):
+Google Play has different requirements for the icon than Android has for the
+launcher icon. Checked against the
+[app icon specifications](https://developer.android.com/distribute/google-play/resources/icon-design-specifications):
 
-| Vorgabe | Umsetzung |
+| Requirement | Implementation |
 |---|---|
 | 512 × 512 px | ✅ |
-| 32-Bit-PNG | ✅ RGBA, 8 Bit je Kanal |
-| Farbraum sRGB | ✅ |
-| höchstens 1024 KB | ✅ 11,7 KB |
-| volles Quadrat, keine runden Ecken | ✅ Play legt 30 % Eckenradius selbst an |
-| kein Schlagschatten | ✅ Play erzeugt ihn selbst |
-| Hintergrundfarbe statt Transparenz | ✅ durchgehend `#10141B` |
-| kein Text, keine Auszeichnungen, keine Rangangaben | ✅ |
+| 32-bit PNG | ✅ RGBA, 8 bits per channel |
+| sRGB color space | ✅ |
+| at most 1024 KB | ✅ 11.7 KB |
+| full square, no rounded corners | ✅ Play applies a 30 % corner radius itself |
+| no drop shadow | ✅ Play generates it itself |
+| background color instead of transparency | ✅ solid `#10141B` throughout |
+| no text, no badges, no ranking claims | ✅ |
 
-Die Marke misst 328 × 304 px, also 64 % der Kantenlänge, und liegt damit
-deutlich innerhalb des Eckenradius von 154 px, den Play anlegt.
+The mark measures 328 × 304 px, i.e. 64 % of the edge length, and thus sits
+well inside the 154 px corner radius that Play applies.
 
-Sie sitzt **optisch** zentriert, nicht geometrisch: Der Blasenkörper trägt
-nahezu die gesamte Fläche, der Schweif wiegt kaum etwas. Am Rahmen
-ausgerichtet wirkte die Marke deshalb nach oben gerutscht.
+It is **optically** centered, not geometrically: the bubble body carries
+almost the entire area, while the tail weighs next to nothing. Aligned to the
+frame, the mark therefore looked as if it had slipped upward.
 
-## Warum die blaue Variante umgekehrt eingefärbt ist
+## Why the blue variant uses inverted colors
 
-Blau `#3858E9` auf dem dunklen Grund erreicht nur einen Kontrast von 3,3:1;
-der Schweif der Sprechblase verschwindet dabei bei kleinen Größen fast. Mit
-weisser Blase auf blauem Grund sind es 5,6:1 in beide Richtungen, bei
-unveränderter Markenfarbe.
+Blue `#3858E9` on the dark background only reaches a contrast of 3.3:1; the
+speech bubble's tail almost disappears at small sizes. With a white bubble on
+a blue background, it is 5.6:1 in both directions, with the brand color
+unchanged.
 
-## Warum größer als im Startsymbol
+## Why larger than in the launcher icon
 
-Im Startsymbol begrenzt die Maske des Herstellers die nutzbare Fläche auf
-66 von 108 dp – die Marke füllt dort 60,5 dp. Bei Play beschneidet nur der
-Eckenradius, deshalb darf die Zeichnung einen größeren Anteil einnehmen. Die
-Proportionen der Zeichnung selbst sind in beiden Fällen dieselbe.
+In the launcher icon, the manufacturer's mask limits the usable area to 66 of
+108 dp – the mark fills 60.5 dp there. On Play, only the corner radius crops,
+so the drawing may take up a larger share. The proportions of the drawing
+itself are the same in both cases.
 
-## Neu erzeugen
+## Regenerating
 
-Die Dateien sind aus `docker/`-unabhängigen SVG-Quellen gerendert. Bei einer
-Änderung am Symbol müssen sie neu erzeugt werden; die Pfaddaten stehen in
-`ic_launcher_foreground.xml` und lassen sich unverändert in ein SVG
-übernehmen.
+The files are rendered from SVG sources independent of `docker/`. When the
+icon changes, they must be regenerated; the path data is in
+`ic_launcher_foreground.xml` and can be copied into an SVG unchanged.

@@ -1,330 +1,325 @@
 # Backlog
 
-Prioritäten:
+Priorities:
 
 | | |
 |---|---|
-| **P0** | zwingend für den MVP |
-| **P1** | wichtig, kurz nach dem MVP |
-| **P2** | später |
-| **P3** | optional, nur wenn es sich anbietet |
+| **P0** | required for the MVP |
+| **P1** | important, shortly after the MVP |
+| **P2** | later |
+| **P3** | optional, only if convenient |
 
-Erledigte Punkte bleiben abgehakt stehen, damit der Weg nachvollziehbar
-bleibt.
+Completed items stay checked so the path remains traceable.
 
 ---
 
 ## MVP
 
-- [x] **P0** WordPress-Verbindung herstellen und prüfen (`/wp-json/`)
-- [x] **P0** Authentifizierung über Application Passwords
-- [x] **P0** Autorisierungs-Flow im Browser mit Rücksprung per Deep Link
-- [x] **P0** Manuelle Eingabe eines Application Passwords als Rückfallebene
-- [x] **P0** Verschlüsselte Ablage der Zugangsdaten über den Android Keystore
-- [x] **P0** Kommentare abrufen (`context=edit`)
-- [x] **P0** Kommentarübersicht mit Autor, Zeit, Text, Beitrag, Status
-- [x] **P0** Kommentarfilter: Alle, Offen, Genehmigt, Spam, Papierkorb
-- [x] **P0** Paginierung über `X-WP-TotalPages`
-- [x] **P0** Pull-to-Refresh
-- [x] **P0** Kommentar genehmigen
-- [x] **P0** Kommentar zurückstellen
-- [x] **P0** Kommentar als Spam markieren
-- [x] **P0** Kommentar in den Papierkorb verschieben
-- [x] **P0** Kommentar endgültig löschen, mit Rückfrage
-- [x] **P0** Antworten schreiben und veröffentlichen
-- [x] **P0** Detailansicht
-- [x] **P0** Fehlerbehandlung für alle geforderten Fälle
-- [x] **P0** Rückgängig-Funktion für Moderationsaktionen
-- [x] **P1** Kommentartext bearbeiten
+- [x] **P0** Establish and verify the WordPress connection (`/wp-json/`)
+- [x] **P0** Authentication via Application Passwords
+- [x] **P0** Authorization flow in the browser with return via deep link
+- [x] **P0** Manual entry of an Application Password as a fallback
+- [x] **P0** Encrypted storage of credentials via the Android Keystore
+- [x] **P0** Fetch comments (`context=edit`)
+- [x] **P0** Comment overview with author, time, text, post, status
+- [x] **P0** Comment filters: All, Pending, Approved, Spam, Trash
+- [x] **P0** Pagination via `X-WP-TotalPages`
+- [x] **P0** Pull-to-refresh
+- [x] **P0** Approve comment
+- [x] **P0** Unapprove comment
+- [x] **P0** Mark comment as spam
+- [x] **P0** Move comment to trash
+- [x] **P0** Delete comment permanently, with confirmation
+- [x] **P0** Write and publish replies
+- [x] **P0** Detail view
+- [x] **P0** Error handling for all required cases
+- [x] **P0** Undo for moderation actions
+- [x] **P1** Edit comment text
 
 ---
 
-## Benachrichtigungen
+## Notifications
 
-- [x] **P0** Erkennung neuer Kommentare im Hintergrund (WorkManager)
-- [x] **P0** Benachrichtigung bei neuen Kommentaren
-- [x] **P0** Deep Link aus der Benachrichtigung in die Detailansicht
-- [x] **P0** Getrennte Benachrichtigungskanäle
-- [x] **P0** Keine Doppelbenachrichtigung für denselben Kommentar
-- [x] **P0** Laufzeitberechtigung `POST_NOTIFICATIONS` ab Android 13
-- [x] **P1** Einstellbares Prüfintervall
-- [x] **P1** Verweis in die Android-Systemeinstellungen
-- [x] **P1** Dauerhafter Hinweis bei abgelehnten Zugangsdaten
+- [x] **P0** Detection of new comments in the background (WorkManager)
+- [x] **P0** Notification for new comments
+- [x] **P0** Deep link from the notification into the detail view
+- [x] **P0** Separate notification channels
+- [x] **P0** No duplicate notification for the same comment
+- [x] **P0** Runtime permission `POST_NOTIFICATIONS` on Android 13 and later
+- [x] **P1** Configurable check interval
+- [x] **P1** Link to the Android system settings
+- [x] **P1** Persistent notice for rejected credentials
 
-### Offen
+### Open
 
-- [x] **P2** Moderationsaktionen direkt aus der Benachrichtigung
-      *Technische Frage: Eine Aktion aus der Benachrichtigung braucht einen
-      BroadcastReceiver, der ohne sichtbare App schreibend auf die API
-      zugreift. Zu klären ist, wie Fehler dort sichtbar gemacht werden –
-      eine stillschweigend fehlgeschlagene Moderation wäre schlimmer als gar
-      keine Schnellaktion.*
-      *Beantwortet: Der Receiver reicht nur an eine beschleunigte
-      WorkManager-Arbeit weiter, die dieselben Use Cases nutzt wie die
-      Oberfläche. Scheitert sie, wird nicht still wiederholt – eine später
-      nachgeholte Moderation könnte eine inzwischen im Web getroffene
-      Entscheidung überschreiben. Die Benachrichtigung bleibt stehen und nennt
-      den Grund, eine gescheiterte Antwort steht mit ihrem Text darin.*
-- [x] **P2** Echtes Push über FCM als zusätzliche `NewCommentSource`
-      *Technische Frage: Ein Versandweg von WordPress zu FCM benötigt einen
-      Dienstkontoschlüssel auf dem WordPress-Server und eine
-      Geräteregistrierung im Plugin. Damit entstünden Metadaten bei Google
-      und eine Abhängigkeit von den Play Services. Die Abwägung steht in
-      `docs/architecture.md`; die Schnittstelle ist vorbereitet.*
-      *Ersetzt: umgesetzt als Sofortmeldung über UnifiedPush, ohne Google;
-      FCM entfällt. Das Plugin (ab 1.5) schickt einen inhaltslosen Weckruf an
-      die hinterlegte Adresse, die App prüft daraufhin sofort. Eine eigene
-      `NewCommentSource` war dafür nicht nötig.*
-- [x] **P2** Benachrichtigungen räumen sich auf
-      *In der App moderiert, beantwortet oder geöffnet: Die Meldung
-      verschwindet sofort. Im Web moderiert: Die Hintergrundprüfung gleicht
-      offene Meldungen mit einer Anfrage (`include`, `status=any`) ab. Was
-      freigegeben gemeldet wurde, bleibt stehen – es wartet womöglich noch
-      auf eine Antwort.*
-- [x] **P2** Blog-Symbol in Benachrichtigungen
-      *Aus demselben Bildspeicher wie in der Kopfleiste; es stammt vom eigenen
-      Blog, eine Verbindung zu Dritten entsteht nicht.*
-- [x] **P3** Benachrichtigung auch für automatisch genehmigte Kommentare
-      *Umgesetzt und zur Voreinstellung gemacht: Auf Blogs, die automatisch
-      freischalten, kam zuvor nie eine Benachrichtigung an. Ein Schalter
-      beschränkt die Meldung wieder auf die Moderationswarteschlange.*
+- [x] **P2** Moderation actions directly from the notification
+      *Technical question: an action from the notification needs a
+      BroadcastReceiver that writes to the API without a visible app. It
+      remains to be clarified how errors are surfaced there – a silently
+      failed moderation would be worse than no quick action at all.*
+      *Answered: the receiver only hands off to expedited WorkManager work
+      that uses the same use cases as the UI. If it fails, there is no silent
+      retry – a moderation made up later could overwrite a decision taken on
+      the web in the meantime. The notification stays and names the reason; a
+      failed reply remains in it with its text.*
+- [x] **P2** Real push via FCM as an additional `NewCommentSource`
+      *Technical question: a delivery path from WordPress to FCM requires a
+      service account key on the WordPress server and device registration in
+      the plugin. This would create metadata at Google and a dependency on
+      Play Services. The trade-off is described in `docs/architecture.md`;
+      the interface is prepared.*
+      *Replaced: implemented as instant notifications via UnifiedPush,
+      without Google; FCM is dropped. The plugin (1.5 and later) sends an
+      empty wake-up call to the registered address, and the app then checks
+      immediately. A separate `NewCommentSource` was not needed.*
+- [x] **P2** Notifications clean up after themselves
+      *Moderated, replied to or opened in the app: the notification
+      disappears immediately. Moderated on the web: the background check
+      reconciles open notifications with one request (`include`,
+      `status=any`). What was reported as approved stays – it may still be
+      waiting for a reply.*
+- [x] **P2** Blog icon in notifications
+      *From the same image cache as in the top app bar; it originates from
+      the blog itself, no connection to third parties is made.*
+- [x] **P3** Notifications for automatically approved comments too
+      *Implemented and made the default: on blogs that approve automatically,
+      a notification never arrived before. A switch restricts notifications
+      to the moderation queue again.*
 
 ---
 
 ## UX
 
-- [x] **P0** Dark Mode und heller Modus nach Systemeinstellung
-- [x] **P1** Dynamic Color ab Android 12
-- [x] **P0** Ladezustände
-- [x] **P0** Leerzustände mit Erklärung statt leerer Fläche
-- [x] **P0** Fehlerzustände mit Wiederholmöglichkeit
-- [x] **P0** Sichtbare Unterscheidung zwischen Cache und frischem Stand
-- [x] **P1** Statuskennzeichnung mit Symbol und Text, nicht nur über Farbe
-- [x] **P1** Deutsche und englische Oberfläche
+- [x] **P0** Dark mode and light mode following the system setting
+- [x] **P1** Dynamic Color on Android 12 and later
+- [x] **P0** Loading states
+- [x] **P0** Empty states with an explanation instead of a blank area
+- [x] **P0** Error states with a retry option
+- [x] **P0** Visible distinction between cached and fresh state
+- [x] **P1** Status indication with icon and text, not just colour
+- [x] **P1** German and English UI
 
-### Offen
+### Open
 
-- [x] **P1** Durchgang mit TalkBack und Korrektur der Vorlesereihenfolge
-      *Die Vorlesereihenfolge war in Ordnung: Ein Abzug mit `uiautomator`
-      legte zunächst nahe, die Kopfleiste komme zuletzt – der zeigt aber nur
-      die Baumstruktur. Compose teilt die Reihenfolge über `traversalBefore`
-      mit, und dort stand nichts: Dann sortiert der Bildschirmleser selbst
-      nach der Lage auf dem Bildschirm, und die Kopfleiste steht oben. Eine
-      vorschnell eingebaute `traversalIndex`-Korrektur wurde deshalb wieder
-      entfernt. Geblieben sind zwei echte Funde: Beschriftung und Wert wurden
-      getrennt vorgelesen, und die Filtermarken lasen den Mittelpunkt aus
-      „Offen · 3" mit. Ein Test prüft jetzt, dass jede bedienbare Stelle einen
-      Namen hat.*
-- [x] **P1** Prüfung bei sehr großer Systemschriftgröße
-      *Bei 200 % im Emulator durchgegangen. Ein Fund: Die Beschriftungsspalte
-      der Detailansicht lag fest bei 64 dp und brach „Beitrag" mitten im Wort
-      um. Breiten werden jetzt gemessen. Liste, Einstellungen und „Über diese
-      App" hielten stand.*
-- [x] **P2** Wischgesten für Genehmigen und Spam in der Liste
-      *Die Aktion haengt am abgeschlossenen Wischen, nicht an
-      `confirmValueChange` – das wird waehrend einer Geste mehrfach
-      aufgerufen und loeste die Moderation doppelt aus.*
-- [ ] **P2** Anpassung an große Bildschirme (Liste und Detail nebeneinander)
-- [ ] **P3** Haptische Rückmeldung bei Moderationsaktionen
+- [x] **P1** Pass with TalkBack and correction of the reading order
+      *The reading order was fine: a dump with `uiautomator` initially
+      suggested the top app bar came last – but it only shows the tree
+      structure. Compose communicates the order via `traversalBefore`, and
+      nothing was set there: the screen reader then sorts by position on
+      screen itself, and the top app bar is at the top. A hastily added
+      `traversalIndex` correction was therefore removed again. Two real
+      findings remained: label and value were read out separately, and the
+      filter chips read out the middle dot in "Pending · 3". A test now
+      checks that every interactive element has a name.*
+- [x] **P1** Check with very large system font size
+      *Gone through at 200 % in the emulator. One finding: the label column
+      of the detail view was fixed at 64 dp and broke "Post" mid-word. Widths
+      are now measured. List, settings and "About this app" held up.*
+- [x] **P2** Swipe gestures for approve and spam in the list
+      *The action is tied to the completed swipe, not to
+      `confirmValueChange` – that is called several times during a gesture
+      and triggered the moderation twice.*
+- [ ] **P2** Adaptation to large screens (list and detail side by side)
+- [ ] **P3** Haptic feedback for moderation actions
 
 ---
 
-## Multi-Blog
+## Multi-blog
 
-Die Datenhaltung war von Anfang an darauf angelegt: Jede Zeile trägt eine
-`instanceId`, Zugangsdaten liegen pro Instanz, und der HTTP-Client wird pro
-Instanz erzeugt. Die Oberfläche ist nachgezogen.
+The data layer was designed for this from the start: every row carries an
+`instanceId`, credentials are stored per instance, and the HTTP client is
+created per instance. The UI has caught up.
 
-- [x] **P2** Liste der eingerichteten Instanzen und Hinzufügen weiterer
-- [x] **P2** Umschalter zwischen Blogs in der Kopfleiste
-      *Erscheint erst ab dem zweiten Blog. Hinzufügen liegt deshalb auch in
-      den Einstellungen, damit es mit nur einem Blog erreichbar bleibt.*
-- [x] **P2** Eigene Zugangsdaten je Instanz in den Einstellungen sichtbar
-      *Als eigener Bildschirm je Blog. Zusammen mit dem Blogunabhängigen auf
-      einem Bildschirm wäre bei jeder Zeile offen geblieben, für welchen Blog
-      sie gilt.*
-- [x] **P2** Benachrichtigungen je Blog getrennt steuerbar
-      *Entschieden für eine gemeinsame Arbeit, die alle Instanzen durchläuft:
-      Das Gerät wacht einmal auf statt n-mal. Die Fehlerbehandlung geschieht
-      dafür von Hand je Instanz – ein Blog mit abgelehnten Zugangsdaten oder
-      ohne Verbindung hält die übrigen nicht auf, und wiederholt wird der
-      Durchgang erst, nachdem alle abgearbeitet sind.*
+- [x] **P2** List of configured instances and adding more
+- [x] **P2** Switcher between blogs in the top app bar
+      *Appears only from the second blog on. Adding is therefore also
+      available in the settings, so it stays reachable with only one blog.*
+- [x] **P2** Separate credentials per instance visible in the settings
+      *As a separate screen per blog. Together with the blog-independent
+      settings on one screen, it would have been unclear for every row which
+      blog it applies to.*
+- [x] **P2** Notifications controllable separately per blog
+      *Decided on a single work item that goes through all instances: the
+      device wakes once instead of n times. Error handling is done manually
+      per instance instead – a blog with rejected credentials or no
+      connection doesn't hold up the others, and the pass is retried only
+      after all have been processed.*
 
-### Offen
+### Open
 
-- [ ] **P3** Kombinierter Posteingang über alle Blogs
-      *Technische Frage: Die Sortierung über Instanzgrenzen hinweg erfordert
-      eine gemeinsame Abfrage; Paginierung je Instanz und globale Sortierung
-      vertragen sich nicht ohne Weiteres.*
-- [ ] **P3** Anzahl offener Kommentare im Umschalter auch für Blogs, die noch
-      nie geladen wurden
-      *Die Zahl kommt heute aus dem Zwischenspeicher; ein ungeladener Blog
-      zeigt deshalb keine. Sie vom Server zu holen wäre eine Anfrage je Blog
-      beim Öffnen des Umschalters – mit Plugin über den Statusendpunkt
-      vertretbar, ohne Plugin nicht.*
-- [ ] **P3** Blogs in der Liste umsortieren
-      *Heute stehen sie in der Reihenfolge ihrer Einrichtung. Ab etwa vier
-      Blogs dürfte das Sortieren nach Wichtigkeit spürbar fehlen.*
+- [ ] **P3** Combined inbox across all blogs
+      *Technical question: sorting across instance boundaries requires a
+      shared query; per-instance pagination and global sorting don't go
+      together easily.*
+- [ ] **P3** Number of pending comments in the switcher also for blogs that
+      have never been loaded
+      *The number currently comes from the cache; an unloaded blog therefore
+      shows none. Fetching it from the server would mean one request per blog
+      when opening the switcher – acceptable with the plugin via the status
+      endpoint, not without it.*
+- [ ] **P3** Reorder blogs in the list
+      *Currently they appear in the order they were set up. From about four
+      blogs on, sorting by importance will probably be noticeably missed.*
 
 ---
 
 ## Offline
 
-- [x] **P0** Lokaler Cache für Kommentare und Beitragstitel
-- [x] **P0** Verständlicher Hinweis statt Netzwerkfehler
-- [x] **P0** Schreibende Aktionen ohne Verbindung gesperrt und erklärt
+- [x] **P0** Local cache for comments and post titles
+- [x] **P0** Understandable notice instead of a network error
+- [x] **P0** Write actions blocked and explained without a connection
 
-### Offen
+### Open
 
-- [ ] **P2** Warteschlange für Moderationsaktionen ohne Verbindung
-      *Technische Frage: Was passiert, wenn ein Kommentar zwischenzeitlich im
-      Web moderiert oder gelöscht wurde? Ohne Konfliktstrategie überschreibt
-      die App fremde Entscheidungen. Denkbar ist, den Status beim Absenden
-      erneut zu lesen und bei Abweichung nachzufragen statt zu überschreiben.
-      Erst mit dieser Strategie ist das Merkmal sinnvoll.*
-- [x] **P2** Im Web gelöschte Kommentare verschwinden nicht aus dem
-      Zwischenspeicher
-      *Gefunden bei den README-Aufnahmen (2026-10-02), behoben: Nach dem
-      Laden der ersten Seite prüft die App die älteren zwischengespeicherten
-      Einträge desselben Filters mit einer Anfrage (`include`, `status=any`,
-      bis zu 100). Was der Blog nicht mehr kennt, fliegt hinaus, der Rest
-      übernimmt seinen aktuellen Status. Höchstens alle zehn Minuten je Blog
-      und Filter.*
-- [ ] **P3** Cache-Obergrenze und Aufräumen alter Kommentare
+- [ ] **P2** Queue for moderation actions without a connection
+      *Technical question: what happens if a comment was moderated or deleted
+      on the web in the meantime? Without a conflict strategy the app
+      overwrites others' decisions. One option is to re-read the status on
+      sending and ask on a mismatch instead of overwriting. Only with this
+      strategy does the feature make sense.*
+- [x] **P2** Comments deleted on the web don't disappear from the cache
+      *Found while recording for the README (2026-10-02), fixed: after
+      loading the first page, the app checks the older cached entries of the
+      same filter with one request (`include`, `status=any`, up to 100).
+      Whatever the blog no longer knows is removed, the rest takes on its
+      current status. At most every ten minutes per blog and filter.*
+- [ ] **P3** Cache limit and cleanup of old comments
 
 ---
 
-## Moderationshilfen
+## Moderation aids
 
-Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
-Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
-geprüft, die Abrufe sind belegt.
+Everything here serves one question: how do I reach a well-founded decision
+faster? The items were checked against a real WordPress installation, and the
+requests are verified.
 
-Die ursprünglichen Punkte dieses Abschnitts sind umgesetzt. „Spam leeren" und
-das Sperren von Absendern nutzen zwei Endpunkte, die das Plugin ab 1.2.0
-mitbringt; das Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je
-Kommentar. Die offenen Punkte am Ende sind später hinzugekommen.
+The original items of this section are implemented. "Empty spam" and blocking
+senders use two endpoints that the plugin ships from 1.2.0 on; emptying also
+works without the plugin, then with one request per comment. The open items
+at the end were added later.
 
-- [x] **P1** Autorenkontext in der Detailansicht
-      *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
-      die Frage, die bei fast jedem offenen Kommentar zuerst kommt. Die
-      Kern-API reicht dafür, ein Plugin ist nicht nötig:*
+- [x] **P1** Author context in the detail view
+      *Shows whether someone is commenting for the first time or is already
+      known - the question that comes first with almost every pending
+      comment. The core API is sufficient for this, no plugin needed:*
       `GET /wp/v2/comments?author_email=<adresse>&status=approve&per_page=1`
-      *Die Zahl steht in `X-WP-Total`, der Rumpf wird nicht gebraucht. Ein
-      Tipp auf den Hinweis könnte die bisherigen Kommentare zeigen.*
-      *Datenschutz: Die Adresse holt die App ohnehin mit `context=edit`. Die
-      reine Anzahl ist weniger heikel als die Adresse selbst und sollte
-      deshalb unabhängig von der Einstellung „E-Mail anzeigen" sichtbar sein.*
-- [x] **P1** Spam-Signale kennzeichnen, ohne zu urteilen
-      *Rein lokal aus dem bereits zwischengespeicherten HTML, ohne zusätzliche
-      Abrufe: Anzahl der Links im Kommentar (die beste Einzelheuristik),
-      Erstkommentator, Text identisch zu einem anderen offenen Kommentar.
-      Ein Hinweis wie „3 Links" genügt - die App soll kennzeichnen, nicht
-      entscheiden.*
-- [x] **P2** Absender dauerhaft sperren
-      *Adresse oder Domain in WordPress' `disallowed_keys` eintragen, statt
-      denselben Absender täglich erneut als Spam zu markieren.*
-      *Braucht das Plugin: `wp/v2/settings` gibt die Moderationsoptionen
-      nicht heraus - geprüft, die Antwort enthält kein einziges Feld zu
-      Kommentarmoderation oder Sperrlisten.*
-- [x] **P2** „Spam leeren" und „Papierkorb leeren"
-      *Der häufige Sammelfall braucht keine Mehrfachauswahl, sondern einen
-      Knopf. Die Kern-API kennt keinen Sammelendpunkt, es würden N
-      Einzellöschungen; ein Endpunkt im Plugin macht daraus eine Anfrage.
-      Sinnvoller Anlass, das Plugin für etwas zu nutzen, das es wirklich
-      besser kann als die Kern-API.*
-- [x] **P2** Textbausteine für wiederkehrende Antworten
-      *Kein API-Thema, reine lokale Ablage. „Danke für den Hinweis, ist
-      korrigiert." tippt man sonst zum zwanzigsten Mal.*
-- [x] **P2** „Freigeben und antworten“
-      *Gegen ein lokales WordPress geprüft: Ohne Freigabe blieb der
-      Elternkommentar offen, und die Antwort war auf der Website unsichtbar.
-      Erst freigeben, dann antworten – scheitert die Freigabe, ist nichts
-      geschehen, und ein zweiter Versuch erzeugt keine doppelte Antwort.*
+      *The number is in `X-WP-Total`, the body isn't needed. Tapping the hint
+      could show the previous comments.*
+      *Privacy: the app fetches the address anyway with `context=edit`. The
+      bare count is less sensitive than the address itself and should
+      therefore be visible regardless of the "Show email addresses"
+      setting.*
+- [x] **P1** Flag spam signals without judging
+      *Purely local from the already cached HTML, without additional
+      requests: number of links in the comment (the best single heuristic),
+      first-time commenter, text identical to another pending comment. A hint
+      like "3 links" is enough - the app should flag, not decide.*
+- [x] **P2** Block senders permanently
+      *Add an address or domain to WordPress' `disallowed_keys` instead of
+      marking the same sender as spam again every day.*
+      *Needs the plugin: `wp/v2/settings` doesn't expose the moderation
+      options - checked, the response contains not a single field on comment
+      moderation or blocklists.*
+- [x] **P2** "Empty spam" and "Empty trash"
+      *The common bulk case doesn't need multi-select but a button. The core
+      API has no bulk endpoint, it would be N individual deletions; an
+      endpoint in the plugin turns that into one request. A sensible reason
+      to use the plugin for something it really does better than the core
+      API.*
+- [x] **P2** Text snippets for recurring replies
+      *Not an API topic, purely local storage. Otherwise you type "Thanks for
+      pointing that out, it's fixed." for the twentieth time.*
+- [x] **P2** "Approve and reply"
+      *Checked against a local WordPress: without approval the parent comment
+      stayed pending, and the reply was invisible on the website. Approve
+      first, then reply – if approval fails, nothing has happened, and a
+      second attempt creates no duplicate reply.*
 
-### Offen
+### Open
 
-- [ ] **P2** Antwortentwürfe behalten
-- [ ] **P2** Nach einer Aktion zum nächsten offenen Kommentar
-- [ ] **P3** Beim Sperren alle bisherigen Kommentare des Absenders als Spam
-      markieren
-
----
-
-## Suche und Filter
-
-- [x] **P1** Kommentarsuche über den `search`-Parameter der API
-      *Wirkt innerhalb des gewählten Filters, mit Verzögerung und ab zwei
-      Zeichen. Die Treffer landen im Zwischenspeicher und werden von dort
-      beobachtet – dadurch wirkt eine Moderation auch in der Trefferliste
-      sofort, ohne einen zweiten Weg für Listenzustände.*
-- [x] **P2** Filter „Unbeantwortet“
-      *Freigegebene Leserkommentare ohne freigegebene Antwort aus dem Team.
-      WordPress kennt den Zustand nicht; die App berechnet ihn aus dem
-      Zwischenspeicher und holt dazu die Antworten auf die geladenen
-      Kommentare nach (`parent=<ids>`). Deshalb ohne Zahl an der Marke und nur
-      über die geladenen Seiten. Vorbild ist die WordPress-App.*
-- [ ] **P2** Filter nach Beitrag
-- [ ] **P2** Filter nach Autor
-- [ ] **P3** Lokale Volltextsuche im Cache über Room FTS
-      *Technische Frage: Eine lokale Suche findet nur, was zwischengespeichert
-      ist. Zu klären ist, wie der Unterschied zur Serversuche sichtbar wird,
-      damit niemand ein unvollständiges Ergebnis für vollständig hält.*
+- [ ] **P2** Keep reply drafts
+- [ ] **P2** Go to the next pending comment after an action
+- [ ] **P3** When blocking, mark all previous comments from the sender as
+      spam
 
 ---
 
-## Weiteres
+## Search and filters
 
-- [x] **P2** Kommentarfaden statt rein chronologischer Liste
-      *Der Aufbau ist eine reine Funktion über `parentId`; die Kommentare,
-      auf die geantwortet wurde, holt das Repository mit einer Anfrage
-      (`include`, `status=any`) nach – ohne sie bliebe der Faden im Filter
-      „Offen" fast immer leer. Nur eine Stufe weit: der unmittelbare Bezug.
-      Wer den ganzen Faden sehen will, öffnet den Kommentar.*
-- [ ] **P2** Sammelmoderation mit Mehrfachauswahl
-- [x] **P1** Kommentarzahlen je Filter anzeigen - „Offen · 3" statt „Offen"
-      *Anders als hier ursprünglich vermerkt hängt das nicht am Plugin: Vier
-      Abrufe mit `per_page=1` liefern alle Zahlen aus `X-WP-Total`, ohne
-      nennenswertes Datenvolumen. Der Endpunkt `summary` des Plugins macht
-      daraus einen Abruf statt vier - eine Verbesserung, keine Voraussetzung.*
-- [ ] **P3** Statistik über Kommentaraufkommen und Spam-Anteil
-- [ ] **P3** Kommentar im Browser öffnen
-- [ ] **P3** Widget mit der Anzahl offener Kommentare
+- [x] **P1** Comment search via the API's `search` parameter
+      *Works within the selected filter, debounced and from two characters.
+      The results go into the cache and are observed from there – so a
+      moderation takes effect in the results immediately too, without a
+      second path for list states.*
+- [x] **P2** "Unanswered" filter
+      *Approved reader comments without an approved reply from the team.
+      WordPress doesn't know this state; the app computes it from the cache
+      and additionally fetches the replies to the loaded comments
+      (`parent=<ids>`). Hence no number on the chip and only over the loaded
+      pages. Modelled on the WordPress app.*
+- [ ] **P2** Filter by post
+- [ ] **P2** Filter by author
+- [ ] **P3** Local full-text search in the cache via Room FTS
+      *Technical question: a local search only finds what is cached. It
+      remains to be clarified how the difference from the server search is
+      made visible, so nobody mistakes an incomplete result for a complete
+      one.*
 
 ---
 
-## Technische Schulden und Pflege
+## Other
 
-- [ ] **P1** Kotlin auf 2.4 anheben, sobald KSP dafür vorliegt
-      *Nachgesehen am 21.09.2026: Kotlin steht bei 2.4.20, KSP bei 2.3.12 –
-      und dessen POM hängt an `kotlin-stdlib` 2.3.20. Eine offizielle Paarung
-      für die 2.4-Linie gibt es also weiterhin nicht. Room und Hilt brauchen
-      KSP.*
-      *Probeweise trotzdem umgestellt: Der Build läuft durch, KSP erzeugt
-      Hilt- und Room-Code, 267 Unit-Tests, 8 Gerätetests und der
-      Release-Build sind grün. Die Umstellung wurde dennoch zurückgenommen –
-      KSP würde die Quellen mit einem Compiler der 2.3-Linie analysieren,
-      während übersetzt wird mit 2.4. Heute fällt das nicht auf; ein
-      Sprachmerkmal aus 2.4 in einer annotierten Klasse könnte still danebengehen.
-      Sobald KSP nachzieht, ist es eine Zeile in `libs.versions.toml`.*
-- [x] **P1** Instrumentierungstests auf einem Gerät oder Emulator ausführen
-      *Laufen auf einem Pixel-10-Emulator (API 37) und auf einem Gerät.*
-- [x] **P2** Room-Migrationen vorbereiten, sobald sich das Schema ändert
-      *Mit der Nutzer-ID des Verfassers stand die erste an. Schema 2 ist
-      exportiert, die Migration ist registriert und wird auf dem Gerät gegen
-      das Schema geprüft – die exportierten JSON-Dateien liegen dafür als
-      Assets der Instrumentierungstests bereit, nicht im APK.*
-- [ ] **P2** `material-icons-core` ablösen, sobald es einen gepflegten
-      Nachfolger gibt
-      *Das Paket ist auf 1.7.8 eingefroren.*
-- [ ] **P2** Prüfen, ob `android.newDsl` und die Variant-API-Umstellung für
-      AGP 10 Anpassungen erfordern
-- [ ] **P3** Neue Schnittstellen aus API 37 im Blick behalten
-      *Durchgesehen am 21.09.2026: Der Zuwachs betrifft fast ausschließlich
-      Bereiche ohne Bezug zu dieser App (App Functions, Health Connect, HPKE,
-      Ranging, Photo Picker, serielle Schnittstellen). Naheliegend wären
-      allenfalls `Notification.createSemanticStyleAnnotation` und die
-      Handoff-Schnittstellen in `Activity`; beides bringt hier derzeit keinen
-      erkennbaren Gewinn.*
-- [ ] **P3** Signaturkonfiguration und reproduzierbarer Release-Build
-- [ ] **P3** Continuous Integration für Build, Lint und Tests
+- [x] **P2** Comment thread instead of a purely chronological list
+      *The structure is a pure function over `parentId`; the repository
+      fetches the comments that were replied to with one request (`include`,
+      `status=any`) – without them the thread would almost always stay empty
+      in the "Pending" filter. Only one level deep: the immediate context.
+      Whoever wants to see the whole thread opens the comment.*
+- [ ] **P2** Bulk moderation with multi-select
+- [x] **P1** Show comment counts per filter - "Pending · 3" instead of
+      "Pending"
+      *Contrary to what was originally noted here, this doesn't depend on the
+      plugin: four requests with `per_page=1` deliver all numbers from
+      `X-WP-Total`, without significant data volume. The plugin's `summary`
+      endpoint turns this into one request instead of four - an improvement,
+      not a prerequisite.*
+- [ ] **P3** Statistics on comment volume and spam share
+- [ ] **P3** Open comment in the browser
+- [ ] **P3** Widget with the number of pending comments
+
+---
+
+## Technical debt and maintenance
+
+- [ ] **P1** Raise Kotlin to 2.4 as soon as KSP supports it
+      *Checked on 2026-09-21: Kotlin is at 2.4.20, KSP at 2.3.12 – and its
+      POM depends on `kotlin-stdlib` 2.3.20. So there is still no official
+      pairing for the 2.4 line. Room and Hilt need KSP.*
+      *Switched over on a trial basis anyway: the build succeeds, KSP
+      generates Hilt and Room code, 267 unit tests, 8 device tests and the
+      release build are green. The switch was nevertheless reverted – KSP
+      would analyse the sources with a compiler from the 2.3 line while
+      compilation uses 2.4. Today this goes unnoticed; a language feature
+      from 2.4 in an annotated class could silently go wrong. Once KSP
+      catches up, it is one line in `libs.versions.toml`.*
+- [x] **P1** Run instrumentation tests on a device or emulator
+      *Run on a Pixel 10 emulator (API 37) and on a device.*
+- [x] **P2** Prepare Room migrations as soon as the schema changes
+      *The first one came with the author's user ID. Schema 2 is exported,
+      the migration is registered and verified against the schema on the
+      device – the exported JSON files are provided as assets of the
+      instrumentation tests for this, not in the APK.*
+- [ ] **P2** Replace `material-icons-core` once a maintained successor
+      exists
+      *The package is frozen at 1.7.8.*
+- [ ] **P2** Check whether `android.newDsl` and the Variant API migration for
+      AGP 10 require changes
+- [ ] **P3** Keep an eye on new APIs in API 37
+      *Reviewed on 2026-09-21: the additions concern almost exclusively areas
+      unrelated to this app (App Functions, Health Connect, HPKE, Ranging,
+      Photo Picker, serial ports). At most
+      `Notification.createSemanticStyleAnnotation` and the handoff APIs in
+      `Activity` would be obvious candidates; neither brings any discernible
+      benefit here at present.*
+- [ ] **P3** Signing configuration and reproducible release build
+- [ ] **P3** Continuous integration for build, lint and tests

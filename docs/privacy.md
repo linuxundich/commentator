@@ -1,213 +1,211 @@
-# Datenverarbeitung und Netzwerkverbindungen
+# Data processing and network connections
 
-Dieses Dokument benennt vollständig, welche Daten Commentator verarbeitet und
-wohin die App Verbindungen aufbaut. Es ist bewusst so geschrieben, dass es
-sich gegen den Quelltext prüfen lässt.
+This document lists completely which data Commentator processes and where the
+app connects to. It is deliberately written so that it can be checked against
+the source code.
 
-## Netzwerkverbindungen
+## Network connections
 
-| Ziel | Wann | Zweck | Abschaltbar |
+| Destination | When | Purpose | Can be turned off |
 |---|---|---|---|
-| Die konfigurierte WordPress-Instanz | Beim Aktualisieren, bei jeder Moderationsaktion und beim periodischen Prüfen im Hintergrund | Kommentare lesen und moderieren | Durch Abmelden; die Hintergrundprüfung einzeln in den Einstellungen |
-| `secure.gravatar.com` bzw. die von WordPress gelieferte Avatar-Adresse | Nur beim Anzeigen von Avataren | Profilbilder der Kommentatoren | Ja – Avatare sind **standardmäßig abgeschaltet** |
+| The configured WordPress instance | When refreshing, on every moderation action and during the periodic background check | Reading and moderating comments | By signing out; the background check separately in the settings |
+| `secure.gravatar.com` or the avatar address supplied by WordPress | Only when displaying avatars | Profile pictures of commenters | Yes – avatars are **turned off by default** |
 
-Weitere Verbindungen baut die App nicht auf. Insbesondere:
+The app makes no other connections. In particular:
 
-* keine Analytics, keine Absturzberichte, keine Telemetrie
-* keine Werbung und keine Werbekennungen
-* keine Firebase- oder Google-Play-Services-Bibliotheken
-* keine Update- oder Lizenzprüfung
-* kein Server des Entwicklers
+* no analytics, no crash reports, no telemetry
+* no ads and no advertising IDs
+* no Firebase or Google Play Services libraries
+* no update or license check
+* no developer server
 
-Die Avatar-Adressen liefert WordPress selbst im Feld `author_avatar_urls`.
-Bei einer Standardinstallation zeigen sie auf Gravatar, einen Dienst von
-Automattic. Das ist eine Verbindung zu einem Dritten – deshalb ist die Anzeige
-von Avataren standardmäßig aus und muss bewusst eingeschaltet werden.
+The avatar addresses are supplied by WordPress itself in the
+`author_avatar_urls` field. On a standard installation they point to
+Gravatar, a service run by Automattic. This is a connection to a third party
+– which is why displaying avatars is off by default and has to be turned on
+deliberately.
 
-Das Symbol des Blogs, das in Kopfleiste, Einstellungen und als großes Bild in
-den Benachrichtigungen erscheint, stammt vom eigenen Blog. Die
-Benachrichtigungen nehmen es aus dem lokalen Bildspeicher der App; eine
-Verbindung zu einem Dritten entsteht dadurch nicht.
+The blog icon, which appears in the top bar, in the settings and as a large
+image in notifications, comes from the blog itself. Notifications take it
+from the app's local image cache; this does not create a connection to a
+third party.
 
-### Optional: Sofortmeldung über UnifiedPush
+### Optional: instant notifications via UnifiedPush
 
-Wer in den Einstellungen eines Blogs „Sofort melden“ einschaltet, bezieht
-weitere Beteiligte ein. Die App selbst verbindet sich auch dann nur mit dem
-eigenen Blog; die übrigen Verbindungen bauen die UnifiedPush-App und das
-Plugin auf:
+Turning on "Notify instantly" in a blog's settings brings in additional
+parties. Even then, the app itself only connects to your own blog; the other
+connections are made by the UnifiedPush app and the plugin:
 
-| Beteiligter | Was er erfährt |
+| Party | What it learns |
 |---|---|
-| Die UnifiedPush-App auf dem Telefon (etwa ntfy) | Dass Commentator je Blog Weckrufe empfangen möchte, und den Namen des Blogs, unter dem sie die Anmeldung anzeigt. Sie vergibt dafür eine Endpoint-Adresse und reicht eingehende Nachrichten an die App weiter. |
-| Der Push-Server dieser App (etwa `ntfy.sh` oder ein eigener ntfy) | Dass und wann auf dem Blog kommentiert wurde – sonst nichts. Die Nachricht besteht nur aus dem Wort „new“. |
-| Das Plugin auf dem Blog | Die Endpoint-Adresse. Die App hinterlegt sie dort und nimmt sie beim Ausschalten, beim Entfernen des Blogs oder bei einer Abmeldung durch die UnifiedPush-App wieder zurück. |
+| The UnifiedPush app on the phone (e.g. ntfy) | That Commentator wants to receive wake-ups per blog, and the blog's name, under which it shows the registration. It assigns an endpoint address for this and forwards incoming messages to the app. |
+| That app's push server (e.g. `ntfy.sh` or your own ntfy) | That, and when, a comment was posted on the blog – nothing else. The message consists only of the word "new". |
+| The plugin on the blog | The endpoint address. The app stores it there and withdraws it when the feature is turned off, when the blog is removed, or when the UnifiedPush app unregisters. |
 
-Bei jedem neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, schickt
-das Plugin an diese Adresse einen Weckruf ohne Inhalt: kein Name, kein Text,
-keine Kennung. Die Nachricht ist bewusst unverschlüsselt – es steht nichts
-darin, was eine Verschlüsselung schützen könnte. Die Kommentare holt die App
-danach wie gewohnt selbst über die REST-API. Google und Firebase sind an
-keiner Stelle beteiligt.
+For every new comment that does not arrive as spam or trash, the plugin sends
+a wake-up without content to this address: no name, no text, no ID. The
+message is deliberately unencrypted – there is nothing in it that encryption
+could protect. The app then fetches the comments itself via the REST API as
+usual. Google and Firebase are not involved at any point.
 
-Wer den Push-Server selbst betreibt, behält auch den Zeitpunkt der Kommentare
-bei sich. Ist die Sofortmeldung aus, findet nichts davon statt.
+If you run the push server yourself, you also keep the timing of comments to
+yourself. If instant notifications are off, none of this happens.
 
-## Verschlüsselung
+## Encryption
 
-Ausschließlich HTTPS. Klartextverkehr ist auf zwei Ebenen unterbunden:
+HTTPS only. Cleartext traffic is prevented on two levels:
 
-* `network_security_config.xml` mit `cleartextTrafficPermitted="false"` und
-  `android:usesCleartextTraffic="false"` im Manifest
-* ein Interceptor, der jede Anfrage ohne HTTPS abbricht
+* `network_security_config.xml` with `cleartextTrafficPermitted="false"` and
+  `android:usesCleartextTraffic="false"` in the manifest
+* an interceptor that aborts every request without HTTPS
 
-Adressen, die mit `http://` beginnen, weist die App bereits bei der Eingabe
-zurück.
+The app rejects addresses beginning with `http://` as soon as they are
+entered.
 
-Debug-Builds vertrauen zusätzlich vom Benutzer installierten Zertifikaten
-(`<debug-overrides>`), damit sich gegen die lokale Testumgebung mit
-selbstsigniertem Zertifikat entwickeln lässt. Die Plattform ignoriert diesen
-Block in Release-Builds; Klartext bleibt auch im Debug-Build verboten.
+Debug builds additionally trust user-installed certificates
+(`<debug-overrides>`), so that development against the local test
+environment with a self-signed certificate is possible. The platform ignores
+this block in release builds; cleartext remains forbidden in the debug build
+as well.
 
-## Zugangsdaten
+## Credentials
 
 | | |
 |---|---|
-| Verfahren | Application Password (WordPress-Kernfunktion seit 5.6) |
-| Kontokennwort | Wird **nie** an die App übergeben; die Eingabe erfolgt im Browser |
-| Ablage | `Base64(IV ‖ AES-256-GCM(JSON))` in DataStore |
-| Schlüssel | Android Keystore, Alias `commentator_credentials_v1`, verlässt den Keystore nicht |
-| Übertragung | Nur als `Authorization`-Kopfzeile an die konfigurierte Instanz |
-| Widerruf | Jederzeit im WordPress-Profil, ohne das Kontokennwort zu ändern |
+| Method | Application Password (WordPress core feature since 5.6) |
+| Account password | Is **never** passed to the app; it is entered in the browser |
+| Storage | `Base64(IV ‖ AES-256-GCM(JSON))` in DataStore |
+| Key | Android Keystore, alias `commentator_credentials_v1`, never leaves the Keystore |
+| Transmission | Only as an `Authorization` header to the configured instance |
+| Revocation | At any time in the WordPress profile, without changing the account password |
 
-Maßnahmen gegen unbeabsichtigtes Preisgeben:
+Measures against accidental disclosure:
 
-* `ApplicationPassword` und `InstanceCredentials` überschreiben `toString()`
-  und geben den Wert nicht preis. Zwei Unit-Tests sichern das ab.
-* Das HTTP-Logging existiert nur im Debug-Build – die Bibliothek ist in
-  Release-Builds gar nicht Teil der Anwendung – und redigiert dort
-  `Authorization`.
-* Der Schritt zur manuellen Eingabe des Application Passwords setzt
-  `FLAG_SECURE`. Damit erscheint ein eingegebenes Passwort weder in
-  Screenshots noch in der App-Übersicht. Bewusst nur dieser eine Schritt:
-  Adresseingabe und Browser-Weg zeigen nichts Schützenswertes, und eine
-  App, die sich generell nicht fotografieren lässt, wäre ohne Gewinn
-  lästig.
-* `android:allowBackup="false"` und leere Extraktionsregeln: Es wird nichts in
-  ein Cloud-Backup übernommen und nichts auf ein neues Gerät übertragen.
-* Das Application Password wird aus dem Deep-Link-Intent gelesen und sofort
-  über einen flüchtigen Kanal weitergereicht. Es wird bewusst **nicht** als
-  Navigationsargument übergeben, weil es dort im Backstack und im
-  gespeicherten Zustand landen würde.
+* `ApplicationPassword` and `InstanceCredentials` override `toString()` and
+  do not reveal the value. Two unit tests ensure this.
+* HTTP logging exists only in the debug build – the library is not even part
+  of the application in release builds – and redacts `Authorization` there.
+* The step for manually entering the Application Password sets
+  `FLAG_SECURE`. This keeps an entered password out of both screenshots and
+  the app overview. Deliberately only this one step: address entry and the
+  browser route show nothing worth protecting, and an app that generally
+  cannot be captured would be annoying for no gain.
+* `android:allowBackup="false"` and empty extraction rules: nothing is
+  included in a cloud backup and nothing is transferred to a new device.
+* The Application Password is read from the deep-link intent and immediately
+  passed on through a transient channel. It is deliberately **not** passed as
+  a navigation argument, because there it would end up in the back stack and
+  in the saved state.
 
-## Lokal gespeicherte Daten
+## Locally stored data
 
-In der Room-Datenbank (`commentator.db`, App-privates Verzeichnis):
+In the Room database (`commentator.db`, app-private directory):
 
-* Kommentare: Kennung, Autorname, E-Mail-Adresse, Website, Avatar-Adresse,
-  Inhalt, Datum, Status, Beitrag
-* Beitragstitel
-* Zeitpunkt der letzten Synchronisierung
-* Kennungen bereits gemeldeter Kommentare (zur Vermeidung von
-  Doppelbenachrichtigungen, nach 30 Tagen automatisch entfernt)
+* Comments: ID, author name, email address, website, avatar address,
+  content, date, status, post
+* Post titles
+* Time of the last synchronization
+* IDs of already reported comments (to avoid duplicate notifications,
+  removed automatically after 30 days)
 
-In den angezeigten Benachrichtigungen selbst steht neben dem sichtbaren Text
-der Status des Kommentars zum Meldezeitpunkt. Die Hintergrundprüfung braucht
-ihn, um erledigte Meldungen abzuräumen.
+The displayed notifications themselves contain, in addition to the visible
+text, the comment's status at the time of notification. The background check
+needs it to clear notifications that have been dealt with.
 
 In DataStore:
 
-* Blog-Konfiguration: Kennung, Anzeigename, Adresse, Benutzername,
-  Benutzerkennung, Berechtigung, ob das Plugin erkannt wurde
-* Einstellungen
-* der verschlüsselte Zugangsdatensatz
+* Blog configuration: ID, display name, address, username, user ID,
+  capability, whether the plugin was detected
+* Settings
+* the encrypted credentials record
 
-**Personenbezug:** Kommentardaten enthalten regelmäßig personenbezogene Daten
-Dritter, insbesondere E-Mail-Adressen. Sie liegen ausschließlich lokal und
-kommen von der eigenen WordPress-Installation. Die App gibt sie an niemanden
-weiter. Die Anzeige der E-Mail-Adresse in der Detailansicht ist standardmäßig
-abgeschaltet – sie wird für die Moderation selten gebraucht.
+**Personal data:** Comment data regularly contains personal data of third
+parties, in particular email addresses. It is stored exclusively locally and
+comes from your own WordPress installation. The app does not pass it on to
+anyone. Displaying the email address in the detail view is turned off by
+default – it is rarely needed for moderation.
 
-Beim Abmelden werden gelöscht: alle Kommentare und Beitragstitel der Instanz,
-der Synchronisierungszustand, die Benachrichtigungsvermerke, die
-Blog-Konfiguration und der Zugangsdatensatz. War die Sofortmeldung
-eingeschaltet, nimmt die App zuvor ihre Push-Adresse beim Plugin zurück und
-meldet sich bei der UnifiedPush-App ab. Ist danach keine Instanz mehr
-eingerichtet, wird zusätzlich der Keystore-Schlüssel entfernt.
+When signing out, the following are deleted: all comments and post titles of
+the instance, the synchronization state, the notification records, the blog
+configuration and the credentials record. If instant notifications were
+turned on, the app first withdraws its push address from the plugin and
+unregisters from the UnifiedPush app. If no instance is configured
+afterwards, the Keystore key is removed as well.
 
-## Berechtigungen
+## Permissions
 
-Von der App selbst angefordert:
+Requested by the app itself:
 
-| Berechtigung | Wofür |
+| Permission | Purpose |
 |---|---|
-| `INTERNET` | Zugriff auf die WordPress-REST-API |
-| `ACCESS_NETWORK_STATE` | Offline-Erkennung und Bedingung für die Hintergrundprüfung |
-| `POST_NOTIFICATIONS` | Hinweis auf neue Kommentare (ab Android 13, wird zur Laufzeit erfragt) |
+| `INTERNET` | Access to the WordPress REST API |
+| `ACCESS_NETWORK_STATE` | Offline detection and a condition for the background check |
+| `POST_NOTIFICATIONS` | Notice of new comments (from Android 13, requested at runtime) |
 
-Beim Zusammenführen der Manifeste kommen drei weitere aus `androidx.work`
-hinzu. Sie stehen nicht im Manifest der App, landen aber im fertigen APK und
-sollen deshalb hier stehen:
+Manifest merging adds three more from `androidx.work`. They are not in the
+app's manifest, but end up in the final APK and should therefore be listed
+here:
 
-| Berechtigung | Wofür |
+| Permission | Purpose |
 |---|---|
-| `WAKE_LOCK` | WorkManager hält das Gerät wach, solange eine Hintergrundprüfung läuft |
-| `RECEIVE_BOOT_COMPLETED` | stellt die geplante Prüfung nach einem Neustart wieder her; ohne sie bliebe sie liegen, bis die App wieder geöffnet wird |
-| `FOREGROUND_SERVICE` | von WorkManager für beschleunigte Arbeit deklariert. Die App nutzt das nicht, die Bibliothek deklariert es aber pauschal |
+| `WAKE_LOCK` | WorkManager keeps the device awake while a background check is running |
+| `RECEIVE_BOOT_COMPLETED` | restores the scheduled check after a reboot; without it, the check would stall until the app is opened again |
+| `FOREGROUND_SERVICE` | declared by WorkManager for expedited work. The app does not use this, but the library declares it across the board |
 
-Dazu kommt `<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` – eine
-Berechtigung, die WorkManager für sich selbst definiert, damit seine internen
-Broadcast-Empfänger für andere Apps unerreichbar bleiben. Sie ist auf
-Signaturebene und für Dritte nicht erlangbar.
+In addition, there is `<applicationId>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`
+– a permission WorkManager defines for itself so that its internal broadcast
+receivers remain unreachable for other apps. It is signature-level and cannot
+be obtained by third parties.
 
-Keine dieser Berechtigungen eröffnet Zugriff auf Nutzerdaten, und keine
-verlangt eine Zustimmung zur Laufzeit außer `POST_NOTIFICATIONS`.
+None of these permissions grants access to user data, and none requires
+consent at runtime except `POST_NOTIFICATIONS`.
 
-Nicht dabei: kein Speicherzugriff, keine Kontakte, kein Standort, keine
-Kamera, kein Mikrofon, kein Hintergrundstandort, kein Wecker, keine exakten
-Alarme, keine Abfrage aller installierten Apps.
+Not included: no storage access, no contacts, no location, no camera, no
+microphone, no background location, no alarm clock, no exact alarms, no
+querying of all installed apps.
 
-Der UnifiedPush-Connector fordert keine Berechtigung an. Er deklariert im
-Manifest lediglich `<queries>` für die drei UnifiedPush-Aktionen `LINK`,
-`REGISTER` und `UNREGISTER`. Damit sieht die App nur Apps, die sich als
-UnifiedPush-Verteiler anbieten – sie muss sie finden, um sich anzumelden.
+The UnifiedPush connector does not request any permission. It merely
+declares `<queries>` in the manifest for the three UnifiedPush actions
+`LINK`, `REGISTER` and `UNREGISTER`. This lets the app see only apps that
+offer themselves as UnifiedPush distributors – it has to find them in order
+to register.
 
-Der Debug-Build enthält zusätzlich den Empfänger `DebugSyncReceiver`, der die
-Hintergrundprüfung sofort anstößt. Er ist mit `android.permission.DUMP`
-geschützt und damit nur über `adb` erreichbar; im Release-Build fehlt er.
+The debug build additionally contains the receiver `DebugSyncReceiver`, which
+triggers the background check immediately. It is protected with
+`android.permission.DUMP` and thus only reachable via `adb`; it is absent
+from the release build.
 
 
-## Datenverarbeitung durch das WordPress-Plugin
+## Data processing by the WordPress plugin
 
-Das optionale Plugin `commentator-bridge` ändert kein Verhalten von
-WordPress, legt keine Tabellen an und setzt keine Cookies. Seine Endpunkte
-sind in [`api.md`](api.md#endpunkte-des-optionalen-plugins) beschrieben.
+The optional plugin `commentator-bridge` does not change any WordPress
+behavior, creates no tables and sets no cookies. Its endpoints are described
+in [`api.md`](api.md#endpoints-of-the-optional-plugin).
 
-Gelesen wird:
+Read access:
 
-* `status` und `summary` liefern ausschließlich Zahlen sowie Kennung und
-  Zeitstempel der neuesten Kommentare – keine Kommentarinhalte.
-* `team` liefert die Rollen, die schreiben oder moderieren dürfen, und je
-  Mitglied Benutzerkennung und Rollen – keine Namen, keine E-Mail-Adressen.
+* `status` and `summary` return only numbers as well as the ID and timestamp
+  of the newest comments – no comment content.
+* `team` returns the roles that may write or moderate, and for each member
+  the user ID and roles – no names, no email addresses.
 
-Geschrieben wird an zwei Stellen:
+Write access in two places:
 
-* `/blocklist` ändert die Option `disallowed_keys`, also die Sperrliste unter
-  Einstellungen → Diskussion. Sie kann E-Mail-Adressen, Namen oder IP-Adressen
-  von Kommentierenden enthalten – genau wie bei einem Eintrag über das
-  Backend. Verlangt `manage_options`.
-* `/push` legt die Push-Adressen des angemeldeten Kontos in dessen Benutzermeta
-  `commentator_push_endpoints` ab, höchstens fünf; die älteste fällt heraus.
-  Die Adresse ist eine Endpoint-URL des Push-Servers und enthält keine
-  Kommentardaten.
+* `/blocklist` changes the `disallowed_keys` option, i.e. the blocklist under
+  Settings → Discussion. It may contain email addresses, names or IP
+  addresses of commenters – just like an entry made via the admin. Requires
+  `manage_options`.
+* `/push` stores the push addresses of the signed-in account in its user meta
+  `commentator_push_endpoints`, at most five; the oldest one is dropped. The
+  address is an endpoint URL of the push server and contains no comment data.
 
-`/empty` löscht Spam oder Papierkorb endgültig, wie die gleichnamigen Knöpfe
-im Backend.
+`/empty` permanently deletes spam or trash, like the buttons of the same name
+in the admin.
 
-**Nach außen** sendet das Plugin nur, wenn mindestens ein Konto mit
-`moderate_comments` eine Push-Adresse hinterlegt hat. Dann geht bei jedem
-neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, an jede
-hinterlegte Adresse ein nicht blockierender `POST` mit dem Rumpf „new“ – ohne
-Namen, Text oder Kennung des Kommentars. Angenommen werden nur öffentlich
-erreichbare HTTPS-Adressen; versendet wird über `wp_safe_remote_post`, das
-Ziele im eigenen Netz ablehnt. Ohne hinterlegte Adresse sendet das Plugin
-nichts.
+**Outbound**, the plugin only sends anything if at least one account with
+`moderate_comments` has stored a push address. Then, for every new comment
+that does not arrive as spam or trash, a non-blocking `POST` with the body
+"new" goes to every stored address – without the comment's name, text or ID.
+Only publicly reachable HTTPS addresses are accepted; sending uses
+`wp_safe_remote_post`, which rejects destinations on the local network.
+Without a stored address, the plugin sends nothing.

@@ -8,145 +8,144 @@ Stable tag: 1.7.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
-Schlanke REST-Endpunkte für die Android-App Commentator.
+Lightweight REST endpoints for the Commentator Android app.
 
-== Beschreibung ==
+== Description ==
 
-Die Android-App Commentator prüft regelmäßig, ob es neue moderationsbedürftige
-Kommentare gibt. Ohne dieses Plugin ruft sie dafür die Kommentarliste der
-WordPress-Kern-API ab. Das funktioniert, ist aber für eine reine
-"Gibt es etwas Neues?"-Frage unnötig aufwendig. Außerdem kennt die Kern-API
-keine Sammellöschung, keinen Zugriff auf die Sperrliste und keinen Weg, das
-Team eines Blogs zu erkennen, wenn das Konto nur Redakteur ist.
+The Commentator Android app regularly checks whether there are new comments
+awaiting moderation. Without this plugin, it fetches the comment list from
+the WordPress core API to do so. That works, but is unnecessarily expensive
+for a simple "Is there anything new?" question. In addition, the core API
+offers no bulk deletion, no access to the blocklist and no way to identify a
+blog's team if the account is only an editor.
 
-Das Plugin ist optional. Ohne es funktioniert die App vollständig, sie stellt
-dann lediglich etwas teurere Anfragen an die Kern-API.
+The plugin is optional. The app works fully without it; it then merely makes
+somewhat more expensive requests to the core API.
 
-Alle Endpunkte liegen unter `/wp-json/commentator/v1/` und verlangen dieselbe
-Authentifizierung wie die Kern-API:
+All endpoints live under `/wp-json/commentator/v1/` and require the same
+authentication as the core API:
 
-* `GET /status` liefert die Anzahl ausstehender Kommentare sowie Kennung und
-  Zeitstempel des neuesten offenen und des neuesten Kommentars überhaupt.
-  Verlangt `moderate_comments`.
-* `GET /summary` liefert die Kommentaranzahl je Status in einem einzigen
-  Aufruf. Verlangt `moderate_comments`.
-* `GET /team` nennt die Rollen, die Beiträge schreiben oder Kommentare
-  moderieren dürfen, und deren Mitglieder (Benutzerkennung und Rollen).
-  Verlangt `moderate_comments`.
-* `POST /empty` leert Spam oder Papierkorb endgültig, in Stapeln von
-  höchstens 200 Kommentaren – wie die gleichnamigen Knöpfe in der
-  Kommentarverwaltung. Verlangt `moderate_comments`.
-* `GET`, `POST` und `DELETE /blocklist` lesen und pflegen die Option
-  `disallowed_keys`, also die Sperrliste unter Einstellungen → Diskussion.
-  Verlangt `manage_options`, weil es eine seitenweite Option ist.
-* `POST` und `DELETE /push` hinterlegen beziehungsweise entfernen eine
-  UnifiedPush-Adresse für das angemeldete Konto. Verlangt
-  `moderate_comments`.
+* `GET /status` returns the number of pending comments as well as the ID and
+  timestamp of the newest pending comment and of the newest comment overall.
+  Requires `moderate_comments`.
+* `GET /summary` returns the comment count per status in a single request.
+  Requires `moderate_comments`.
+* `GET /team` lists the roles that may write posts or moderate comments, and
+  their members (user ID and roles). Requires `moderate_comments`.
+* `POST /empty` permanently empties spam or trash, in batches of at most 200
+  comments – like the buttons of the same name in the comment management.
+  Requires `moderate_comments`.
+* `GET`, `POST` and `DELETE /blocklist` read and maintain the
+  `disallowed_keys` option, i.e. the blocklist under Settings → Discussion.
+  Requires `manage_options`, because it is a site-wide option.
+* `POST` and `DELETE /push` store or remove a UnifiedPush address for the
+  signed-in account. Requires `moderate_comments`.
 
-== Sofortmeldung über UnifiedPush ==
+== Instant notifications via UnifiedPush ==
 
-Seit Version 1.5.0 kann die App eine UnifiedPush-Adresse hinterlegen, die sie
-von einer UnifiedPush-App auf dem Telefon (etwa ntfy) bekommen hat. Bei jedem
-neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, schickt das
-Plugin an jede hinterlegte Adresse aller Konten mit `moderate_comments` einen
-nicht blockierenden Weckruf mit dem Rumpf "new" – ohne Namen, Text oder
-Kennung des Kommentars. Die App holt die Kommentare danach wie gewohnt selbst
-über die REST-API. Der Push-Server erfährt damit nur, dass und wann
-kommentiert wurde.
+Since version 1.5.0, the app can store a UnifiedPush address it received from
+a UnifiedPush app on the phone (e.g. ntfy). For every new comment that does
+not arrive as spam or trash, the plugin sends a non-blocking wake-up with the
+body "new" to every stored address of all accounts with `moderate_comments`
+– without the comment's name, text or ID. The app then fetches the comments
+itself via the REST API as usual. The push server thus only learns that, and
+when, a comment was posted.
 
-Seit 1.6.0 weckt auch eine Statusänderung, etwa eine Freigabe im Backend, mit
-dem Rumpf "status". Die App nimmt ihre Benachrichtigung zu dem Kommentar dann
-sofort zurück. Änderungen, die aus der App selbst kommen, wecken nicht.
+Since 1.6.0, a status change, such as an approval in the admin, also sends a
+wake-up, with the body "status". The app then immediately withdraws its
+notification for that comment. Changes made from the app itself do not
+trigger a wake-up.
 
-Angenommen werden nur öffentlich erreichbare HTTPS-Adressen; versendet wird
-über `wp_safe_remote_post`. Je Konto gelten höchstens fünf Adressen, die
-älteste fällt heraus. Gespeichert werden sie in der Benutzermeta
-`commentator_push_endpoints`. Ohne hinterlegte Adresse passiert nichts.
+Only publicly reachable HTTPS addresses are accepted; sending uses
+`wp_safe_remote_post`. At most five addresses apply per account; the oldest
+one is dropped. They are stored in the user meta
+`commentator_push_endpoints`. Without a stored address, nothing happens.
 
-Weckrufe wegen Statusänderungen gehen an eine Adresse höchstens alle 30
-Sekunden; Sammelmoderation im Backend löst so einen statt Dutzender aus. Neue
-Kommentare wecken immer.
+Wake-ups for status changes go to an address at most once every 30 seconds;
+bulk moderation in the admin thus triggers one instead of dozens. New
+comments always trigger a wake-up.
 
-Im Benutzerprofil zeigt der Abschnitt „Commentator: Sofortmeldung“, wohin der
-Blog Weckrufe schickt, mit „Entfernen“ und „Testweckruf senden“.
+In the user profile, the section "Commentator: Sofortmeldung" (instant
+notifications) shows where the blog sends wake-ups, with "Entfernen" (remove)
+and "Testweckruf senden" (send test wake-up).
 
-== Für Admins ==
+== For admins ==
 
-Es gibt keine Einstellungsseite. Für seltene Fälle:
+There is no settings page. For rare cases:
 
-* `define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true );` in der `wp-config.php`
-  schaltet die Sofortmeldung ab. Das Plugin nimmt dann keine Adressen an und
-  sendet nichts nach außen; alles andere bleibt.
-* Laufen Blog und ntfy im selben Netz, erlaubt
+* `define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true );` in `wp-config.php`
+  disables instant notifications. The plugin then accepts no addresses and
+  sends nothing outbound; everything else stays the same.
+* If the blog and ntfy run on the same network,
   `add_filter( 'commentator_bridge_push_allow_local', '__return_true' );`
-  Adressen im lokalen Netz.
-* Der Filter `commentator_bridge_push_endpoint_allowed` schränkt Adressen
-  weiter ein, etwa auf den eigenen Server:
+  allows addresses on the local network.
+* The filter `commentator_bridge_push_endpoint_allowed` restricts addresses
+  further, for example to your own server:
 
     add_filter( 'commentator_bridge_push_endpoint_allowed', function ( $ok, $endpoint ) {
         return $ok && 'ntfy.example.org' === wp_parse_url( $endpoint, PHP_URL_HOST );
     }, 10, 2 );
 
-Einen ntfy-Server stellt man nicht hier ein, sondern in der ntfy-App auf dem
-Telefon: Die App gibt die Adresse, die sie von dort bekommt, an das Plugin
-weiter.
+An ntfy server is not configured here but in the ntfy app on the phone: the
+app passes the address it receives from there on to the plugin.
 
-== Was dieses Plugin nicht tut ==
+== What this plugin does not do ==
 
-* Es ändert kein Verhalten von WordPress.
-* Es sendet nur dann etwas nach außen, wenn ein Moderator die Sofortmeldung
-  eingerichtet hat – und dann nichts als einen inhaltslosen Weckruf an die
-  hinterlegte Adresse.
-* Es schreibt Optionen nur über `/blocklist` (`disallowed_keys`) und
-  Benutzermeta nur über `/push` (`commentator_push_endpoints`). Beides ist
-  auch über das Backend möglich und verlangt dieselben Rechte.
-* Es legt keine Tabellen an und setzt keine Cookies.
-* Es liefert keine Kommentarinhalte; dafür bleibt die Kern-API zuständig.
+* It does not change any WordPress behavior.
+* It only sends anything outbound if a moderator has set up instant
+  notifications – and then nothing but a content-free wake-up to the stored
+  address.
+* It writes options only via `/blocklist` (`disallowed_keys`) and user meta
+  only via `/push` (`commentator_push_endpoints`). Both are also possible via
+  the admin and require the same capabilities.
+* It creates no tables and sets no cookies.
+* It does not return comment content; the core API remains responsible for
+  that.
 
 == Installation ==
 
-1. Den Ordner `commentator-bridge` nach `wp-content/plugins/` kopieren.
-2. Das Plugin im WordPress-Backend aktivieren.
+1. Copy the `commentator-bridge` folder to `wp-content/plugins/`.
+2. Activate the plugin in the WordPress admin.
 
-Die App erkennt das Plugin automatisch am Namensraum `commentator/v1` in der
-Antwort von `/wp-json/`.
+The app detects the plugin automatically by the `commentator/v1` namespace in
+the response from `/wp-json/`.
 
 == Changelog ==
 
 = 1.7.0 =
-* `/push/test` und Abschnitt im Benutzerprofil: hinterlegte Adressen sehen,
-  entfernen, Testweckruf senden.
-* Weckrufe wegen Statusänderungen höchstens alle 30 Sekunden je Adresse.
-* `COMMENTATOR_BRIDGE_DISABLE_PUSH`, Filter
-  `commentator_bridge_push_allow_local` und
+* `/push/test` and a section in the user profile: view stored addresses,
+  remove them, send a test wake-up.
+* Wake-ups for status changes at most once every 30 seconds per address.
+* `COMMENTATOR_BRIDGE_DISABLE_PUSH`, filters
+  `commentator_bridge_push_allow_local` and
   `commentator_bridge_push_endpoint_allowed`.
 
 = 1.6.0 =
-* Auch Statusänderungen wecken die App (`transition_comment_status`), außer
-  sie kommen aus der App selbst.
+* Status changes also wake the app (`transition_comment_status`), unless they
+  come from the app itself.
 
 = 1.5.0 =
-* Neuer Endpunkt `/push` für die Sofortmeldung über UnifiedPush. Bei neuen
-  Kommentaren geht ein inhaltsloser Weckruf an die hinterlegten Adressen.
+* New endpoint `/push` for instant notifications via UnifiedPush. For new
+  comments, a content-free wake-up is sent to the stored addresses.
 
 = 1.4.0 =
-* Neuer Endpunkt `/team`: Rollen des Blogs, die schreiben oder moderieren
-  dürfen, und ihre Mitglieder.
+* New endpoint `/team`: the blog's roles that may write or moderate, and
+  their members.
 
 = 1.3.0 =
-* `/status` meldet zusätzlich den neuesten Kommentar unabhängig vom Status
-  (`latest_any_comment_id`, `latest_any_comment_date_gmt`). Ohne dieses Feld
-  bemerkt die App auf Blogs mit automatischer Freischaltung keine neuen
-  Kommentare.
+* `/status` additionally reports the newest comment regardless of status
+  (`latest_any_comment_id`, `latest_any_comment_date_gmt`). Without this
+  field, the app does not notice new comments on blogs with automatic
+  approval.
 
 = 1.2.0 =
-* Neue Endpunkte `/empty` (Spam oder Papierkorb leeren) und `/blocklist`
-  (Sperrliste `disallowed_keys` pflegen).
+* New endpoints `/empty` (empty spam or trash) and `/blocklist` (maintain the
+  `disallowed_keys` blocklist).
 
 = 1.1.0 =
-* `/summary` meldet unter `all` genehmigte plus offene Kommentare statt
-  `total_comments`, das Spam mitzählt. Die Zahl passt damit zu der Liste, die
-  die REST-API bei `status=all` liefert.
+* `/summary` reports approved plus pending comments under `all` instead of
+  `total_comments`, which included spam. The number thus matches the list the
+  REST API returns for `status=all`.
 
 = 1.0.0 =
-* Erste Fassung mit den Endpunkten `status` und `summary`.
+* Initial version with the `status` and `summary` endpoints.

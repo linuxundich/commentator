@@ -1,775 +1,758 @@
-# Architektur
+# Architecture
 
-Dieses Dokument hält die Analyse aus Phase 1 und alle daraus folgenden
-Technologie- und Architekturentscheidungen fest. Es ist die Referenz dafür,
-*warum* etwas so gebaut ist, wie es gebaut ist.
+This document records the analysis from phase 1 and all the technology and
+architecture decisions that followed from it. It is the reference for *why*
+things are built the way they are.
 
-Stand der Analyse: **2026-09-20**
-
----
-
-## 1. Ziel und Rahmen
-
-Commentator ist ein spezialisiertes Werkzeug zur täglichen Moderation von
-WordPress-Kommentaren – kein WordPress-Reader und kein Admin-Ersatz.
-
-Rahmenbedingungen, die die Architektur prägen:
-
-* Die Architektur trägt mehrere WordPress-Instanzen. Version 1 bediente nur
-  einen Blog, war aber von Anfang an darauf angelegt – der Mehrfachbetrieb kam
-  später ohne Umbau der Datenschicht.
-* Es gibt **keinen eigenen Server**. Alles, was die App kann, muss sie
-  gegen die WordPress-REST-API oder lokal erledigen.
-* Datensparsamkeit und Nachvollziehbarkeit der Netzwerkverbindungen haben
-  Vorrang vor Komfortfunktionen.
+Analysis as of: **2026-09-20**
 
 ---
 
-## 2. Ermittelte Toolchain (geprüft am 2026-09-20)
+## 1. Goal and scope
 
-Alle Versionen wurden direkt aus den Maven-Metadaten von Google Maven und
-Maven Central sowie aus den offiziellen Release Notes ermittelt, nicht aus
-Tutorials.
+Commentator is a specialised tool for the daily moderation of WordPress
+comments – not a WordPress reader and not a replacement for the admin.
 
-| Komponente | Gewählt | Aktuellste gefundene | Begründung der Wahl |
+Constraints that shape the architecture:
+
+* The architecture supports multiple WordPress instances. Version 1 served only
+  one blog, but was designed for more from the start – multi-blog support came
+  later without reworking the data layer.
+* There is **no server of our own**. Everything the app can do, it has to do
+  against the WordPress REST API or locally.
+* Data minimisation and traceability of network connections take precedence
+  over convenience features.
+
+---
+
+## 2. Toolchain determined (checked on 2026-09-20)
+
+All versions were determined directly from the Maven metadata of Google Maven
+and Maven Central and from the official release notes, not from tutorials.
+
+| Component | Chosen | Latest found | Rationale |
 |---|---|---|---|
-| Android Gradle Plugin | 9.4.1 | 9.5.0-alpha06 | Neueste stabile Version; Alphas sind für ein Produktivprojekt ungeeignet. |
-| Gradle | 9.7.1 | 9.7.1 | AGP 9.4 verlangt min. 9.6.0; 9.7.1 ist aktueller Stable-Stand. |
-| JDK (Build) | 21 | 26 | AGP 9.4 verlangt min. JDK 17, Gradle 9.7 unterstützt 17–26. JDK 21 ist der breit erprobte LTS-Mittelweg. |
-| Kotlin | 2.3.21 | 2.4.20 | **Bewusst nicht die neueste Version:** KSP liegt aktuell nur bis zur 2.3.x-Linie vor (KSP 2.3.12 ist gegen kotlin-stdlib 2.3.20 gebaut). Room und Hilt brauchen KSP. Sobald KSP für Kotlin 2.4 erscheint, kann angehoben werden. |
-| KSP | 2.3.12 | 2.3.12 | Ersetzt kapt vollständig; kapt wird nicht verwendet. |
-| compileSdk / targetSdk | 37 | 37 | API 37 ist die höchste von AGP 9.4 unterstützte Ebene. Das SDK-Paket heißt seit den SDK-Minor-Releases `platforms;android-37.0`. |
-| minSdk | 26 | – | Android 8.0. Notification Channels sind ab 26 Pflicht und ohne Kompatibilitätspfade nutzbar; deckt praktisch den gesamten aktiven Gerätebestand ab. |
-| Build Tools | 37.0.0 | 37.0.0 | AGP 9.4 verlangt min. 36.0.0. |
-| Compose BOM | 2026.09.00 | 2026.09.00 | Hält alle Compose-Artefakte konsistent. |
-| compose-material3 | 1.5.0-alpha29 | 1.5.0-alpha29 | **Einzige bewusste Ausnahme von der Stable-Regel**, und das einzige Compose-Artefakt mit eigener Version. Begründung unten. |
-| Navigation Compose | 2.10.1 | 2.10.1 | Typsichere Navigation über `@Serializable`-Routen. |
-| Lifecycle | 2.11.0 | 2.12.0-alpha03 | Neueste stabile Version. |
-| Hilt | 2.60.1 | 2.60.1 | In den Vorgaben ausdrücklich bevorzugt; mit KSP betrieben. |
-| Retrofit | 3.0.0 | 3.0.0 | Mit `converter-kotlinx-serialization` in derselben Version. |
-| OkHttp | 5.5.0 | 5.5.0 | Von Retrofit 3 ohnehin vorausgesetzt; liefert MockWebServer für Tests. |
-| kotlinx.serialization | 1.11.0 | 1.12.0-RC | JSON ohne Reflection und ohne Code-Generator zur Laufzeit. |
+| Android Gradle Plugin | 9.4.1 | 9.5.0-alpha06 | Latest stable version; alphas are unsuitable for a production project. |
+| Gradle | 9.7.1 | 9.7.1 | AGP 9.4 requires at least 9.6.0; 9.7.1 is the current stable release. |
+| JDK (build) | 21 | 26 | AGP 9.4 requires at least JDK 17, Gradle 9.7 supports 17–26. JDK 21 is the widely tested LTS middle ground. |
+| Kotlin | 2.3.21 | 2.4.20 | **Deliberately not the latest version:** KSP is currently only available up to the 2.3.x line (KSP 2.3.12 is built against kotlin-stdlib 2.3.20). Room and Hilt need KSP. As soon as KSP for Kotlin 2.4 is released, this can be raised. |
+| KSP | 2.3.12 | 2.3.12 | Replaces kapt completely; kapt is not used. |
+| compileSdk / targetSdk | 37 | 37 | API 37 is the highest level supported by AGP 9.4. Since the SDK minor releases, the SDK package is called `platforms;android-37.0`. |
+| minSdk | 26 | – | Android 8.0. Notification channels are mandatory from 26 and usable without compatibility paths; covers practically the entire active device base. |
+| Build Tools | 37.0.0 | 37.0.0 | AGP 9.4 requires at least 36.0.0. |
+| Compose BOM | 2026.09.00 | 2026.09.00 | Keeps all Compose artifacts consistent. |
+| compose-material3 | 1.5.0-alpha29 | 1.5.0-alpha29 | **The only deliberate exception to the stable rule**, and the only Compose artifact with its own version. Rationale below. |
+| Navigation Compose | 2.10.1 | 2.10.1 | Type-safe navigation via `@Serializable` routes. |
+| Lifecycle | 2.11.0 | 2.12.0-alpha03 | Latest stable version. |
+| Hilt | 2.60.1 | 2.60.1 | Explicitly preferred in the requirements; run with KSP. |
+| Retrofit | 3.0.0 | 3.0.0 | With `converter-kotlinx-serialization` in the same version. |
+| OkHttp | 5.5.0 | 5.5.0 | Required by Retrofit 3 anyway; provides MockWebServer for tests. |
+| kotlinx.serialization | 1.11.0 | 1.12.0-RC | JSON without reflection and without a runtime code generator. |
 | Coroutines | 1.11.0 | 1.11.0 | – |
-| Room | 2.8.5 | 2.8.5 | Lokaler Cache, siehe Abschnitt 8. |
-| WorkManager | 2.11.2 | 2.12.0-rc01 | Periodische Hintergrundprüfung auf neue Kommentare. |
-| DataStore (Preferences) | 1.2.1 | 1.3.0-alpha11 | Ersatz für SharedPreferences, asynchron. |
-| Coil | 3.6.3 | 3.6.3 | Avatare. Siehe Abschnitt 4 zur Drittanbieter-Abwägung. |
-| material-icons-core | 1.7.8 | 1.7.8 | Auf dieser Version eingefroren. Material 3 liefert die Symbole nicht mehr mit, deshalb ausdrücklich aufgenommen. |
-| Robolectric | 4.17 | 4.17 | Compose-Oberflächentests ohne Gerät. |
+| Room | 2.8.5 | 2.8.5 | Local cache, see section 8. |
+| WorkManager | 2.11.2 | 2.12.0-rc01 | Periodic background check for new comments. |
+| DataStore (Preferences) | 1.2.1 | 1.3.0-alpha11 | Replacement for SharedPreferences, asynchronous. |
+| Coil | 3.6.3 | 3.6.3 | Avatars. See section 4 for the third-party trade-off. |
+| material-icons-core | 1.7.8 | 1.7.8 | Frozen at this version. Material 3 no longer ships the icons, so it is included explicitly. |
+| Robolectric | 4.17 | 4.17 | Compose UI tests without a device. |
 
-### Die Ausnahme: material3 als Alpha
+### The exception: material3 as an alpha
 
-Für das Android Gradle Plugin steht oben „Alphas sind für ein Produktivprojekt
-ungeeignet". Bei `compose-material3` wird davon abgewichen, und das soll
-nachvollziehbar bleiben.
+For the Android Gradle Plugin, the table above says "alphas are unsuitable for
+a production project". `compose-material3` deviates from that, and the
+reasoning should stay traceable.
 
-Material 3 Expressive ist in der stabilen Linie **1.4.0 nicht benutzbar**.
-Vorhanden ist es dort: `MaterialExpressiveTheme`, `MotionScheme`,
-`MaterialTheme.motionScheme` und sogar `ExperimentalMaterial3ExpressiveApi`
-liegen im Artefakt. Sie sind aber sämtlich Kotlin-`internal` und aus App-Code
-nicht aufrufbar. Ein Blick mit `javap` täuscht hier: Kotlins `internal` ist im
-Bytecode `public` und nur in den Metadaten markiert - erst der Compiler sagt
-es. Die Komponenten `ButtonGroup`, `ToggleButton`, `LoadingIndicator`,
-`MaterialShapes` und `FloatingToolbar` fehlen in 1.4.0 vollständig.
+Material 3 Expressive is **not usable** in the stable **1.4.0** line. It is
+present there: `MaterialExpressiveTheme`, `MotionScheme`,
+`MaterialTheme.motionScheme` and even `ExperimentalMaterial3ExpressiveApi` are
+in the artifact. But they are all Kotlin `internal` and cannot be called from
+app code. Inspecting with `javap` is misleading here: Kotlin's `internal` is
+`public` in bytecode and only marked in the metadata - only the compiler tells
+you. The components `ButtonGroup`, `ToggleButton`, `LoadingIndicator`,
+`MaterialShapes` and `FloatingToolbar` are missing entirely in 1.4.0.
 
-Ohne die Alpha wäre also nur die Hälfte erreichbar gewesen: Form und Schrift
-öffentlich, die Bewegung nur als Nachbau mit von Hand gesetzten Federn - und
-die mitgelieferten Komponenten wären beim Standardschema geblieben, weil jede
-Material-Komponente ihr Bewegungsschema aus dem Theme liest und nicht aus dem
-Aufrufer.
+Without the alpha, only half would have been achievable: shape and typography
+public, motion only as a re-creation with hand-tuned springs - and the bundled
+components would have stayed on the standard scheme, because every Material
+component reads its motion scheme from the theme and not from the caller.
 
-Was die Entscheidung kostet:
+What the decision costs:
 
-* Die Alpha-Linie ändert Signaturen zwischen den Fassungen. `MaterialShapes`
-  und `LoadingIndicator` wurden in der 1.5.0-Reihe schon einmal zurück auf
-  experimentell gestuft. Ein Anheben ist deshalb nichts, was nebenbei
-  mitläuft.
-* Die BOM wird für genau ein Artefakt überstimmt. Die übrigen
-  Compose-Artefakte bleiben konsistent aus der BOM; `material3` hängt an einer
-  eigenen Version in `libs.versions.toml`.
-* Alles Expressive steht hinter `@OptIn(ExperimentalMaterial3ExpressiveApi)`.
+* The alpha line changes signatures between releases. `MaterialShapes` and
+  `LoadingIndicator` have already been demoted back to experimental once in
+  the 1.5.0 series. Upgrading is therefore not something that happens on the
+  side.
+* The BOM is overridden for exactly one artifact. The remaining Compose
+  artifacts stay consistent via the BOM; `material3` is pinned to its own
+  version in `libs.versions.toml`.
+* Everything Expressive sits behind `@OptIn(ExperimentalMaterial3ExpressiveApi)`.
 
-Sobald 1.5.0 stabil ist, entfällt der Sondereintrag und `material3` kommt
-wieder aus der BOM.
+As soon as 1.5.0 is stable, the special entry goes away and `material3` comes
+from the BOM again.
 
-### Bewusst *nicht* verwendet
+### Deliberately *not* used
 
 * **androidx.security:security-crypto / EncryptedSharedPreferences** –
-  seit 1.1.0-beta01 (Juni 2025) vollständig deprecated. Google verweist
-  ausdrücklich auf die direkte Nutzung des Android Keystore. Wir folgen dem
-  (siehe Abschnitt 6) und nehmen keine veraltete Abhängigkeit auf.
-* **kapt** – durch KSP ersetzt, deutlich schneller und offiziell empfohlen.
-* **XML-Layouts, Fragments, AppCompat-Activities** – nicht nötig, die App ist
-  vollständig Compose-basiert mit einer einzigen `ComponentActivity`.
-* **Accompanist** – die früher dort beheimateten Funktionen (Pull-to-Refresh,
-  SwipeRefresh, Permissions-Helfer) sind in Material 3 bzw. der Plattform
-  angekommen. Wir verwenden `PullToRefreshBox` aus Material 3.
-* **material-icons-extended** – bringt mehrere tausend Vektoren mit, von denen
-  die App eine Handvoll bräuchte. Stattdessen wird das Kernset verwendet und
-  die Symbolauswahl daran angepasst.
-* **Mocking-Bibliotheken** (Mockito, MockK) – die Tests verwenden
-  handgeschriebene Doppelgänger. Das ist bei dieser Codegröße übersichtlicher
-  und erzwingt nebenbei Schnittstellen, die auch der Produktivcode gut
-  gebrauchen kann.
-* **Firebase / Google Play Services** – siehe Abschnitt 9. Die App enthält
-  keine proprietären Cloud-SDKs.
-* **Analytics-, Crash- oder Telemetrie-SDKs** – keine.
+  fully deprecated since 1.1.0-beta01 (June 2025). Google explicitly points to
+  using the Android Keystore directly. We follow that (see section 6) and do
+  not take on an outdated dependency.
+* **kapt** – replaced by KSP, significantly faster and officially recommended.
+* **XML layouts, Fragments, AppCompat activities** – not needed; the app is
+  entirely Compose-based with a single `ComponentActivity`.
+* **Accompanist** – the features that used to live there (pull-to-refresh,
+  SwipeRefresh, permission helpers) have arrived in Material 3 or the
+  platform. We use `PullToRefreshBox` from Material 3.
+* **material-icons-extended** – brings several thousand vectors, of which the
+  app would need a handful. Instead, the core set is used and the choice of
+  icons adapted to it.
+* **Mocking libraries** (Mockito, MockK) – the tests use hand-written test
+  doubles. At this code size that is clearer, and as a side effect it enforces
+  interfaces that the production code can make good use of too.
+* **Firebase / Google Play Services** – see section 9. The app contains no
+  proprietary cloud SDKs.
+* **Analytics, crash or telemetry SDKs** – none.
 
-### Drittanbieter-Abhängigkeiten und ihre Rechtfertigung
+### Third-party dependencies and their justification
 
-Die Vorgabe lautet: vor jeder Bibliothek prüfen, ob es eine offizielle
-Jetpack-Lösung gibt. Ergebnis:
+The requirement is: before adding any library, check whether there is an
+official Jetpack solution. Result:
 
-| Abhängigkeit | Offizielle Alternative? | Entscheidung |
+| Dependency | Official alternative? | Decision |
 |---|---|---|
-| Retrofit + OkHttp | `HttpURLConnection`, Ktor (JetBrains, nicht Google) | Retrofit. Jetpack hat keinen HTTP-Client; Retrofit/OkHttp ist der De-facto-Standard, wird in Googles eigenen Samples verwendet und ist in den Vorgaben genannt. |
-| kotlinx.serialization | Keine Jetpack-JSON-Lösung | kotlinx.serialization, von JetBrains, Compiler-Plugin statt Reflection. |
-| Hilt | Manuelle DI | Hilt – in den Vorgaben bevorzugt und von Google gepflegt. |
-| Coil | Kein Jetpack-Image-Loader | Coil 3. Alternative wäre eigenes Laden von Gravatar-Bildern inkl. Cache – unnötige Eigenentwicklung. Avatare sind zudem per Einstellung abschaltbar. |
-| UnifiedPush Connector (`org.unifiedpush.android:connector` 3.3.5), bringt Google Tink transitiv mit | FCM (proprietär, siehe Abschnitt 9) | UnifiedPush. Offener Standard für Push ohne Google; der Connector übernimmt Anmeldung bei der UnifiedPush-App auf dem Telefon und Empfang der Nachrichten. Tink braucht er für die Web-Push-Verschlüsselung, die hier nicht genutzt wird – die Nachricht ist inhaltslos. Die Funktion ist optional und je Blog abschaltbar. |
+| Retrofit + OkHttp | `HttpURLConnection`, Ktor (JetBrains, not Google) | Retrofit. Jetpack has no HTTP client; Retrofit/OkHttp is the de facto standard, is used in Google's own samples and is named in the requirements. |
+| kotlinx.serialization | No Jetpack JSON solution | kotlinx.serialization, by JetBrains, compiler plugin instead of reflection. |
+| Hilt | Manual DI | Hilt – preferred in the requirements and maintained by Google. |
+| Coil | No Jetpack image loader | Coil 3. The alternative would be loading Gravatar images ourselves, including caching – unnecessary custom development. Avatars can also be switched off in the settings. |
+| UnifiedPush Connector (`org.unifiedpush.android:connector` 3.3.5), pulls in Google Tink transitively | FCM (proprietary, see section 9) | UnifiedPush. Open standard for push without Google; the connector handles registration with the UnifiedPush app on the phone and receiving the messages. It needs Tink for Web Push encryption, which is not used here – the message has no content. The feature is optional and can be switched off per blog. |
 
 ---
 
-## 3. Schichten
+## 3. Layers
 
 ```
 UI (Compose, Material 3)
- │   Screens, Komponenten, Navigation. Kennt nur UI-State und Events.
+ │   Screens, components, navigation. Knows only UI state and events.
  ▼
 ViewModel
- │   Hält StateFlow<UiState>, übersetzt Events in Use-Case-Aufrufe.
+ │   Holds StateFlow<UiState>, translates events into use case calls.
  ▼
 Use Cases / Repository (domain)
- │   Geschäftsregeln, Statuswechsel, Cache-/Netz-Koordination.
+ │   Business rules, status changes, cache/network coordination.
  ▼
 Data
- │   WordPressApiClient (Retrofit), Room-Cache, CredentialStore
+ │   WordPressApiClient (Retrofit), Room cache, CredentialStore
  ▼
 WordPress REST API
 ```
 
-Verbindliche Regeln:
+Binding rules:
 
-1. **Die UI kennt keine DTOs.** Retrofit-DTOs leben in `data.remote.dto` und
-   werden dort in Domain-Modelle gemappt. Ändert WordPress ein Feld, ist nur
-   das Mapping betroffen – die Vorgabe „API-Änderungen von der UI entkoppeln“.
-2. **Die UI kennt keine HTTP-Fehler.** Alle Fehler werden früh in eine
-   geschlossene Fehlerhierarchie (`AppError`) übersetzt, die die UI in Texte
-   auflöst.
-3. **Repositories geben `Flow` aus dem Cache aus**, nicht das Ergebnis eines
-   einzelnen Netzwerkaufrufs. Dadurch aktualisiert sich die UI nach einer
-   Moderationsaktion automatisch.
-4. **Kein Domain-Code kennt Android-Klassen.** `domain` ist reines Kotlin und
-   damit ohne Emulator testbar.
+1. **The UI knows no DTOs.** Retrofit DTOs live in `data.remote.dto` and are
+   mapped to domain models there. If WordPress changes a field, only the
+   mapping is affected – the requirement "decouple API changes from the UI".
+2. **The UI knows no HTTP errors.** All errors are translated early into a
+   sealed error hierarchy (`AppError`), which the UI resolves into texts.
+3. **Repositories emit a `Flow` from the cache**, not the result of a single
+   network call. This way the UI updates automatically after a moderation
+   action.
+4. **No domain code knows Android classes.** `domain` is pure Kotlin and thus
+   testable without an emulator.
 
-### Paketstruktur
+### Package structure
 
 ```
 de.christophlangner.commentator
-├── core/            Ergebnis- und Fehlertypen, Zeit-/HTML-Hilfen
+├── core/            Result and error types, time/HTML helpers
 ├── domain/
 │   ├── model/       Comment, CommentStatus, WordPressInstance, ...
-│   ├── repository/  Interfaces (die Implementierung liegt in data/)
+│   ├── repository/  Interfaces (the implementation lives in data/)
 │   └── usecase/     ModerateCommentUseCase, ReplyToCommentUseCase, ...
 ├── data/
-│   ├── remote/      Retrofit-Service, DTOs, Interceptors, Fehler-Mapping
-│   ├── local/       Room (Entities, DAOs, DB), DataStore
-│   ├── account/     Keystore-Krypto, CredentialStore, InstanceStore
-│   └── repository/  Implementierungen
-├── notification/    Channels, WorkManager-Worker, Deep Links,
-│                    Aktionen in der Benachrichtigung
-├── push/            Sofortmeldung über UnifiedPush (InstantPush, PushSetup,
+│   ├── remote/      Retrofit service, DTOs, interceptors, error mapping
+│   ├── local/       Room (entities, DAOs, DB), DataStore
+│   ├── account/     Keystore crypto, CredentialStore, InstanceStore
+│   └── repository/  Implementations
+├── notification/    Channels, WorkManager worker, deep links,
+│                    actions in the notification
+├── push/            Instant notification via UnifiedPush (InstantPush, PushSetup,
 │                    CommentatorPushService)
 ├── ui/
-│   ├── theme/       Material-3-Theme, Dynamic Color, Dark Mode
-│   ├── setup/       Einrichtung/Anmeldung
-│   ├── inbox/       Kommentarliste + Filter
-│   ├── detail/      Kommentardetail + Antwort
-│   ├── settings/    Einstellungen
-│   └── navigation/  Typsichere Routen, Deep-Link-Behandlung
-└── di/              Hilt-Module
+│   ├── theme/       Material 3 theme, dynamic color, dark mode
+│   ├── setup/       Setup/sign-in
+│   ├── inbox/       Comment list + filters
+│   ├── detail/      Comment detail + reply
+│   ├── settings/    Settings
+│   └── navigation/  Type-safe routes, deep link handling
+└── di/              Hilt modules
 ```
 
 ---
 
-## 4. Mehrere WordPress-Instanzen
+## 4. Multiple WordPress instances
 
-Die App verwaltet mehrere Blogs. Die Instanz ist dabei nie implizit.
+The app manages multiple blogs. The instance is never implicit.
 
 ```kotlin
 data class WordPressInstance(
-    val id: String,          // stabile lokale UUID, nicht die Blog-URL
+    val id: String,          // stable local UUID, not the blog URL
     val name: String,
-    val siteUrl: HttpUrl,    // https erzwungen
+    val siteUrl: HttpUrl,    // https enforced
     val username: String,
 )
 ```
 
-Konsequenzen, die heute schon umgesetzt sind:
+Consequences that are already implemented today:
 
-* Jede Room-Zeile trägt eine `instanceId`; der Primärschlüssel der
-  Kommentartabelle ist `(instanceId, id)`. Ein zweiter Blog fügt nur Zeilen
-  hinzu, er erzwingt keine Migration.
-* Zugangsdaten liegen **pro Instanz** unter einem eigenen Schlüssel im
-  CredentialStore, nicht in einem globalen „das Passwort“-Eintrag.
-* Der Retrofit-Client wird nicht als Singleton mit fester Basis-URL gebaut,
-  sondern von einer `WordPressClientFactory` pro Instanz erzeugt und
-  gecacht. Die Basis-URL kommt nie aus einer Konstante.
-* Repositories nehmen die `instanceId` als Parameter. Es gibt keine
-  „aktuelle Instanz“ tief in der Datenschicht – die Auswahl passiert einmal
-  oben (`ActiveInstanceProvider`) und wird nach unten durchgereicht.
-* Benachrichtigungen führen den Zustand „zuletzt gesehener Kommentar“
-  pro Instanz.
+* Every Room row carries an `instanceId`; the primary key of the comment table
+  is `(instanceId, id)`. A second blog only adds rows; it does not force a
+  migration.
+* Credentials are stored **per instance** under their own key in the
+  CredentialStore, not in a global "the password" entry.
+* The Retrofit client is not built as a singleton with a fixed base URL, but
+  created and cached per instance by a `WordPressClientFactory`. The base URL
+  never comes from a constant.
+* Repositories take the `instanceId` as a parameter. There is no "current
+  instance" deep in the data layer – the selection happens once at the top
+  (`ActiveInstanceProvider`) and is passed down.
+* Notifications track the "last seen comment" state per instance.
 
-Dass diese Entscheidungen von Anfang an so fielen, hat sich ausgezahlt: Der
-Mehrfachbetrieb kam ohne Datenmigration und ohne Eingriff in die Datenschicht.
+Making these decisions this way from the start paid off: multi-blog support
+came without data migration and without touching the data layer.
 
-Darauf aufbauend gilt:
+Building on that:
 
-* Einstellungen sind geteilt in **blogübergreifend** (`AppSettings`:
-  Hauptschalter für Benachrichtigungen, Prüftakt, Avatare, E-Mail-Anzeige,
-  Fadenansicht) und **je Blog** (`SiteSettings`: ob dieser Blog meldet,
-  worüber, welche Rollen als Team gelten, deren Farben). Wären die Rollen
-  global, würde eine Redaktion auf einem Blog die Farben eines anderen
-  mitverstellen. Textbausteine liegen ebenfalls je Blog.
-* Blogbezogene Werte liegen in DataStore unter einem Schlüssel mit angehängter
-  Kennung. Fehlt er, greift der frühere blogübergreifende Schlüssel: Als es
-  nur einen Blog gab, galten diese Werte für ihn, und dort sollen sie bleiben.
-  Geschrieben wird immer der blogbezogene Schlüssel; der alte wird nur noch
-  gelesen. Damit brauchte auch die Einstellungsschicht keine Migration.
-* Die Hintergrundprüfung ist **eine** WorkManager-Arbeit, die alle Blogs
-  durchläuft. Das Gerät wacht einmal auf statt n-mal, und die Abfragen laufen
-  ohnehin über dieselbe Verbindung. Der Preis ist, dass die Fehlerbehandlung
-  von Hand je Blog geschieht: Ein Blog mit abgelehnten Zugangsdaten bekommt
-  seinen Hinweis und blockiert die übrigen nicht; ein netzbedingter Fehler
-  lässt den ganzen Durchgang wiederholen, aber erst, nachdem alle Blogs
-  abgearbeitet sind. Ein früher Abbruch hieße, dass ein unerreichbarer Blog
-  die Benachrichtigungen aller anderen aufhält.
-* Benachrichtigungen tragen den Blog als **Marke** (`tag`) neben der aus der
-  Kommentar-ID abgeleiteten Zahl. Kommentar-IDs sind nur innerhalb eines Blogs
-  eindeutig; die Kennung des Blogs über einen Hashwert in die Zahl zu falten
-  hätte Zusammenstöße nur unwahrscheinlicher gemacht, nicht unmöglich – und
-  ein Zusammenstoß hieße, dass ein Blog die Meldung eines anderen überschreibt.
-* Eine erneute Anmeldung bei einer bereits eingerichteten Adresse aktualisiert
-  den vorhandenen Eintrag und behält seine `id`. Daran hängen Zwischenspeicher
-  und Meldestand: Ein zweiter Eintrag für denselben Blog würde jeden
-  vorhandenen Kommentar noch einmal als neu melden.
+* Settings are split into **cross-blog** (`AppSettings`: master switch for
+  notifications, check interval, avatars, email display, thread view) and
+  **per blog** (`SiteSettings`: whether this blog notifies, about what, which
+  roles count as team, their colours). If roles were global, an editorial team
+  on one blog would also change the colours of another. Text snippets are
+  per blog as well.
+* Blog-specific values live in DataStore under a key with the identifier
+  appended. If it is missing, the former cross-blog key applies: when there
+  was only one blog, these values applied to it, and that is where they should
+  stay. Writes always go to the blog-specific key; the old one is only read.
+  This way the settings layer did not need a migration either.
+* The background check is **one** WorkManager job that iterates over all
+  blogs. The device wakes up once instead of n times, and the requests go over
+  the same connection anyway. The price is that error handling happens by hand
+  per blog: a blog with rejected credentials gets its notice and does not block
+  the others; a network-related error causes the whole run to be retried, but
+  only after all blogs have been processed. Aborting early would mean that one
+  unreachable blog holds up the notifications of all the others.
+* Notifications carry the blog as a **tag** (`tag`) alongside the number
+  derived from the comment ID. Comment IDs are only unique within a blog;
+  folding the blog's identifier into the number via a hash would only have
+  made collisions less likely, not impossible – and a collision would mean
+  one blog overwriting another's notification.
+* Signing in again at an address that is already set up updates the existing
+  entry and keeps its `id`. Caches and notification state hang off it: a second
+  entry for the same blog would report every existing comment as new again.
 
-Was noch fehlt – der kombinierte Posteingang über alle Blogs – steht in
-`BACKLOG.md`. Die Sortierung über Instanzgrenzen hinweg ist dort die offene
-Frage, nicht die Datenhaltung.
+What is still missing – the combined inbox across all blogs – is in
+`BACKLOG.md`. Sorting across instance boundaries is the open question there,
+not data storage.
 
 ---
 
-## 5. WordPress-Anbindung
+## 5. WordPress integration
 
-Genutzt werden ausschließlich offizielle Endpunkte:
+Only official endpoints are used:
 
-| Zweck | Endpunkt |
+| Purpose | Endpoint |
 |---|---|
-| API-Erkennung, Auth-Fähigkeiten | `GET /wp-json/` |
-| Angemeldeten Benutzer prüfen | `GET /wp-json/wp/v2/users/me` |
-| Kommentare auflisten | `GET /wp-json/wp/v2/comments` |
-| Einzelner Kommentar | `GET /wp-json/wp/v2/comments/<id>` |
-| Status ändern / bearbeiten | `POST /wp-json/wp/v2/comments/<id>` |
-| Antworten | `POST /wp-json/wp/v2/comments` |
-| Papierkorb / löschen | `DELETE /wp-json/wp/v2/comments/<id>` |
-| Beitragstitel | `GET /wp-json/wp/v2/posts?include=…` |
+| API discovery, auth capabilities | `GET /wp-json/` |
+| Check signed-in user | `GET /wp-json/wp/v2/users/me` |
+| List comments | `GET /wp-json/wp/v2/comments` |
+| Single comment | `GET /wp-json/wp/v2/comments/<id>` |
+| Change status / edit | `POST /wp-json/wp/v2/comments/<id>` |
+| Reply | `POST /wp-json/wp/v2/comments` |
+| Trash / delete | `DELETE /wp-json/wp/v2/comments/<id>` |
+| Post titles | `GET /wp-json/wp/v2/posts?include=…` |
 
-Details, Parameter und Fehlerfälle stehen in [`api.md`](api.md).
+Details, parameters and error cases are in [`api.md`](api.md).
 
-Wichtige Eigenheiten, die die Implementierung berücksichtigt:
+Important quirks the implementation takes into account:
 
-* Moderation erfordert `context=edit`. Ohne `edit`-Kontext liefert WordPress
-  weder `status` noch `author_email` zuverlässig.
-* Nicht-öffentliche Status (`hold`, `spam`, `trash`) sind nur mit
-  `moderate_comments`-Berechtigung sichtbar.
-* Paginierung läuft über die Header `X-WP-Total` und `X-WP-TotalPages`, nicht
-  über den Body.
-* `DELETE` verschiebt in den Papierkorb; `DELETE?force=true` löscht endgültig.
-  Ist der Papierkorb in WordPress deaktiviert, löscht schon der erste Aufruf
-  endgültig – die App weist darauf hin.
-* Kommentarinhalte kommen als gerendertes HTML (`content.rendered`). Die App
-  rendert das nicht in einem WebView, sondern wandelt es in eine
-  `AnnotatedString` um (kein JavaScript, keine Remote-Inhalte).
+* Moderation requires `context=edit`. Without the `edit` context, WordPress
+  reliably returns neither `status` nor `author_email`.
+* Non-public statuses (`hold`, `spam`, `trash`) are only visible with the
+  `moderate_comments` capability.
+* Pagination works via the `X-WP-Total` and `X-WP-TotalPages` headers, not via
+  the body.
+* `DELETE` moves to the trash; `DELETE?force=true` deletes permanently. If the
+  trash is disabled in WordPress, the first call already deletes permanently –
+  the app points this out.
+* Comment content arrives as rendered HTML (`content.rendered`). The app does
+  not render it in a WebView, but converts it into an `AnnotatedString` (no
+  JavaScript, no remote content).
 
 ---
 
-## 6. Authentifizierung und Umgang mit Zugangsdaten
+## 6. Authentication and handling of credentials
 
-### Verfahren: Application Passwords (WordPress ab 5.6)
+### Method: Application Passwords (WordPress 5.6 and later)
 
-Geprüfte Alternativen:
+Alternatives examined:
 
-| Verfahren | Bewertung |
+| Method | Assessment |
 |---|---|
-| Benutzername + echtes Kennwort (Basic Auth) | **Ausgeschlossen.** Die Vorgabe verbietet es, und ein Kontokennwort lässt sich nicht einzeln widerrufen. |
-| Cookie + Nonce | Nur für Code gedacht, der innerhalb von WordPress läuft. Für native Apps unbrauchbar. |
-| OAuth 2.0 | Kein Kernbestandteil von WordPress; benötigt ein Plugin und eine Client-Registrierung. Zusätzliche Serverabhängigkeit ohne Mehrwert. |
-| JWT-Plugins | Drittanbieter-Plugins unterschiedlicher Qualität, kein Kernstandard. |
-| **Application Passwords** | **Gewählt.** Kernbestandteil seit 5.6, einzeln widerrufbar, pro Anwendung getrennt, ohne Zusatz-Plugin, mit Autorisierungs-Flow für native Apps. |
+| Username + real password (Basic Auth) | **Ruled out.** The requirements forbid it, and an account password cannot be revoked individually. |
+| Cookie + nonce | Only intended for code running inside WordPress. Unusable for native apps. |
+| OAuth 2.0 | Not part of WordPress core; requires a plugin and a client registration. Additional server dependency with no added value. |
+| JWT plugins | Third-party plugins of varying quality, not a core standard. |
+| **Application Passwords** | **Chosen.** Part of core since 5.6, individually revocable, separate per application, no extra plugin, with an authorization flow for native apps. |
 
-### Ablauf
+### Flow
 
-1. Die App fragt `GET /wp-json/` ab und liest
+1. The app requests `GET /wp-json/` and reads
    `authentication['application-passwords'].endpoints.authorization`.
-   Fehlt der Schlüssel, sind Application Passwords nicht verfügbar
-   (typischerweise fehlendes HTTPS) – die App erklärt das konkret.
-2. Die App öffnet diesen Endpunkt in einem **Custom Tab**, mit
-   `app_name`, `app_id` (feste UUID der Anwendung) und
+   If the key is missing, Application Passwords are not available
+   (typically because HTTPS is missing) – the app explains this specifically.
+2. The app opens this endpoint in a **Custom Tab**, with
+   `app_name`, `app_id` (fixed UUID of the application) and
    `success_url=commentator://auth-callback`.
-   WordPress erlaubt an dieser Stelle ausdrücklich App-Schemata; nur
-   `http://` wird abgelehnt.
-3. Der Benutzer meldet sich in seinem Browser bei WordPress an und bestätigt.
-   WordPress leitet auf `success_url` zurück und hängt `site_url`,
-   `user_login` und `password` an.
-4. Die App nimmt das Application Password entgegen, verifiziert es sofort mit
-   `GET /wp/v2/users/me?context=edit` und speichert es verschlüsselt.
+   WordPress explicitly allows app schemes at this point; only `http://` is
+   rejected.
+3. The user signs in to WordPress in their browser and confirms. WordPress
+   redirects back to `success_url` and appends `site_url`, `user_login` and
+   `password`.
+4. The app receives the Application Password, verifies it immediately with
+   `GET /wp/v2/users/me?context=edit` and stores it encrypted.
 
-Das eigentliche Kontokennwort des Benutzers wird dabei **nie** an die App
-weitergereicht – es wird ausschließlich im Browser eingegeben.
+The user's actual account password is **never** passed to the app – it is
+entered exclusively in the browser.
 
-Als Rückfallebene gibt es die manuelle Eingabe eines im WP-Profil erzeugten
-Application Passwords. Das ist nötig für Installationen, bei denen der
-Autorisierungs-Endpunkt deaktiviert ist.
+As a fallback, an Application Password generated in the WP profile can be
+entered manually. This is needed for installations where the authorization
+endpoint is disabled.
 
-### Speicherung
+### Storage
 
-Da `EncryptedSharedPreferences` deprecated ist, verschlüsselt die App selbst:
+Since `EncryptedSharedPreferences` is deprecated, the app does the encryption
+itself:
 
-* Ein Schlüssel `commentator_credentials_v1` im **Android Keystore**
-  (`AES/GCM/NoPadding`, 256 Bit, `setUserAuthenticationRequired(false)`,
-  `setRandomizedEncryptionRequired(true)`), erzeugt beim ersten Bedarf.
-  Der Schlüssel verlässt den Keystore nie; auf Geräten mit StrongBox/TEE
-  liegt er in Hardware.
-* Das Application Password wird mit einem zufälligen IV verschlüsselt,
-  `IV || Ciphertext` Base64-kodiert und in DataStore abgelegt.
-* Schlüssel für die Ablage: `credential_<instanceId>` – damit ist die
-  Mehr-Instanzen-Fähigkeit auch hier gegeben.
-* Beim Abmelden wird sowohl der DataStore-Eintrag als auch der
-  Keystore-Schlüssel gelöscht.
+* A key `commentator_credentials_v1` in the **Android Keystore**
+  (`AES/GCM/NoPadding`, 256 bits, `setUserAuthenticationRequired(false)`,
+  `setRandomizedEncryptionRequired(true)`), created when first needed.
+  The key never leaves the Keystore; on devices with StrongBox/TEE it lives in
+  hardware.
+* The Application Password is encrypted with a random IV, `IV || Ciphertext`
+  is Base64-encoded and stored in DataStore.
+* Storage key: `credential_<instanceId>` – so multi-instance support is given
+  here too.
+* On sign-out, both the DataStore entry and the Keystore key are deleted.
 
-### Weitere Schutzmaßnahmen
+### Further safeguards
 
-* **Nur HTTPS.** Die Netzwerkkonfiguration verbietet Klartextverkehr
-  (`cleartextTrafficPermitted="false"`), und die App weist `http://`-URLs
-  schon bei der Eingabe zurück.
-* **Kein Credential-Logging.** Der OkHttp-Logging-Interceptor läuft nur in
-  Debug-Builds und redigiert `Authorization`. In Release-Builds ist er
-  komplett abwesend.
-* Das `Authorization`-Objekt existiert als eigener Typ, dessen `toString()`
-  überschrieben ist, damit es nicht versehentlich in Logs oder
-  Exception-Meldungen landet.
-* `android:allowBackup="false"` – der verschlüsselte Zugangsdatensatz wird
-  nicht über Cloud-Backups exportiert.
-* `FLAG_SECURE` ist im Schritt zur manuellen Eingabe des Application
-  Passwords gesetzt, damit dieses nicht in Screenshots oder der
-  App-Übersicht landet. Gekapselt in `ScreenshotProtection`, damit die
-  Zusage prüfbar ist - einschließlich der Gegenrichtung, dass das Flag beim
-  Verlassen wieder verschwindet.
+* **HTTPS only.** The network configuration forbids cleartext traffic
+  (`cleartextTrafficPermitted="false"`), and the app rejects `http://` URLs
+  already at input.
+* **No credential logging.** The OkHttp logging interceptor only runs in debug
+  builds and redacts `Authorization`. In release builds it is completely
+  absent.
+* The `Authorization` object exists as its own type whose `toString()` is
+  overridden, so that it does not accidentally end up in logs or exception
+  messages.
+* `android:allowBackup="false"` – the encrypted credential record is not
+  exported via cloud backups.
+* `FLAG_SECURE` is set in the step for manually entering the Application
+  Password, so that it does not end up in screenshots or the app overview.
+  Encapsulated in `ScreenshotProtection` so that the promise is testable -
+  including the reverse direction, that the flag disappears again on leaving.
 
-### Abgelaufene oder widerrufene Zugangsdaten
+### Expired or revoked credentials
 
-Antwortet WordPress mit **401** oder mit dem Fehlercode
-`rest_cannot_*`/`invalid_username`, markiert die App die Sitzung als ungültig,
-verwirft die gespeicherten Zugangsdaten nicht sofort (der Benutzer soll den
-Grund sehen), sperrt aber alle schreibenden Aktionen und bietet eine erneute
-Autorisierung an. Ein **403** wird davon unterschieden: Die Zugangsdaten sind
-gültig, aber die Rolle reicht nicht.
+If WordPress responds with **401** or with the error code
+`rest_cannot_*`/`invalid_username`, the app marks the session as invalid, does
+not discard the stored credentials immediately (the user should see the
+reason), but blocks all write actions and offers to authorize again. A **403**
+is distinguished from this: the credentials are valid, but the role is not
+sufficient.
 
 ---
 
-## 7. Fehlerbehandlung
+## 7. Error handling
 
-Zentrale, geschlossene Hierarchie `AppError` in `core/error`:
+Central, sealed hierarchy `AppError` in `core/error`:
 
-| Fall | Erkennung | Darstellung für den Benutzer |
+| Case | Detection | Presentation to the user |
 |---|---|---|
-| Keine Verbindung | `UnknownHostException`, `ConnectException`, Connectivity-Status | „Keine Internetverbindung.“ + Hinweis auf Cache |
-| Zeitüberschreitung | `SocketTimeoutException` | „Der Server hat nicht rechtzeitig geantwortet.“ |
-| TLS-Problem | `SSLException` | „Die sichere Verbindung ist fehlgeschlagen.“ |
-| 401 | HTTP-Code | „Zugangsdaten ungültig oder widerrufen.“ + Aktion „Neu anmelden“ |
-| 403 | HTTP-Code | „Dieses Konto darf keine Kommentare moderieren.“ |
-| 404 | HTTP-Code | Kontextabhängig: Kommentar gelöscht bzw. REST-API nicht erreichbar |
-| 429 | HTTP-Code, `Retry-After` | „Zu viele Anfragen. Erneut in n Sekunden.“ |
-| 5xx | HTTP-Code | „Der Server meldet ein Problem.“ |
-| Ungültige Konfiguration | `/wp-json/` liefert kein JSON bzw. keinen `namespaces`-Eintrag | „Unter dieser Adresse wurde keine WordPress-REST-API gefunden.“ |
-| Unbekannt | Rest | Allgemeiner Text + Code für Rückfragen |
+| No connection | `UnknownHostException`, `ConnectException`, connectivity status | "No internet connection." + note about the cache |
+| Timeout | `SocketTimeoutException` | "The server did not respond in time." |
+| TLS problem | `SSLException` | "The secure connection failed." |
+| 401 | HTTP code | "The credentials are invalid or have been revoked." + action "Sign in again" |
+| 403 | HTTP code | "This account is not allowed to moderate comments." |
+| 404 | HTTP code | Context-dependent: comment deleted or REST API not reachable |
+| 429 | HTTP code, `Retry-After` | "Too many requests. Try again in n seconds." |
+| 5xx | HTTP code | "The server reports a problem." |
+| Invalid configuration | `/wp-json/` returns no JSON or no `namespaces` entry | "No WordPress REST API was found at this address." |
+| Unknown | Everything else | Generic text + code for follow-up questions |
 
-Regeln:
+Rules:
 
-* Stacktraces erreichen nie die UI. Der Text kommt aus `strings.xml`.
-* WordPress-Fehlercodes (`code`/`message` im JSON-Body) werden ausgewertet und
-  fließen in die Zuordnung ein, die Rohmeldung wird aber nicht ungefiltert
-  angezeigt.
-* Technische Details gehen über `Timber`-artiges Logging nur in Debug-Builds.
-  Es wird kein eigener Logger gebaut: `android.util.Log`, gekapselt in
-  `core/AppLog`, das in Release-Builds nichts tut.
-
----
-
-## 8. Offline-Verhalten
-
-### Lesen
-
-Room ist die **Single Source of Truth** für die Kommentarliste. Der Ablauf:
-
-1. Die UI beobachtet einen `Flow` aus Room und zeigt sofort den Cache.
-2. Parallel läuft die Aktualisierung gegen die API.
-3. Ergebnisse werden in Room geschrieben, die UI aktualisiert sich dadurch.
-
-Gecacht werden: Kommentare (inkl. Status), Beitragstitel, Blog-Konfiguration,
-die Anzahl je Filter, die Teamzugehörigkeit und der Zeitpunkt der letzten
-erfolgreichen Synchronisierung.
-
-Die Anzahl je Filter (`filter_counts`) steht dort nicht nur für die
-Filterleiste. Eine leere Kommentartabelle ist mehrdeutig — sie heißt entweder
-„dieser Filter ist leer“ oder „dieser Filter wurde noch nie geholt“, und für
-die Oberfläche ist das der Unterschied zwischen Leerzustand und Ladeanzeige.
-Ohne die gespeicherte Zahl musste sie die zweite Deutung annehmen und beim
-Start Platzhalterkarten zeigen, bis der Server bestätigte, was die App schon
-wusste. Eine festgehaltene 0 ist eine Antwort, ein fehlender Eintrag heißt
-„noch nie geholt“.
-
-Das Team (`team_members`, `team_roles`) liegt aus demselben Grund dort. An ihm
-hängt mehr als die Rollenmarke: Ohne bekanntes Team gilt niemand als Mitglied,
-eingeklappte Rollen klappen auf, und die Hintergrundprüfung meldet
-ausgerechnet die Rollen, die stummgeschaltet sind. Schlägt der Abruf fehl,
-gilt deshalb der gespeicherte Stand statt eines leeren Teams — anders als bei
-den Kommentaren ist „nichts bekannt“ hier keine harmlose Antwort. Die Auswahl,
-welche Rollen als Team gelten, entscheidet über die gespeicherte Zuordnung;
-eine Änderung verwirft sie deshalb mit (`invalidate`).
-
-Die Zahl verkürzt nur die Wartezeit, sie ersetzt den Abruf nicht: Nach einem
-Neustart wird weiterhin bei jedem Öffnen aktualisiert. Deshalb bleibt auch der
-Zeitpunkt der letzten Aktualisierung je Filter bewusst im Arbeitsspeicher — er
-entscheidet über das Überspringen eines Abrufs, und diese Entscheidung soll
-einen Neustart nicht überleben.
-
-Die Unterscheidung zwischen lokalem und frischem Stand ist **sichtbar**: Eine
-Leiste über der Liste nennt den Zeitpunkt der letzten Synchronisierung und
-kennzeichnet den Offline-Zustand. Es gibt keinen stillen Cache.
-
-Ein Sonderfall ist der Antwortfaden in der Detailansicht: Die Liste lädt immer
-nur einen Status, eine freigeschaltete Antwort auf einen offenen Kommentar
-käme darüber also nie in den Cache. Deshalb holt `fetchComment` den Faden mit
-`GET /wp/v2/comments?parent=<id>&status=all` eigens nach. Scheitert dieser
-Nachschlag, bleibt der Kommentar selbst erhalten — es fehlt dann nur der
-Faden.
-
-### Schreiben
-
-Bewusste Entscheidung: **Offline-Moderation wird in Version 1 nicht
-angeboten**, statt sie halbfertig zu bauen.
-
-Begründung: Eine Offline-Warteschlange für Moderation braucht eine
-Konfliktstrategie (der Kommentar wurde zwischenzeitlich im Web moderiert oder
-gelöscht), sonst überschreibt die App fremde Entscheidungen. Das ist deutlich
-mehr Aufwand, als es nach außen aussieht, und die Vorgabe erlaubt
-ausdrücklich, schreibende Aktionen offline zu sperren.
-
-Umsetzung: Ohne Verbindung sind Moderations- und Antwort-Aktionen deaktiviert
-und erklärt („Offline – Moderation nicht möglich“). Nichts geht still
-verloren, weil nichts still angenommen wird. Die Warteschlange inkl.
-Konfliktauflösung steht als P2 im Backlog.
+* Stack traces never reach the UI. The text comes from `strings.xml`.
+* WordPress error codes (`code`/`message` in the JSON body) are evaluated and
+  feed into the mapping, but the raw message is not shown unfiltered.
+* Technical details go through `Timber`-style logging in debug builds only. No
+  custom logger is built: `android.util.Log`, encapsulated in `core/AppLog`,
+  which does nothing in release builds.
 
 ---
 
-## 9. Benachrichtigungen über neue Kommentare
+## 8. Offline behaviour
 
-### Vergleich der Optionen
+### Reading
 
-| Option | Last auf WordPress | Latenz | Externe Abhängigkeit | Bewertung |
+Room is the **single source of truth** for the comment list. The flow:
+
+1. The UI observes a `Flow` from Room and shows the cache immediately.
+2. In parallel, the refresh runs against the API.
+3. Results are written to Room, and the UI updates as a result.
+
+Cached are: comments (including status), post titles, blog configuration, the
+count per filter, team membership and the time of the last successful
+synchronisation.
+
+The count per filter (`filter_counts`) is not stored there just for the filter
+bar. An empty comment table is ambiguous — it means either "this filter is
+empty" or "this filter has never been fetched", and for the UI that is the
+difference between the empty state and the loading indicator. Without the
+stored number, it had to assume the second interpretation and show placeholder
+cards at startup until the server confirmed what the app already knew. A
+stored 0 is an answer; a missing entry means "never fetched".
+
+The team (`team_members`, `team_roles`) is stored there for the same reason.
+More depends on it than the role badge: without a known team nobody counts as
+a member, collapsed roles expand, and the background check reports precisely
+the roles that are muted. If fetching fails, the stored state therefore applies
+instead of an empty team — unlike with comments, "nothing known" is not a
+harmless answer here. The selection of which roles count as team determines the
+stored mapping; a change therefore discards it as well (`invalidate`).
+
+The number only shortens the wait; it does not replace fetching: after a
+restart, a refresh still happens every time the screen is opened. That is also
+why the time of the last refresh per filter deliberately stays in memory — it
+decides whether a fetch is skipped, and that decision should not survive a
+restart.
+
+The distinction between local and fresh state is **visible**: a bar above the
+list shows the time of the last synchronisation and marks the offline state.
+There is no silent cache.
+
+A special case is the reply thread in the detail view: the list only ever loads
+one status, so an approved reply to a pending comment would never get into the
+cache that way. That is why `fetchComment` additionally fetches the thread with
+`GET /wp/v2/comments?parent=<id>&status=all`. If this follow-up fetch fails,
+the comment itself is kept — only the thread is missing then.
+
+### Writing
+
+Deliberate decision: **offline moderation is not offered in version 1**,
+rather than building it half-finished.
+
+Rationale: an offline queue for moderation needs a conflict strategy (the
+comment was moderated or deleted on the web in the meantime), otherwise the app
+overwrites other people's decisions. That is considerably more work than it
+looks from the outside, and the requirements explicitly allow blocking write
+actions while offline.
+
+Implementation: without a connection, moderation and reply actions are
+disabled and explained ("Offline – moderation is unavailable"). Nothing is
+silently lost, because nothing is silently accepted. The queue including
+conflict resolution is in the backlog as P2.
+
+---
+
+## 9. Notifications about new comments
+
+### Comparison of options
+
+| Option | Load on WordPress | Latency | External dependency | Assessment |
 |---|---|---|---|---|
-| 1. Polling gegen `wp/v2/comments` | Mittel – jede Prüfung ist eine volle Kommentarabfrage | 15 min | keine | Funktioniert überall, aber unnötig teuer. |
-| 2. WordPress-Webhooks | Gering | Sekunden | **Erfordert einen erreichbaren Endpunkt**, den ein Telefon nicht hat | Ohne eigenen Server nicht nutzbar. |
-| 3. Plugin als Push-Bridge | Gering | Sekunden | Plugin + Push-Dienst | Sinnvoll, aber nur zusammen mit Option 4 oder eigenem Relay. |
-| 4. Firebase Cloud Messaging | Gering | Sekunden | **Google-Konto, Play Services, Firebase-Projekt, Service-Account-Schlüssel auf dem WP-Server** | Echter Push, aber proprietär und mit Datenabfluss an Google. |
-| 5. Kombination | Gering | Sekunden bis Minuten | je nach Ausbaustufe | – |
-| 6. UnifiedPush | Gering | Sekunden | UnifiedPush-App auf dem Telefon (z. B. ntfy) und deren Push-Server; Plugin ab 1.5 | Echter Push ohne Google. Der Push-Server erfährt nur, dass und wann kommentiert wurde. |
+| 1. Polling against `wp/v2/comments` | Medium – every check is a full comment query | 15 min | none | Works everywhere, but unnecessarily expensive. |
+| 2. WordPress webhooks | Low | Seconds | **Requires a reachable endpoint**, which a phone does not have | Not usable without a server of our own. |
+| 3. Plugin as push bridge | Low | Seconds | Plugin + push service | Sensible, but only together with option 4 or a relay of our own. |
+| 4. Firebase Cloud Messaging | Low | Seconds | **Google account, Play Services, Firebase project, service account key on the WP server** | Real push, but proprietary and with data flowing to Google. |
+| 5. Combination | Low | Seconds to minutes | depending on the stage | – |
+| 6. UnifiedPush | Low | Seconds | UnifiedPush app on the phone (e.g. ntfy) and its push server; plugin 1.5 or later | Real push without Google. The push server only learns that and when a comment was posted. |
 
-### Entscheidung
+### Decision
 
-Gewählt wird eine **Kombination aus 1 und 3 ohne Fremdinfrastruktur**:
+The choice is a **combination of 1 and 3 without third-party infrastructure**:
 
-* Ein sehr kleines WordPress-Plugin (`commentator-bridge`) stellt einen
-  Endpunkt `GET /commentator/v1/status` bereit, der im Kern drei Werte liefert:
-  Anzahl ausstehender Kommentare, ID und Zeitstempel des neuesten Kommentars
-  (spätere Fassungen ergänzen den neuesten Kommentar jeden Status, siehe
+* A very small WordPress plugin (`commentator-bridge`) provides an endpoint
+  `GET /commentator/v1/status`, which at its core returns three values: the
+  number of pending comments, and the ID and timestamp of the newest comment
+  (later versions add the newest comment of every status, see
   `docs/api.md`).
-  Das ist **eine** indizierte Abfrage statt einer vollständigen
-  Kommentarauflistung – die WordPress-Installation wird also gerade *nicht*
-  unnötig belastet.
-* Die App prüft diesen Endpunkt periodisch über **WorkManager**
-  (Standardintervall 15 Minuten, einstellbar, nur bei vorhandener Verbindung).
-  Nur wenn sich die Werte geändert haben, werden die neuen Kommentare geladen.
-* Ist das Plugin nicht installiert, fällt die App automatisch auf eine
-  sparsame Kernabfrage zurück:
+  That is **one** indexed query instead of a full comment listing – so the
+  WordPress installation is precisely *not* burdened unnecessarily.
+* The app checks this endpoint periodically via **WorkManager** (default
+  interval 15 minutes, configurable, only when a connection is available).
+  Only if the values have changed are the new comments loaded.
+* If the plugin is not installed, the app automatically falls back to an
+  economical core query:
   `wp/v2/comments?status=hold&per_page=1&_fields=id,date_gmt&context=edit`.
-  Die App funktioniert also vollständig ohne Plugin, nur etwas teurer.
+  So the app works fully without the plugin, just somewhat more expensively.
 
-**Warum kein FCM:** FCM verlangt Google Play Services auf dem Gerät, ein
-Firebase-Projekt und einen Service-Account-Schlüssel auf dem WordPress-Server.
-Damit flössen Metadaten über jeden neuen Kommentar über Google-Server. Die
-Vorgaben verlangen ausdrücklich, proprietäre Cloud-Dienste zu meiden, wenn es
-eine gleichwertige lokale Lösung gibt, und keine Daten an Dritte zu senden.
-Für die Moderation eines Blogs ist eine Latenz von Minuten fachlich
-gleichwertig zu einer Latenz von Sekunden.
+**Why not FCM:** FCM requires Google Play Services on the device, a Firebase
+project and a service account key on the WordPress server. Metadata about every
+new comment would then flow through Google's servers. The requirements
+explicitly demand avoiding proprietary cloud services when there is an
+equivalent local solution, and not sending data to third parties. For
+moderating a blog, a latency of minutes is functionally equivalent to a latency
+of seconds.
 
-**Die Architektur bleibt aber push-fähig:** Die Erkennung neuer Kommentare
-liegt hinter der Schnittstelle `NewCommentSource`. Heute gibt es genau eine
-Implementierung (`PollingNewCommentSource`). Ursprünglich war vorgesehen, für
-echten Push eine zweite Quelle danebenzustellen.
+**But the architecture remains push-capable:** detection of new comments sits
+behind the `NewCommentSource` interface. Today there is exactly one
+implementation (`PollingNewCommentSource`). Originally, the plan was to add a
+second source alongside it for real push.
 
-### Ergänzung: Sofortmeldung über UnifiedPush
+### Addendum: instant notification via UnifiedPush
 
-Der Wunsch nach Meldungen in Sekunden ist geblieben, nur der Weg über Google
-nicht. Umgesetzt ist deshalb Option 6 als **optionale Ergänzung** zu 1 und 3,
-je Blog in dessen Einstellungen unter „Sofort melden“ einschaltbar:
+The wish for notifications within seconds remained, only the route via Google
+did not. Option 6 is therefore implemented as an **optional addition** to 1 and
+3, switchable per blog in its settings under "Notify instantly":
 
-* Die App meldet sich je Blog bei einer UnifiedPush-App auf dem Telefon an
-  (die UnifiedPush-Instanz ist die `instanceId`), etwa bei ntfy, und bekommt
-  eine Endpoint-Adresse. Die hinterlegt sie beim Plugin über
-  `POST /commentator/v1/push`. Beim Ausschalten, beim Entfernen des Blogs und
-  bei einer Abmeldung durch die UnifiedPush-App nimmt
-  `DELETE /commentator/v1/push` sie zurück; eine ersetzte Adresse ebenso.
-* Das Plugin hängt sich an `wp_insert_comment` (nicht `comment_post`, das nur für das Kommentarformular feuert) und schickt an jede hinterlegte
-  Adresse aller Konten mit `moderate_comments` einen nicht blockierenden
-  `POST` mit dem Rumpf „new“ – kein Name, kein Text, keine Kennung. Als Spam
-  oder Papierkorb eingegangene Kommentare wecken niemanden.
-* Die Nachricht ist **bewusst inhaltslos und unverschlüsselt**; der Connector
-  liefert sie mit `decrypted=false`. Eine Verschlüsselung schützte nichts,
-  weil nichts darin steht. Jede Nachricht stößt eine einmalige, beschleunigte
-  Prüfung aller Blogs an (`CommentSyncWorker`, eindeutig als
-  „commentator-push-sync“ mit `KEEP`, damit ein Schwall von Weckrufen nicht
-  ebenso viele Prüfungen auslöst). Die Kommentare holt die App danach wie
-  gewohnt selbst über die REST-API.
-* Die regelmäßige Prüfung läuft unverändert weiter und holt ein, was auf dem
-  Push-Weg verloren ging. Der Weckruf verkürzt nur die Wartezeit.
+* The app registers per blog with a UnifiedPush app on the phone (the
+  UnifiedPush instance is the `instanceId`), such as ntfy, and receives an
+  endpoint address. It stores it with the plugin via
+  `POST /commentator/v1/push`. When switching off, when removing the blog and
+  when unregistered by the UnifiedPush app, `DELETE /commentator/v1/push`
+  withdraws it; likewise for a replaced address.
+* The plugin hooks into `wp_insert_comment` (not `comment_post`, which only fires for the comment form) and sends to every stored
+  address of all accounts with `moderate_comments` a non-blocking `POST` with
+  the body "new" – no name, no text, no identifier. Comments that arrive as
+  spam or trash wake nobody.
+* The message is **deliberately contentless and unencrypted**; the connector
+  delivers it with `decrypted=false`. Encryption would protect nothing, because
+  there is nothing in it. Each message triggers a one-off, expedited check of
+  all blogs (`CommentSyncWorker`, unique as "commentator-push-sync" with
+  `KEEP`, so that a burst of wake-ups does not trigger just as many checks).
+  The app then fetches the comments itself via the REST API as usual.
+* The regular check continues unchanged and catches up on whatever was lost on
+  the push route. The wake-up only shortens the wait.
 
-Damit hat sich die vorgesehene `FcmNewCommentSource` erübrigt: Ein Weckruf, der
-dieselbe Prüfung früher auslöst, braucht keine eigene Quelle. Benachrichtigungen,
-Entdopplung, Deep Links und UI blieben unberührt.
+This made the planned `FcmNewCommentSource` unnecessary: a wake-up that
+triggers the same check earlier does not need a source of its own.
+Notifications, deduplication, deep links and UI remained untouched.
 
-Was der Push-Server erfährt: dass und wann auf einem Blog kommentiert wurde,
-mehr nicht. Wer einen eigenen ntfy betreibt, behält auch das bei sich. Das
-Plugin nimmt nur öffentliche HTTPS-Adressen an und sendet über
-`wp_safe_remote_post`, damit sich der Blog nicht als Sprungbrett ins eigene
-Netz missbrauchen lässt.
+What the push server learns: that and when a comment was posted on a blog,
+nothing more. Anyone running their own ntfy keeps even that to themselves. The
+plugin only accepts public HTTPS addresses and sends via
+`wp_safe_remote_post`, so that the blog cannot be abused as a stepping stone
+into its own network.
 
-Der Code liegt in `push/`. `PushSetup` ist die Schnittstelle, über die die
-Blog-Einstellungen die Sofortmeldung steuern – als Schnittstelle, damit sich
-der Bildschirm ohne UnifiedPush und ohne Gerät prüfen lässt. `InstantPush`
-setzt sie mit dem Connector um und stimmt sich mit dem Plugin ab;
-`CommentatorPushService` nimmt die Ereignisse des Connectors entgegen. Die
-Einstellung nennt ihren Zustand: braucht das Plugin ab 1.5, braucht eine
-UnifiedPush-App, wird eingerichtet, aktiv über die gewählte App oder Fehler –
-etwa ein zu altes Plugin, erkennbar an einem 404 auf `/push`.
+The code lives in `push/`. `PushSetup` is the interface through which the blog
+settings control instant notification – as an interface, so that the screen
+can be tested without UnifiedPush and without a device. `InstantPush`
+implements it with the connector and coordinates with the plugin;
+`CommentatorPushService` receives the connector's events. The setting shows its
+state: needs plugin 1.5 or later, needs a UnifiedPush app, being set up, active
+via the selected app, or error – such as a plugin that is too old,
+recognisable by a 404 on `/push`.
 
-### Aktionen in der Benachrichtigung
+### Actions in the notification
 
-Jede Kommentar-Benachrichtigung trägt bis zu drei Knöpfe: „Antworten“ (bei
-einem offenen Kommentar „Freigeben und antworten“, mit Texteingabe in der
-Benachrichtigung über `RemoteInput`), „Freigeben“ (nur bei offenen
-Kommentaren) und „Spam“ (nicht bei Spam). Sie erscheinen nur bei Konten mit
-`moderate_comments`.
+Every comment notification carries up to three buttons: "Reply" (for a pending
+comment "Approve and reply", with text input in the notification via
+`RemoteInput`), "Approve" (only for pending comments) and "Spam" (not for
+spam). They only appear for accounts with `moderate_comments`.
 
-Der nicht exportierte `NotificationActionReceiver` arbeitet nichts selbst ab,
-sondern reicht an den `NotificationActionWorker` weiter: beschleunigte
-WorkManager-Arbeit, je Kommentar höchstens eine laufende Aktion
-(`ExistingWorkPolicy.KEEP`), mit denselben Use Cases wie die Oberfläche.
+The non-exported `NotificationActionReceiver` does not process anything
+itself, but hands off to the `NotificationActionWorker`: expedited WorkManager
+work, at most one running action per comment (`ExistingWorkPolicy.KEEP`), using
+the same use cases as the UI.
 
-**Keine Wiederholung bei Fehlern.** WorkManager könnte eine gescheiterte
-Aktion später erneut versuchen – aber eine still nachgeholte Moderation
-überschriebe womöglich eine Entscheidung, die inzwischen im Web gefallen ist.
-Stattdessen bleibt die Benachrichtigung stehen und nennt den Grund; eine
-gescheiterte Antwort steht mit ihrem Text darin, damit nichts Geschriebenes
-verloren geht.
+**No retry on errors.** WorkManager could retry a failed action later – but a
+silently retried moderation might overwrite a decision that has since been
+made on the web. Instead, the notification stays and states the reason; a
+failed reply is shown in it with its text, so that nothing written is lost.
 
-**Abschluss nach einer Direktantwort.** Ab Android 15 hält das System eine
-Benachrichtigung nach einer Direktantwort fest
-(`FLAG_LIFETIME_EXTENDED_BY_DIRECT_REPLY`) und übergeht ein bloßes
-`cancel()`. Die Meldung wird deshalb durch eine kurze Bestätigung „Erledigt“
-ersetzt, die nach zwei Sekunden über `setTimeoutAfter` verschwindet.
+**Completion after a direct reply.** From Android 15, the system holds on to a
+notification after a direct reply
+(`FLAG_LIFETIME_EXTENDED_BY_DIRECT_REPLY`) and ignores a plain `cancel()`. The
+notification is therefore replaced by a short "Done" confirmation, which
+disappears after two seconds via `setTimeoutAfter`.
 
-### Aufräumen erledigter Meldungen
+### Cleaning up handled notifications
 
-Eine Benachrichtigung zu einem längst erledigten Kommentar ist Lärm.
+A notification about a comment that was handled long ago is noise.
 
-* **In der App erledigt:** Wird ein Kommentar moderiert, beantwortet oder in
-  der Detailansicht geöffnet, verschwindet seine Meldung. Die Schnittstelle
-  `CommentAlerts` (umgesetzt von `CommentNotifier`) hält dafür
-  `ModerateCommentUseCase`, `ReplyToCommentUseCase` und
-  `CommentDetailViewModel` frei von Android-Klassen.
-* **Im Web erledigt:** Die Hintergrundprüfung gleicht offene Meldungen ab,
-  bevor sie Neues meldet – und nur, wenn überhaupt welche offen sind. Dafür
-  genügt eine Anfrage: `GET wp/v2/comments?include=<ids>&status=any`. `any`
-  schließt Spam und Papierkorb ein, `all` nicht; fehlt ein Kommentar in der
-  Antwort, ist er endgültig gelöscht.
-* Weg kommt, was gelöscht, Spam oder im Papierkorb ist, und was als offen
-  gemeldet wurde und inzwischen freigegeben ist. Was bereits freigegeben
-  gemeldet wurde, bleibt stehen: Es wartet womöglich noch auf eine Antwort.
-  Den Status zum Meldezeitpunkt trägt die Benachrichtigung in ihren Extras.
-  Eine leer gewordene Sammelmeldung verschwindet mit.
+* **Handled in the app:** if a comment is moderated, replied to or opened in
+  the detail view, its notification disappears. The `CommentAlerts` interface
+  (implemented by `CommentNotifier`) keeps `ModerateCommentUseCase`,
+  `ReplyToCommentUseCase` and `CommentDetailViewModel` free of Android classes
+  for this.
+* **Handled on the web:** the background check reconciles open notifications
+  before reporting anything new – and only if any are open at all. A single
+  request suffices: `GET wp/v2/comments?include=<ids>&status=any`. `any`
+  includes spam and trash, `all` does not; if a comment is missing from the
+  response, it has been permanently deleted.
+* Removed are those that are deleted, spam or in the trash, and those that were
+  reported as pending and have since been approved. Those reported as already
+  approved stay: they may still be waiting for a reply. The notification
+  carries the status at the time of reporting in its extras. A summary
+  notification that has become empty disappears along with them.
 
-Jede Kommentar-Benachrichtigung und die Sammelmeldung tragen das Symbol des
-Blogs als großes Bild (`setLargeIcon`). `SiteIconLoader` lädt es über Coil aus
-demselben Bildspeicher wie Kopfleiste und Einstellungen, mit
-`allowHardware(false)`: Benachrichtigungen zeichnet ein anderer Prozess, der
-mit Hardware-Bitmaps nichts anfangen kann. Es stammt vom eigenen Blog; eine Verbindung zu Dritten entsteht
-nicht.
+Every comment notification and the summary notification carry the blog's icon
+as a large image (`setLargeIcon`). `SiteIconLoader` loads it via Coil from the
+same image cache as the header and settings, with `allowHardware(false)`:
+notifications are drawn by another process, which cannot do anything with
+hardware bitmaps. It comes from the blog itself; no connection to third parties
+is made.
 
-### Benachrichtigungskanäle
+### Notification channels
 
-Die Kanäle sind durch Aktionen, Aufräumen und Sofortmeldung unverändert
-geblieben.
+The channels have remained unchanged by actions, cleanup and instant
+notification.
 
-| Kanal | ID | Inhalt | Standardwichtigkeit |
+| Channel | ID | Content | Default importance |
 |---|---|---|---|
-| Neue Kommentare | `new_comments` | Kommentare, die auf Moderation warten | `DEFAULT` |
-| Antworten | `moderation_events` | Kommentare, die auf einen bestehenden Kommentar antworten | `LOW` |
-| Synchronisierung | `sync_status` | Dauerhafte Hinweise bei Problemen, z. B. ungültige Zugangsdaten | `LOW` |
+| New comments | `new_comments` | Comments awaiting moderation | `DEFAULT` |
+| Replies | `moderation_events` | Comments replying to an existing comment | `LOW` |
+| Synchronisation | `sync_status` | Persistent notices about problems, e.g. invalid credentials | `LOW` |
 
-Jeder dieser Kanäle wird auch tatsächlich bespielt - ein Kanal, der in den
-Systemeinstellungen erscheint, aber nie etwas meldet, ist für den Benutzer
-irreführend. Die Zuordnung entscheidet sich an `Comment.isReply`. Alle Kanäle
-sind über die Android-Systemeinstellungen einzeln steuerbar; die App verlinkt
-direkt dorthin. Die Laufzeitberechtigung
-`POST_NOTIFICATIONS` (ab Android 13) wird erst kontextbezogen erfragt.
+Each of these channels is actually used - a channel that appears in the system
+settings but never reports anything is misleading for the user. The assignment
+is decided by `Comment.isReply`. All channels can be controlled individually in
+the Android system settings; the app links directly there. The runtime
+permission `POST_NOTIFICATIONS` (Android 13 and later) is only requested in
+context.
 
-**Erster Lauf meldet nichts.** Beim allerersten Durchgang gibt es keinen
-Vergleichspunkt - alles Offene wäre „neu" und käme als Schwall. Der erste Lauf
-hält deshalb nur den Stand fest. Ob ein solcher Ausgangszustand existiert,
-beantwortet `NewCommentSource.hasBaseline`; der Hintergrunddienst liest dafür
-bewusst kein Datenbankfeld mehr aus, das die Quelle nebenbei beschreibt. Der
-Stand wird auch dann festgehalten, wenn gerade nichts offen ist - sonst gälte
-der nächste Lauf erneut als erster und die erste echte Meldung bliebe aus.
+**The first run reports nothing.** On the very first run there is no point of
+comparison - everything pending would be "new" and arrive as a flood. The first
+run therefore only records the state. Whether such a baseline exists is
+answered by `NewCommentSource.hasBaseline`; the background service deliberately
+no longer reads a database field for this that the source writes on the side.
+The state is recorded even when nothing is pending - otherwise the next run
+would again count as the first and the first real notification would never
+come.
 
-**Keine Doppelbenachrichtigungen:** Gemeldet wird nur, was neuer ist als die
-pro Instanz gespeicherte `lastNotifiedCommentId`/`lastNotifiedDate`. Zusätzlich
-werden bereits gemeldete IDs in Room vermerkt. Die Notification-ID leitet sich
-deterministisch aus der Kommentar-ID ab, sodass ein erneutes Melden desselben
-Kommentars dieselbe Benachrichtigung ersetzt statt eine zweite zu erzeugen.
+**No duplicate notifications:** only what is newer than the per-instance stored
+`lastNotifiedCommentId`/`lastNotifiedDate` is reported. In addition, IDs that
+have already been reported are recorded in Room. The notification ID is derived
+deterministically from the comment ID, so that reporting the same comment again
+replaces the same notification instead of creating a second one.
 
-### Deep Links
+### Deep links
 
-Benachrichtigungen öffnen
-`commentator://comment/<instanceId>/<commentId>` über einen
-`PendingIntent` mit `FLAG_IMMUTABLE` auf die einzige Activity. Die Route ist
-dieselbe, die die App intern verwendet – es gibt keinen zweiten Pfad in die
-Detailansicht.
+Notifications open
+`commentator://comment/<instanceId>/<commentId>` via a
+`PendingIntent` with `FLAG_IMMUTABLE` on the single activity. The route is the
+same one the app uses internally – there is no second path into the detail
+view.
 
 ---
 
-## 9a. Umschaltbares App-Symbol
+## 9a. Switchable app icon
 
-Android bietet keine Möglichkeit, das Startsymbol zur Laufzeit zu ändern.
-Der übliche Weg ist deshalb ein `activity-alias` je Variante, die alle auf
-dieselbe Activity zeigen; eingeschaltet ist immer genau einer
+Android offers no way to change the launcher icon at runtime. The usual
+approach is therefore one `activity-alias` per variant, all pointing to the
+same activity; exactly one is always enabled
 (`PackageManager.setComponentEnabledSetting`).
 
-Drei Dinge sind dabei entscheidend und deshalb im Code festgehalten:
+Three things are crucial here and are therefore recorded in the code:
 
-* **Reihenfolge.** Erst die neue Variante einschalten, dann die alte aus.
-  Andersherum gibt es einen Moment ohne eingeschaltetes Startsymbol - die App
-  verschwindet dann aus dem Startbildschirm, bei manchen Herstellern dauerhaft.
-* **`DONT_KILL_APP`.** Ohne dieses Flag beendet Android den Prozess sofort,
-  mitten in der Bedienung der Einstellungen.
-* **Namensraum statt Paketkennung.** Der Klassenname des Alias folgt der
-  `namespace` des Moduls, die installierte Paketkennung dagegen der
-  `applicationId` - im Debug-Build mit dem Zusatz `.debug`. Wer den
-  Klassennamen aus der Paketkennung zusammensetzt, zeigt ins Leere, und das
-  Umschalten bleibt wirkungslos. Ein Test hält das fest.
+* **Order.** Enable the new variant first, then disable the old one. The other
+  way round, there is a moment with no enabled launcher icon - the app then
+  disappears from the home screen, permanently with some manufacturers.
+* **`DONT_KILL_APP`.** Without this flag, Android kills the process
+  immediately, in the middle of using the settings.
+* **Namespace instead of package ID.** The alias class name follows the
+  module's `namespace`, whereas the installed package ID follows the
+  `applicationId` - in the debug build with the `.debug` suffix. Building the
+  class name from the package ID points nowhere, and switching has no effect.
+  A test captures this.
 
-Maßgeblich für die Anzeige ist der Zustand im PackageManager, nicht eine
-gespeicherte Einstellung. Damit kann beides nicht auseinanderlaufen, etwa wenn
-die App-Daten gelöscht werden, der Systemzustand aber bestehen bleibt.
+What counts for the display is the state in the PackageManager, not a stored
+setting. That way the two cannot diverge, for example when the app data is
+cleared but the system state remains.
 
-Bekannte Einschränkung: `android:icon` am `<application>` bleibt unverändert.
-Die Systemeinstellungen und die Freigabeauswahl zeigen deshalb weiterhin die
-Standardvariante.
-
----
-
-## 10. Umfang des WordPress-Plugins
-
-Das Plugin `commentator-bridge` ist optional und ändert **kein** Verhalten von
-WordPress. Es fügt ausschließlich Routen unter `commentator/v1` hinzu, alle mit
-derselben Authentifizierung wie die Kern-API:
-
-| Route | Recht | Zweck |
-|---|---|---|
-| `GET /status` | `moderate_comments` | Kompakter Zustand für die regelmäßige Prüfung |
-| `GET /summary` | `moderate_comments` | Kommentaranzahl je Status in einem Aufruf, damit die Filterleiste keine fünf Abfragen braucht |
-| `GET /team` | `moderate_comments` | Rollen, die schreiben oder moderieren dürfen, und ihre Mitglieder |
-| `POST /empty` | `moderate_comments` | Spam oder Papierkorb stapelweise endgültig leeren (seit 1.2.0) |
-| `GET`, `POST`, `DELETE /blocklist` | `manage_options` | Die Sperrliste `disallowed_keys` lesen und pflegen (seit 1.2.0) |
-| `POST`, `DELETE /push` | `moderate_comments` | Push-Adresse für die Sofortmeldung hinterlegen und zurücknehmen (seit 1.5.0) |
-| `POST /push/test` | `moderate_comments` | Testweckruf an die eigenen Adressen, wartet auf den Push-Server (seit 1.7.0) |
-
-Geschrieben wird nur an zwei Stellen, und beide entsprechen dem, was im Backend
-ohnehin möglich ist: `/blocklist` ändert die Option `disallowed_keys` – dieselbe
-Liste wie unter Einstellungen → Diskussion –, `/push` die Benutzermeta
-`commentator_push_endpoints` des angemeldeten Kontos. `/empty` löscht, was im
-Backend der Knopf „Spam leeren“ beziehungsweise „Papierkorb leeren“ löscht.
-
-Seit 1.5.0 hängt sich das Plugin an `wp_insert_comment` und **sendet optional nach
-außen**: Ist für ein Konto mit `moderate_comments` eine Push-Adresse
-hinterlegt, geht dorthin bei jedem neuen Kommentar, der nicht als Spam oder
-Papierkorb eingeht, ein inhaltsloser Weckruf (Abschnitt 9); seit 1.6.0 auch
-bei jeder Statusänderung, die nicht aus der App kommt. Ohne hinterlegte
-Adresse sendet es nichts. Tabellen legt es nicht an, Cookies setzt es nicht.
+Known limitation: `android:icon` on `<application>` stays unchanged. The system
+settings and the share sheet therefore continue to show the default variant.
 
 ---
 
-## 10a. Nahtstellen für Tests
+## 10. Scope of the WordPress plugin
 
-An vier Stellen steht bewusst eine Schnittstelle, wo auch eine konkrete Klasse
-gereicht hätte. Alle vier sind aus einem Testproblem entstanden und haben den
-Produktivcode nebenbei entkoppelt:
+The `commentator-bridge` plugin is optional and changes **no** WordPress
+behaviour. It only adds routes under `commentator/v1`, all with the same
+authentication as the core API:
 
-| Schnittstelle | Statt | Warum |
+| Route | Capability | Purpose |
 |---|---|---|
-| `CredentialSource` | `CredentialStore` | Der HTTP-Interceptor hängt sonst an DataStore und Android Keystore und ist ohne Gerät nicht prüfbar. |
-| `WordPressApiProvider` | `WordPressClientFactory` | Repository und Hintergrundprüfung brauchen nur „gib mir den Client zu dieser Instanz“, nicht die gesamte Client-Erzeugung. |
-| `SiteUrl` | private Methode im Repository | Hier fällt die Entscheidung, dass nur HTTPS zulässig ist. Eine Sicherheitsregel gehört an einen prüfbaren Ort. |
-| `InboxScreenContent` / `CommentDetailBody` | Bildschirme mit ViewModel | Die Oberfläche lässt sich mit einem Zustand füttern und auf Ereignisse prüfen, ohne Hilt und ohne Gerät. |
+| `GET /status` | `moderate_comments` | Compact state for the regular check |
+| `GET /summary` | `moderate_comments` | Comment count per status in one call, so the filter bar doesn't need five queries |
+| `GET /team` | `moderate_comments` | Roles allowed to write or moderate, and their members |
+| `POST /empty` | `moderate_comments` | Permanently empty spam or trash in batches (since 1.2.0) |
+| `GET`, `POST`, `DELETE /blocklist` | `manage_options` | Read and maintain the `disallowed_keys` blocklist (since 1.2.0) |
+| `POST`, `DELETE /push` | `moderate_comments` | Store and withdraw the push address for instant notification (since 1.5.0) |
+| `POST /push/test` | `moderate_comments` | Test wake-up to your own addresses, waits for the push server (since 1.7.0) |
 
-### Fallstricke bei Compose-Tests unter Robolectric
+Writes happen in only two places, and both correspond to what is possible in
+the backend anyway: `/blocklist` changes the `disallowed_keys` option – the
+same list as under Settings → Discussion –, `/push` the user meta
+`commentator_push_endpoints` of the signed-in account. `/empty` deletes what
+the "Empty Spam" or "Empty Trash" button deletes in the backend.
 
-Zwei Einstellungen sind zwingend, sonst sind die Tests wertlos statt rot:
+Since 1.5.0, the plugin hooks into `wp_insert_comment` and **optionally sends
+outward**: if a push address is stored for an account with
+`moderate_comments`, a contentless wake-up goes there for every new comment
+that does not arrive as spam or trash (section 9); since 1.6.0 also for every
+status change that does not come from the app. Without a stored address it
+sends nothing. It creates no tables and sets no cookies.
 
-* `@Config(qualifiers = "de-rDE-w411dp-h891dp")` – ohne Bildschirmgröße misst
-  Robolectric mit 0 × 0, und in Compose gilt dann nichts als sichtbar. Und
-  ohne Gebietsschema läuft der Test gegen die englischen Texte aus
-  `values-en`, während die Standardsprache der App Deutsch ist.
+---
+
+## 10a. Seams for tests
+
+In four places there is deliberately an interface where a concrete class would
+have sufficed. All four arose from a testing problem and decoupled the
+production code as a side effect:
+
+| Interface | Instead of | Why |
+|---|---|---|
+| `CredentialSource` | `CredentialStore` | Otherwise the HTTP interceptor depends on DataStore and the Android Keystore and cannot be tested without a device. |
+| `WordPressApiProvider` | `WordPressClientFactory` | The repository and background check only need "give me the client for this instance", not the whole client creation. |
+| `SiteUrl` | private method in the repository | This is where the decision is made that only HTTPS is allowed. A security rule belongs in a testable place. |
+| `InboxScreenContent` / `CommentDetailBody` | Screens with ViewModel | The UI can be fed a state and checked for events, without Hilt and without a device. |
+
+### Pitfalls with Compose tests under Robolectric
+
+Two settings are mandatory, otherwise the tests are worthless rather than red:
+
+* `@Config(qualifiers = "de-rDE-w411dp-h891dp")` – without a screen size,
+  Robolectric measures 0 × 0, and in Compose nothing then counts as visible.
+  And without a locale, the test runs against the English texts from
+  `values-en`, while the app's default language is German.
 * `graphicsMode=NATIVE` in `robolectric.properties`.
 
 ---
 
-## 11. Teststrategie
+## 11. Test strategy
 
-| Ebene | Werkzeuge | Inhalt |
+| Level | Tools | Content |
 |---|---|---|
-| Unit (JVM) | JUnit 4, kotlinx-coroutines-test, Turbine | DTO-Mapping, Statuslogik, Fehlerzuordnung, Use Cases, ViewModels |
-| Netzwerk (JVM) | MockWebServer | Paginierung, Header-Auswertung, Fehlercodes, Auth-Header |
-| UI | Compose UI-Test + Robolectric | Liste, Filter, Detail, Antwort, Moderationsaktion, Fehler- und Leerzustände |
-| Integration | Docker-Compose-WordPress | Echter End-to-End-Durchlauf gegen eine lokale Installation |
+| Unit (JVM) | JUnit 4, kotlinx-coroutines-test, Turbine | DTO mapping, status logic, error mapping, use cases, ViewModels |
+| Network (JVM) | MockWebServer | Pagination, header evaluation, error codes, auth header |
+| UI | Compose UI test + Robolectric | List, filters, detail, reply, moderation action, error and empty states |
+| Integration | Docker Compose WordPress | Real end-to-end run against a local installation |
 
-Integrationstests laufen ausschließlich gegen die lokale Docker-Instanz. Es
-gibt keinen Testpfad, der auf einen produktiven Blog zeigt; die Testkonfiguration
-enthält ausschließlich `localhost`-Adressen.
+Integration tests run exclusively against the local Docker instance. There is
+no test path pointing to a production blog; the test configuration contains
+only `localhost` addresses.
 
 ---
 
-## 12. Bekannte Risiken
+## 12. Known risks
 
-* **Kotlin 2.3 statt 2.4** wegen KSP – bei einem KSP-Release für 2.4 anheben.
-* **Robolectric + Compose** ist empfindlich gegenüber Versionssprüngen. Falls
-  UI-Tests dort brechen, laufen dieselben Tests unverändert als
-  Instrumentierungstests auf einem Gerät.
-* **Papierkorb-Verhalten** hängt von `EMPTY_TRASH_DAYS` der Installation ab.
-  Die App kann das nicht auslesen und weist deshalb vor dem endgültigen
-  Löschen ausdrücklich darauf hin.
-* **Gravatar** ist eine Verbindung zu einem Dritten (Automattic). Avatare sind
-  deshalb abschaltbar; siehe `docs/privacy.md`.
+* **Kotlin 2.3 instead of 2.4** because of KSP – raise it once KSP is released
+  for 2.4.
+* **Robolectric + Compose** is sensitive to version jumps. If UI tests break
+  there, the same tests run unchanged as instrumentation tests on a device.
+* **Trash behaviour** depends on the installation's `EMPTY_TRASH_DAYS`. The
+  app cannot read this and therefore explicitly points it out before permanent
+  deletion.
+* **Gravatar** is a connection to a third party (Automattic). Avatars can
+  therefore be switched off; see `docs/privacy.md`.
