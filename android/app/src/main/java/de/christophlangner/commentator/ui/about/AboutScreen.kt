@@ -185,4 +185,4 @@ private fun AboutRow(
     }
 }
 
-private const val REPOSITORY_URL = "https://github.com/christophlangner/commentator"
+private const val REPOSITORY_URL = "https://github.com/linuxundich/commentator"

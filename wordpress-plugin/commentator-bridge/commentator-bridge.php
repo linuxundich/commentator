@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Commentator Bridge
- * Plugin URI:        https://github.com/christophlangner/commentator
+ * Plugin URI:        https://github.com/linuxundich/commentator
  * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
  * Version:           1.7.0
  * Requires at least: 6.0
