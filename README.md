@@ -9,6 +9,33 @@ genehmigen, ablehnen, beantworten – schnell, vom Telefon aus, ohne den Umweg
 
 ---
 
+## So sieht es aus
+
+<p>
+<img src="docs/screenshots/02-posteingang.png" width="200" alt="Posteingang mit offenen Kommentaren">
+<img src="docs/screenshots/03-benachrichtigung.png" width="200" alt="Benachrichtigung mit Knöpfen zum Freigeben, Antworten und für Spam">
+<img src="docs/screenshots/04-direktantwort.png" width="200" alt="Antwort direkt aus der Benachrichtigung">
+<img src="docs/screenshots/05-detail.png" width="200" alt="Detailansicht mit Autorenkontext und Textbausteinen">
+</p>
+<p>
+<img src="docs/screenshots/06-unbeantwortet.png" width="200" alt="Filter Unbeantwortet">
+<img src="docs/screenshots/08-gespraechsfaden.png" width="200" alt="Gesprächsfaden mit Antwort aus dem Team">
+<img src="docs/screenshots/07-sofortmeldung.png" width="200" alt="Einstellungen eines Blogs mit Sofortmeldung über ntfy">
+<img src="docs/screenshots/09-dunkel.png" width="200" alt="Posteingang im dunklen Modus">
+</p>
+
+**Video (44 s):** Spam aussortieren, ein neuer Kommentar kommt per Push,
+lesen, freigeben, antworten – und auf die Rückfrage direkt aus der
+Benachrichtigung antworten.
+
+<a href="docs/screenshots/demo-moderation.mp4"><img src="docs/screenshots/demo-vorschau.png" width="200" alt="Demo-Video der Moderation abspielen"></a>
+
+Die Aufnahmen zeigen den Blog linuxundich.de mit erfundenen Kommentaren aus
+einer lokalen Testumgebung; wie sie entstehen, steht in
+[`docker/README.md`](docker/README.md#screenshots-und-demo-video).
+
+---
+
 ## Für wen ist das gedacht?
 
 Für Leute, die einen oder mehrere eigene WordPress-Blogs betreiben, dort
@@ -176,6 +203,8 @@ Passwort notieren. Es wird nur einmal angezeigt.
 Das Kontokennwort wird dafür nicht gebraucht und gehört auch nicht in die App.
 
 ### 4. App einrichten
+
+<img src="docs/screenshots/01-einrichtung.png" width="200" alt="Blog hinzufügen" align="right">
 
 1. App starten.
 2. Blog-Adresse eingeben, etwa `https://example.com`. Die App prüft, ob dort
