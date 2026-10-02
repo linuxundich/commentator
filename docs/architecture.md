@@ -126,6 +126,7 @@ Jetpack-Lösung gibt. Ergebnis:
 | kotlinx.serialization | Keine Jetpack-JSON-Lösung | kotlinx.serialization, von JetBrains, Compiler-Plugin statt Reflection. |
 | Hilt | Manuelle DI | Hilt – in den Vorgaben bevorzugt und von Google gepflegt. |
 | Coil | Kein Jetpack-Image-Loader | Coil 3. Alternative wäre eigenes Laden von Gravatar-Bildern inkl. Cache – unnötige Eigenentwicklung. Avatare sind zudem per Einstellung abschaltbar. |
+| UnifiedPush Connector (`org.unifiedpush.android:connector` 3.3.5), bringt Google Tink transitiv mit | FCM (proprietär, siehe Abschnitt 9) | UnifiedPush. Offener Standard für Push ohne Google; der Connector übernimmt Anmeldung bei der UnifiedPush-App auf dem Telefon und Empfang der Nachrichten. Tink braucht er für die Web-Push-Verschlüsselung, die hier nicht genutzt wird – die Nachricht ist inhaltslos. Die Funktion ist optional und je Blog abschaltbar. |
 
 ---
 
@@ -175,7 +176,10 @@ de.christophlangner.commentator
 │   ├── local/       Room (Entities, DAOs, DB), DataStore
 │   ├── account/     Keystore-Krypto, CredentialStore, InstanceStore
 │   └── repository/  Implementierungen
-├── notification/    Channels, WorkManager-Worker, Deep Links
+├── notification/    Channels, WorkManager-Worker, Deep Links,
+│                    Aktionen in der Benachrichtigung
+├── push/            Sofortmeldung über UnifiedPush (InstantPush, PushSetup,
+│                    CommentatorPushService)
 ├── ui/
 │   ├── theme/       Material-3-Theme, Dynamic Color, Dark Mode
 │   ├── setup/       Einrichtung/Anmeldung
@@ -482,14 +486,17 @@ Konfliktauflösung steht als P2 im Backlog.
 | 3. Plugin als Push-Bridge | Gering | Sekunden | Plugin + Push-Dienst | Sinnvoll, aber nur zusammen mit Option 4 oder eigenem Relay. |
 | 4. Firebase Cloud Messaging | Gering | Sekunden | **Google-Konto, Play Services, Firebase-Projekt, Service-Account-Schlüssel auf dem WP-Server** | Echter Push, aber proprietär und mit Datenabfluss an Google. |
 | 5. Kombination | Gering | Sekunden bis Minuten | je nach Ausbaustufe | – |
+| 6. UnifiedPush | Gering | Sekunden | UnifiedPush-App auf dem Telefon (z. B. ntfy) und deren Push-Server; Plugin ab 1.5 | Echter Push ohne Google. Der Push-Server erfährt nur, dass und wann kommentiert wurde. |
 
 ### Entscheidung
 
 Gewählt wird eine **Kombination aus 1 und 3 ohne Fremdinfrastruktur**:
 
 * Ein sehr kleines WordPress-Plugin (`commentator-bridge`) stellt einen
-  Endpunkt `GET /commentator/v1/status` bereit, der genau drei Werte liefert:
-  Anzahl ausstehender Kommentare, ID und Zeitstempel des neuesten Kommentars.
+  Endpunkt `GET /commentator/v1/status` bereit, der im Kern drei Werte liefert:
+  Anzahl ausstehender Kommentare, ID und Zeitstempel des neuesten Kommentars
+  (spätere Fassungen ergänzen den neuesten Kommentar jeden Status, siehe
+  `docs/api.md`).
   Das ist **eine** indizierte Abfrage statt einer vollständigen
   Kommentarauflistung – die WordPress-Installation wird also gerade *nicht*
   unnötig belastet.
@@ -511,13 +518,111 @@ gleichwertig zu einer Latenz von Sekunden.
 
 **Die Architektur bleibt aber push-fähig:** Die Erkennung neuer Kommentare
 liegt hinter der Schnittstelle `NewCommentSource`. Heute gibt es genau eine
-Implementierung (`PollingNewCommentSource`). Eine `FcmNewCommentSource` ließe
-sich ergänzen, ohne Benachrichtigungslogik, Deep Links oder UI anzufassen –
-nötig wären dann nur das FCM-SDK, eine Registrierungsroute im Plugin und ein
-Versandweg. Das Plugin ist dafür bereits mit einem klaren Erweiterungspunkt
-angelegt und der Schritt steht als P2 im Backlog.
+Implementierung (`PollingNewCommentSource`). Ursprünglich war vorgesehen, für
+echten Push eine zweite Quelle danebenzustellen.
+
+### Ergänzung: Sofortmeldung über UnifiedPush
+
+Der Wunsch nach Meldungen in Sekunden ist geblieben, nur der Weg über Google
+nicht. Umgesetzt ist deshalb Option 6 als **optionale Ergänzung** zu 1 und 3,
+je Blog in dessen Einstellungen unter „Sofort melden“ einschaltbar:
+
+* Die App meldet sich je Blog bei einer UnifiedPush-App auf dem Telefon an
+  (die UnifiedPush-Instanz ist die `instanceId`), etwa bei ntfy, und bekommt
+  eine Endpoint-Adresse. Die hinterlegt sie beim Plugin über
+  `POST /commentator/v1/push`. Beim Ausschalten, beim Entfernen des Blogs und
+  bei einer Abmeldung durch die UnifiedPush-App nimmt
+  `DELETE /commentator/v1/push` sie zurück; eine ersetzte Adresse ebenso.
+* Das Plugin hängt sich an `comment_post` und schickt an jede hinterlegte
+  Adresse aller Konten mit `moderate_comments` einen nicht blockierenden
+  `POST` mit dem Rumpf „new“ – kein Name, kein Text, keine Kennung. Als Spam
+  oder Papierkorb eingegangene Kommentare wecken niemanden.
+* Die Nachricht ist **bewusst inhaltslos und unverschlüsselt**; der Connector
+  liefert sie mit `decrypted=false`. Eine Verschlüsselung schützte nichts,
+  weil nichts darin steht. Jede Nachricht stößt eine einmalige, beschleunigte
+  Prüfung aller Blogs an (`CommentSyncWorker`, eindeutig als
+  „commentator-push-sync“ mit `KEEP`, damit ein Schwall von Weckrufen nicht
+  ebenso viele Prüfungen auslöst). Die Kommentare holt die App danach wie
+  gewohnt selbst über die REST-API.
+* Die regelmäßige Prüfung läuft unverändert weiter und holt ein, was auf dem
+  Push-Weg verloren ging. Der Weckruf verkürzt nur die Wartezeit.
+
+Damit hat sich die vorgesehene `FcmNewCommentSource` erübrigt: Ein Weckruf, der
+dieselbe Prüfung früher auslöst, braucht keine eigene Quelle. Benachrichtigungen,
+Entdopplung, Deep Links und UI blieben unberührt.
+
+Was der Push-Server erfährt: dass und wann auf einem Blog kommentiert wurde,
+mehr nicht. Wer einen eigenen ntfy betreibt, behält auch das bei sich. Das
+Plugin nimmt nur öffentliche HTTPS-Adressen an und sendet über
+`wp_safe_remote_post`, damit sich der Blog nicht als Sprungbrett ins eigene
+Netz missbrauchen lässt.
+
+Der Code liegt in `push/`. `PushSetup` ist die Schnittstelle, über die die
+Blog-Einstellungen die Sofortmeldung steuern – als Schnittstelle, damit sich
+der Bildschirm ohne UnifiedPush und ohne Gerät prüfen lässt. `InstantPush`
+setzt sie mit dem Connector um und stimmt sich mit dem Plugin ab;
+`CommentatorPushService` nimmt die Ereignisse des Connectors entgegen. Die
+Einstellung nennt ihren Zustand: braucht das Plugin ab 1.5, braucht eine
+UnifiedPush-App, wird eingerichtet, aktiv über die gewählte App oder Fehler –
+etwa ein zu altes Plugin, erkennbar an einem 404 auf `/push`.
+
+### Aktionen in der Benachrichtigung
+
+Jede Kommentar-Benachrichtigung trägt bis zu drei Knöpfe: „Antworten“ (bei
+einem offenen Kommentar „Freigeben und antworten“, mit Texteingabe in der
+Benachrichtigung über `RemoteInput`), „Freigeben“ (nur bei offenen
+Kommentaren) und „Spam“ (nicht bei Spam). Sie erscheinen nur bei Konten mit
+`moderate_comments`.
+
+Der nicht exportierte `NotificationActionReceiver` arbeitet nichts selbst ab,
+sondern reicht an den `NotificationActionWorker` weiter: beschleunigte
+WorkManager-Arbeit, je Kommentar höchstens eine laufende Aktion
+(`ExistingWorkPolicy.KEEP`), mit denselben Use Cases wie die Oberfläche.
+
+**Keine Wiederholung bei Fehlern.** WorkManager könnte eine gescheiterte
+Aktion später erneut versuchen – aber eine still nachgeholte Moderation
+überschriebe womöglich eine Entscheidung, die inzwischen im Web gefallen ist.
+Stattdessen bleibt die Benachrichtigung stehen und nennt den Grund; eine
+gescheiterte Antwort steht mit ihrem Text darin, damit nichts Geschriebenes
+verloren geht.
+
+**Abschluss nach einer Direktantwort.** Ab Android 15 hält das System eine
+Benachrichtigung nach einer Direktantwort fest
+(`FLAG_LIFETIME_EXTENDED_BY_DIRECT_REPLY`) und übergeht ein bloßes
+`cancel()`. Die Meldung wird deshalb durch eine kurze Bestätigung „Erledigt“
+ersetzt, die nach zwei Sekunden über `setTimeoutAfter` verschwindet.
+
+### Aufräumen erledigter Meldungen
+
+Eine Benachrichtigung zu einem längst erledigten Kommentar ist Lärm.
+
+* **In der App erledigt:** Wird ein Kommentar moderiert, beantwortet oder in
+  der Detailansicht geöffnet, verschwindet seine Meldung. Die Schnittstelle
+  `CommentAlerts` (umgesetzt von `CommentNotifier`) hält dafür
+  `ModerateCommentUseCase`, `ReplyToCommentUseCase` und
+  `CommentDetailViewModel` frei von Android-Klassen.
+* **Im Web erledigt:** Die Hintergrundprüfung gleicht offene Meldungen ab,
+  bevor sie Neues meldet – und nur, wenn überhaupt welche offen sind. Dafür
+  genügt eine Anfrage: `GET wp/v2/comments?include=<ids>&status=any`. `any`
+  schließt Spam und Papierkorb ein, `all` nicht; fehlt ein Kommentar in der
+  Antwort, ist er endgültig gelöscht.
+* Weg kommt, was gelöscht, Spam oder im Papierkorb ist, und was als offen
+  gemeldet wurde und inzwischen freigegeben ist. Was bereits freigegeben
+  gemeldet wurde, bleibt stehen: Es wartet womöglich noch auf eine Antwort.
+  Den Status zum Meldezeitpunkt trägt die Benachrichtigung in ihren Extras.
+  Eine leer gewordene Sammelmeldung verschwindet mit.
+
+Jede Kommentar-Benachrichtigung und die Sammelmeldung tragen das Symbol des
+Blogs als großes Bild (`setLargeIcon`). `SiteIconLoader` lädt es über Coil aus
+demselben Bildspeicher wie Kopfleiste und Einstellungen, mit
+`allowHardware(false)`: Benachrichtigungen zeichnet ein anderer Prozess, der
+mit Hardware-Bitmaps nichts anfangen kann. Es stammt vom eigenen Blog; eine Verbindung zu Dritten entsteht
+nicht.
 
 ### Benachrichtigungskanäle
+
+Die Kanäle sind durch Aktionen, Aufräumen und Sofortmeldung unverändert
+geblieben.
 
 | Kanal | ID | Inhalt | Standardwichtigkeit |
 |---|---|---|---|
@@ -556,21 +661,6 @@ Detailansicht.
 
 ---
 
-## 10. Umfang des WordPress-Plugins
-
-Das Plugin `commentator-bridge` ist optional und ändert **kein** Verhalten von
-WordPress. Es fügt ausschließlich hinzu:
-
-* `GET /commentator/v1/status` – kompakter Zustand für die Abfrage.
-* `GET /commentator/v1/summary` – Kommentaranzahl je Status in einem Aufruf,
-  damit die Filterleiste keine fünf Abfragen braucht.
-
-Beide Routen verlangen `moderate_comments` und dieselbe Authentifizierung wie
-die Kern-API. Es werden keine Optionen geschrieben, keine Hooks in die
-Kommentarverarbeitung gehängt und keine Daten nach außen gesendet.
-
----
-
 ## 9a. Umschaltbares App-Symbol
 
 Android bietet keine Möglichkeit, das Startsymbol zur Laufzeit zu ändern.
@@ -598,6 +688,35 @@ die App-Daten gelöscht werden, der Systemzustand aber bestehen bleibt.
 Bekannte Einschränkung: `android:icon` am `<application>` bleibt unverändert.
 Die Systemeinstellungen und die Freigabeauswahl zeigen deshalb weiterhin die
 Standardvariante.
+
+---
+
+## 10. Umfang des WordPress-Plugins
+
+Das Plugin `commentator-bridge` ist optional und ändert **kein** Verhalten von
+WordPress. Es fügt ausschließlich Routen unter `commentator/v1` hinzu, alle mit
+derselben Authentifizierung wie die Kern-API:
+
+| Route | Recht | Zweck |
+|---|---|---|
+| `GET /status` | `moderate_comments` | Kompakter Zustand für die regelmäßige Prüfung |
+| `GET /summary` | `moderate_comments` | Kommentaranzahl je Status in einem Aufruf, damit die Filterleiste keine fünf Abfragen braucht |
+| `GET /team` | `moderate_comments` | Rollen, die schreiben oder moderieren dürfen, und ihre Mitglieder |
+| `POST /empty` | `moderate_comments` | Spam oder Papierkorb stapelweise endgültig leeren (seit 1.2.0) |
+| `GET`, `POST`, `DELETE /blocklist` | `manage_options` | Die Sperrliste `disallowed_keys` lesen und pflegen (seit 1.2.0) |
+| `POST`, `DELETE /push` | `moderate_comments` | Push-Adresse für die Sofortmeldung hinterlegen und zurücknehmen (seit 1.5.0) |
+
+Geschrieben wird nur an zwei Stellen, und beide entsprechen dem, was im Backend
+ohnehin möglich ist: `/blocklist` ändert die Option `disallowed_keys` – dieselbe
+Liste wie unter Einstellungen → Diskussion –, `/push` die Benutzermeta
+`commentator_push_endpoints` des angemeldeten Kontos. `/empty` löscht, was im
+Backend der Knopf „Spam leeren“ beziehungsweise „Papierkorb leeren“ löscht.
+
+Seit 1.5.0 hängt sich das Plugin an `comment_post` und **sendet optional nach
+außen**: Ist für ein Konto mit `moderate_comments` eine Push-Adresse
+hinterlegt, geht dorthin bei jedem neuen Kommentar, der nicht als Spam oder
+Papierkorb eingeht, ein inhaltsloser Weckruf (Abschnitt 9). Ohne hinterlegte
+Adresse sendet es nichts. Tabellen legt es nicht an, Cookies setzt es nicht.
 
 ---
 

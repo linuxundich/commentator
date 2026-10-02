@@ -11,7 +11,7 @@ sich gegen den Quelltext prüfen lässt.
 | Die konfigurierte WordPress-Instanz | Beim Aktualisieren, bei jeder Moderationsaktion und beim periodischen Prüfen im Hintergrund | Kommentare lesen und moderieren | Durch Abmelden; die Hintergrundprüfung einzeln in den Einstellungen |
 | `secure.gravatar.com` bzw. die von WordPress gelieferte Avatar-Adresse | Nur beim Anzeigen von Avataren | Profilbilder der Kommentatoren | Ja – Avatare sind **standardmäßig abgeschaltet** |
 
-Weitere Verbindungen gibt es nicht. Insbesondere:
+Weitere Verbindungen baut die App nicht auf. Insbesondere:
 
 * keine Analytics, keine Absturzberichte, keine Telemetrie
 * keine Werbung und keine Werbekennungen
@@ -23,6 +23,34 @@ Die Avatar-Adressen liefert WordPress selbst im Feld `author_avatar_urls`.
 Bei einer Standardinstallation zeigen sie auf Gravatar, einen Dienst von
 Automattic. Das ist eine Verbindung zu einem Dritten – deshalb ist die Anzeige
 von Avataren standardmäßig aus und muss bewusst eingeschaltet werden.
+
+Das Symbol des Blogs, das in Kopfleiste, Einstellungen und als großes Bild in
+den Benachrichtigungen erscheint, stammt vom eigenen Blog. Die
+Benachrichtigungen nehmen es aus dem lokalen Bildspeicher der App; eine
+Verbindung zu einem Dritten entsteht dadurch nicht.
+
+### Optional: Sofortmeldung über UnifiedPush
+
+Wer in den Einstellungen eines Blogs „Sofort melden“ einschaltet, bezieht
+weitere Beteiligte ein. Die App selbst verbindet sich auch dann nur mit dem
+eigenen Blog; die übrigen Verbindungen bauen die UnifiedPush-App und das
+Plugin auf:
+
+| Beteiligter | Was er erfährt |
+|---|---|
+| Die UnifiedPush-App auf dem Telefon (etwa ntfy) | Dass Commentator je Blog Weckrufe empfangen möchte, und den Namen des Blogs, unter dem sie die Anmeldung anzeigt. Sie vergibt dafür eine Endpoint-Adresse und reicht eingehende Nachrichten an die App weiter. |
+| Der Push-Server dieser App (etwa `ntfy.sh` oder ein eigener ntfy) | Dass und wann auf dem Blog kommentiert wurde – sonst nichts. Die Nachricht besteht nur aus dem Wort „new“. |
+| Das Plugin auf dem Blog | Die Endpoint-Adresse. Die App hinterlegt sie dort und nimmt sie beim Ausschalten, beim Entfernen des Blogs oder bei einer Abmeldung durch die UnifiedPush-App wieder zurück. |
+
+Bei jedem neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, schickt
+das Plugin an diese Adresse einen Weckruf ohne Inhalt: kein Name, kein Text,
+keine Kennung. Die Nachricht ist bewusst unverschlüsselt – es steht nichts
+darin, was eine Verschlüsselung schützen könnte. Die Kommentare holt die App
+danach wie gewohnt selbst über die REST-API. Google und Firebase sind an
+keiner Stelle beteiligt.
+
+Wer den Push-Server selbst betreibt, behält auch den Zeitpunkt der Kommentare
+bei sich. Ist die Sofortmeldung aus, findet nichts davon statt.
 
 ## Verschlüsselung
 
@@ -82,6 +110,10 @@ In der Room-Datenbank (`commentator.db`, App-privates Verzeichnis):
 * Kennungen bereits gemeldeter Kommentare (zur Vermeidung von
   Doppelbenachrichtigungen, nach 30 Tagen automatisch entfernt)
 
+In den angezeigten Benachrichtigungen selbst steht neben dem sichtbaren Text
+der Status des Kommentars zum Meldezeitpunkt. Die Hintergrundprüfung braucht
+ihn, um erledigte Meldungen abzuräumen.
+
 In DataStore:
 
 * Blog-Konfiguration: Kennung, Anzeigename, Adresse, Benutzername,
@@ -97,7 +129,9 @@ abgeschaltet – sie wird für die Moderation selten gebraucht.
 
 Beim Abmelden werden gelöscht: alle Kommentare und Beitragstitel der Instanz,
 der Synchronisierungszustand, die Benachrichtigungsvermerke, die
-Blog-Konfiguration und der Zugangsdatensatz. Ist danach keine Instanz mehr
+Blog-Konfiguration und der Zugangsdatensatz. War die Sofortmeldung
+eingeschaltet, nimmt die App zuvor ihre Push-Adresse beim Plugin zurück und
+meldet sich bei der UnifiedPush-App ab. Ist danach keine Instanz mehr
 eingerichtet, wird zusätzlich der Keystore-Schlüssel entfernt.
 
 ## Berechtigungen
@@ -130,13 +164,50 @@ verlangt eine Zustimmung zur Laufzeit außer `POST_NOTIFICATIONS`.
 
 Nicht dabei: kein Speicherzugriff, keine Kontakte, kein Standort, keine
 Kamera, kein Mikrofon, kein Hintergrundstandort, kein Wecker, keine exakten
-Alarme, keine Abfrage installierter Apps.
+Alarme, keine Abfrage aller installierten Apps.
+
+Der UnifiedPush-Connector fordert keine Berechtigung an. Er deklariert im
+Manifest lediglich `<queries>` für die drei UnifiedPush-Aktionen `LINK`,
+`REGISTER` und `UNREGISTER`. Damit sieht die App nur Apps, die sich als
+UnifiedPush-Verteiler anbieten – sie muss sie finden, um sich anzumelden.
+
+Der Debug-Build enthält zusätzlich den Empfänger `DebugSyncReceiver`, der die
+Hintergrundprüfung sofort anstößt. Er ist mit `android.permission.DUMP`
+geschützt und damit nur über `adb` erreichbar; im Release-Build fehlt er.
 
 
 ## Datenverarbeitung durch das WordPress-Plugin
 
-Das optionale Plugin `commentator-bridge` registriert zwei **Lese**endpunkte.
-Es schreibt nichts, ändert kein Verhalten von WordPress, legt keine Tabellen
-an, setzt keine Cookies und sendet keine Daten an Dritte. Beide Endpunkte
-liefern ausschließlich Zahlen sowie Kennung und Zeitstempel des neuesten
-moderationsbedürftigen Kommentars – keine Kommentarinhalte.
+Das optionale Plugin `commentator-bridge` ändert kein Verhalten von
+WordPress, legt keine Tabellen an und setzt keine Cookies. Seine Endpunkte
+sind in [`api.md`](api.md#endpunkte-des-optionalen-plugins) beschrieben.
+
+Gelesen wird:
+
+* `status` und `summary` liefern ausschließlich Zahlen sowie Kennung und
+  Zeitstempel der neuesten Kommentare – keine Kommentarinhalte.
+* `team` liefert die Rollen, die schreiben oder moderieren dürfen, und je
+  Mitglied Benutzerkennung und Rollen – keine Namen, keine E-Mail-Adressen.
+
+Geschrieben wird an zwei Stellen:
+
+* `/blocklist` ändert die Option `disallowed_keys`, also die Sperrliste unter
+  Einstellungen → Diskussion. Sie kann E-Mail-Adressen, Namen oder IP-Adressen
+  von Kommentierenden enthalten – genau wie bei einem Eintrag über das
+  Backend. Verlangt `manage_options`.
+* `/push` legt die Push-Adressen des angemeldeten Kontos in dessen Benutzermeta
+  `commentator_push_endpoints` ab, höchstens fünf; die älteste fällt heraus.
+  Die Adresse ist eine Endpoint-URL des Push-Servers und enthält keine
+  Kommentardaten.
+
+`/empty` löscht Spam oder Papierkorb endgültig, wie die gleichnamigen Knöpfe
+im Backend.
+
+**Nach außen** sendet das Plugin nur, wenn mindestens ein Konto mit
+`moderate_comments` eine Push-Adresse hinterlegt hat. Dann geht bei jedem
+neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, an jede
+hinterlegte Adresse ein nicht blockierender `POST` mit dem Rumpf „new“ – ohne
+Namen, Text oder Kennung des Kommentars. Angenommen werden nur öffentlich
+erreichbare HTTPS-Adressen; versendet wird über `wp_safe_remote_post`, das
+Ziele im eigenen Netz ablehnt. Ohne hinterlegte Adresse sendet das Plugin
+nichts.

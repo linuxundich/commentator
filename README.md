@@ -26,8 +26,11 @@ eigene WordPress-Installation.
 * Kommentare über die offizielle WordPress-REST-API abrufen
 * Übersichtliche Liste mit Autor, Zeitpunkt, Text, zugehörigem Beitrag und
   Status
-* Filter: Alle, Offen, Genehmigt, Spam, Papierkorb; der zuletzt gewählte wird
-  gemerkt
+* Filter: Alle, Offen, Unbeantwortet, Genehmigt, Spam, Papierkorb; der
+  zuletzt gewählte wird gemerkt
+* „Unbeantwortet“ zeigt freigegebene Kommentare von Lesern, unter denen noch
+  keine Antwort aus dem Team steht. WordPress kennt diesen Zustand nicht; die
+  App ermittelt ihn aus den geladenen Seiten und nennt deshalb keine Zahl
 * Optional Avatare (standardmäßig aus, siehe Datenschutz)
 * Umschaltbares App-Symbol (grün oder blau)
 * Pull-to-Refresh und Aktualisieren über die Kopfleiste
@@ -53,12 +56,18 @@ eigene WordPress-Installation.
 * Endgültig löschen (mit Rückfrage)
 * Kommentartext bearbeiten, sofern das Konto es darf
 * Jede zurücknehmbare Aktion bietet direkt „Rückgängig“ an
+* Freigeben und als Spam markieren auch direkt aus der Benachrichtigung
 
 ### Antworten
 
 * Antwort direkt aus der Detailansicht schreiben
 * Veröffentlichung als echter WordPress-Kommentar mit Bezug auf den
   ursprünglichen Kommentar
+* Antwort auf einen noch offenen Kommentar gibt diesen zuerst frei
+  („Freigeben und antworten“), wie im WordPress-Backend – sonst bliebe die
+  Antwort auf der Website unsichtbar
+* Antworten auch direkt aus der Benachrichtigung, mit Texteingabe in der
+  Benachrichtigung selbst
 * Rückmeldung bei Erfolg, verständliche Fehlermeldung bei Problemen
 
 ### Benachrichtigungen
@@ -66,6 +75,15 @@ eigene WordPress-Installation.
 * Hinweis auf neue moderationsbedürftige Kommentare, auch wenn die App
   geschlossen ist
 * Antippen öffnet unmittelbar den betreffenden Kommentar
+* Knöpfe in der Benachrichtigung: „Antworten“ (bei offenen Kommentaren
+  „Freigeben und antworten“), „Freigeben“ und „Spam“. Scheitert eine Aktion,
+  bleibt die Benachrichtigung stehen und nennt den Grund
+* Benachrichtigungen räumen sich auf: Wird ein Kommentar in der App
+  moderiert, beantwortet oder geöffnet, verschwindet seine Meldung; wurde er
+  im Web moderiert, gleicht die nächste Prüfung das ab
+* Das Symbol des Blogs steht als Bild in jeder Benachrichtigung
+* Optional Sofortmeldung über UnifiedPush (etwa mit ntfy), ohne Google; siehe
+  unten
 * Getrennte Benachrichtigungskanäle, einzeln über die Android-Systemeinstellungen
   steuerbar
 * Kein Kommentar wird zweimal gemeldet
@@ -103,7 +121,10 @@ eigene WordPress-Installation.
 
 Nicht erforderlich. Es macht die regelmäßige Prüfung auf neue Kommentare
 deutlich sparsamer, indem es drei Zahlen statt einer vollständigen
-Kommentarliste liefert. Ohne das Plugin funktioniert die App vollständig.
+Kommentarliste liefert. Außerdem bringt es Endpunkte für das Team, für „Spam
+leeren“ und „Papierkorb leeren“ in einer Anfrage und für die Sperrliste mit.
+Ab Version 1.5 ermöglicht es die Sofortmeldung über UnifiedPush. Ohne das
+Plugin funktioniert die App vollständig.
 
 ### Push-Infrastruktur
 
@@ -111,6 +132,14 @@ Kommentarliste liefert. Ohne das Plugin funktioniert die App vollständig.
 keine Google Play Services. Die Begründung für diese Entscheidung und der
 Vergleich mit den Alternativen stehen in
 [`docs/architecture.md`](docs/architecture.md#9-benachrichtigungen-über-neue-kommentare).
+
+Wer neue Kommentare in Sekunden statt bei der nächsten Prüfung gemeldet haben
+möchte, kann je Blog die **Sofortmeldung über UnifiedPush** einschalten. Dafür
+braucht es eine UnifiedPush-App auf dem Telefon, etwa ntfy, und auf dem Blog
+das Plugin ab Version 1.5. Das Plugin schickt bei jedem neuen Kommentar nur
+einen inhaltslosen Weckruf über den Push-Server; die Kommentare holt die App
+danach wie gewohnt selbst vom Blog. Der Push-Server erfährt dabei nur, dass
+und wann kommentiert wurde.
 
 ---
 
@@ -186,6 +215,19 @@ Das kürzest mögliche Intervall sind 15 Minuten – das ist die Untergrenze von
 WorkManager für periodische Arbeit. Es gilt für den Durchgang über alle Blogs
 gemeinsam: Sie werden in einem Lauf geprüft, damit das Gerät nur einmal
 aufwacht.
+
+Schneller geht es mit **Sofort melden** in den Einstellungen des jeweiligen
+Blogs. Voraussetzungen sind eine UnifiedPush-App auf dem Telefon (etwa ntfy)
+und das Plugin `commentator-bridge` ab Version 1.5 auf dem Blog. Beim
+Einschalten meldet sich die App bei der UnifiedPush-App an und hinterlegt die
+erhaltene Adresse beim Plugin. Die Zeile nennt anschließend, über welche App
+die Meldungen kommen, oder warum es nicht geklappt hat – etwa weil das Plugin
+zu alt ist. Die regelmäßige Prüfung läuft weiter und holt ein, was auf dem
+Push-Weg verloren gegangen ist. Beim Ausschalten oder Entfernen des Blogs wird
+die Adresse beim Plugin wieder zurückgenommen.
+
+Die Knöpfe in den Benachrichtigungen erscheinen nur bei Konten, die
+Kommentare moderieren dürfen.
 
 ### 7. App bauen
 
@@ -372,6 +414,66 @@ docker compose down -v     # alles verwerfen
 Einzelheiten, auch zum Zugriff aus dem Emulator, stehen in
 [`docker/README.md`](docker/README.md).
 
+Statt Docker geht auch Podman. Dessen Socket ersetzt den Docker-Dienst, und
+`docker-compose` spricht ihn über `DOCKER_HOST` an:
+
+```bash
+systemctl --user start podman.socket
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+docker-compose up -d
+```
+
+### Emulator ohne Android Studio
+
+So ließ sich ein Emulator unter Arch Linux allein mit den
+Kommandozeilenwerkzeugen einrichten. Das SDK liegt dabei unter
+`~/Android/Sdk`:
+
+```bash
+sdkmanager emulator platform-tools "platforms;android-37.0" "build-tools;37.0.0" \
+           "system-images;android-37.0;google_apis_playstore;x86_64"
+
+avdmanager create avd -n Pixel_10_API_37 \
+  -k "system-images;android-37.0;google_apis_playstore;x86_64" -d pixel_10
+```
+
+API 37 entspricht Android 17. In `~/.android/avd/Pixel_10_API_37.avd/config.ini`
+`hw.ramSize=4096` setzen, dann starten:
+
+```bash
+emulator -avd Pixel_10_API_37 -gpu host
+```
+
+Für die lokale Testumgebung muss der Emulator nicht über `10.0.2.2` gehen.
+Einfacher ist es, den Port durchzureichen:
+
+```bash
+adb reverse tcp:8443 tcp:8443
+```
+
+Danach gilt `https://localhost:8443` für Rechner und Emulator gleichermaßen,
+und `WP_SITE_URL` muss nicht gesetzt werden.
+
+Das Testzertifikat kommt per `adb push docker/certs/server.crt /sdcard/Download/`
+auf den Emulator und wird dort unter **Einstellungen → Sicherheit &
+Datenschutz → Weitere Sicherheitseinstellungen → Verschlüsselung &
+Anmeldedaten → Zertifikat installieren → CA-Zertifikat** installiert.
+
+### Hintergrundprüfung sofort anstoßen
+
+WorkManager zieht periodische Arbeit nicht vor; auf die nächste Prüfung zu
+warten, kostet bis zu 15 Minuten. Der Debug-Build bringt deshalb einen
+Empfänger mit, der sie sofort auslöst:
+
+```bash
+adb shell am broadcast \
+  -n de.christophlangner.commentator.debug/de.christophlangner.commentator.notification.DebugSyncReceiver
+```
+
+`DebugSyncReceiver` existiert nur im Debug-Build und ist mit
+`android.permission.DUMP` geschützt, also nur über `adb` erreichbar, nicht für
+andere Apps.
+
 ---
 
 ## Architektur
@@ -401,9 +503,10 @@ Die wichtigsten Festlegungen:
   `instanceId`, der HTTP-Client wird pro Instanz erzeugt, und Zugangsdaten
   liegen pro Instanz. Weil das von Anfang an so war, kam der Mehrfachbetrieb
   ohne Datenmigration aus.
-* **Die Erkennung neuer Kommentare liegt hinter einer Schnittstelle.** Heute
-  gibt es eine Polling-Implementierung; eine Push-Variante ließe sich
-  ergänzen, ohne Benachrichtigungen, Deep Links oder UI anzufassen.
+* **Die Erkennung neuer Kommentare liegt hinter einer Schnittstelle.** Sie
+  arbeitet per Polling. Die optionale Sofortmeldung über UnifiedPush ist nur
+  ein Weckruf, der dieselbe Prüfung sofort anstößt – Benachrichtigungen, Deep
+  Links und UI blieben dafür unberührt.
 
 Verzeichnisse:
 
@@ -458,6 +561,11 @@ WordPress-Instanz auf. Die einzige mögliche Ausnahme sind Avatarbilder, die
 bei einer Standardinstallation von Gravatar stammen – deshalb ist die Anzeige
 von Avataren standardmäßig **aus**.
 
+Wer die optionale Sofortmeldung einschaltet, bezieht zusätzlich einen
+Push-Server ein: Das Plugin schickt bei neuen Kommentaren einen inhaltslosen
+Weckruf dorthin, die UnifiedPush-App auf dem Telefon nimmt ihn entgegen. Die
+App selbst verbindet sich auch dann nur mit dem eigenen Blog.
+
 Es gibt keine Analytics, keine Absturzberichte, keine Telemetrie, keine
 Werbung, keine Werbekennungen und keinen Server des Entwicklers. Die App
 fordert selbst drei Berechtigungen an: `INTERNET`, `ACCESS_NETWORK_STATE`
@@ -471,21 +579,27 @@ einzeln auf.
 
 ## Bekannte Einschränkungen
 
-* **Ein Blog.** Die Datenhaltung ist mehrinstanzenfähig, die Oberfläche noch
-  nicht. Siehe [`BACKLOG.md`](BACKLOG.md).
 * **Keine Offline-Moderation.** Ohne Verbindung sind schreibende Aktionen
   gesperrt und als solche gekennzeichnet. Eine Warteschlange bräuchte eine
   Konfliktauflösung für zwischenzeitlich anderswo moderierte Kommentare; das
   halbfertig zu bauen wäre schlechter als es wegzulassen.
 * **Benachrichtigungen mit Verzögerung.** Die Prüfung läuft periodisch,
-  frühestens alle 15 Minuten. Echtzeit-Push würde Fremdinfrastruktur
-  erfordern – die Abwägung steht in der Architekturdokumentation.
+  frühestens alle 15 Minuten. Schneller geht es nur mit der optionalen
+  Sofortmeldung über UnifiedPush, die eine UnifiedPush-App auf dem Telefon und
+  das Plugin ab 1.5 voraussetzt – die Abwägung steht in der
+  Architekturdokumentation.
+* **„Unbeantwortet“ ohne Zahl und nur über Geladenes.** Der Filter wirkt nur
+  über die bereits geladenen Seiten; WordPress kann diesen Zustand nicht
+  zählen.
 * **Erster Lauf meldet nichts.** Beim allerersten Hintergrundlauf wird nur der
   Ausgangszustand festgehalten, damit nicht der gesamte vorhandene Rückstand
   als Benachrichtigungsflut ankommt.
-* **Keine Suche und keine Sammelaktionen.** Beides steht im Backlog.
-* **Kein Kommentar-Threading in der Liste.** Antworten erscheinen in der
-  Detailansicht des übergeordneten Kommentars, die Liste ist flach.
+* **Keine Mehrfachauswahl.** Sammelaktionen gibt es nur als „Spam leeren“ und
+  „Papierkorb leeren“; eine Mehrfachauswahl steht im Backlog.
+* **Gesprächsfaden nur eine Stufe tief.** Die Liste zeigt zu einer Antwort den
+  unmittelbaren Bezug; den ganzen Faden zeigt die Detailansicht.
+* **Kein gemeinsamer Posteingang.** Mehrere Blogs werden nacheinander über den
+  Umschalter angezeigt, nicht in einer gemeinsamen Liste.
 * **Papierkorb-Verhalten hängt von WordPress ab.** Ist der Papierkorb in der
   Installation abgeschaltet, löscht bereits die Papierkorb-Aktion endgültig.
   Die App kann das nicht auslesen und weist vor dem endgültigen Löschen

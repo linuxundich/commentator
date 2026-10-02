@@ -53,18 +53,37 @@ bleibt.
 
 ### Offen
 
-- [ ] **P2** Moderationsaktionen direkt aus der Benachrichtigung
+- [x] **P2** Moderationsaktionen direkt aus der Benachrichtigung
       *Technische Frage: Eine Aktion aus der Benachrichtigung braucht einen
       BroadcastReceiver, der ohne sichtbare App schreibend auf die API
       zugreift. Zu klären ist, wie Fehler dort sichtbar gemacht werden –
       eine stillschweigend fehlgeschlagene Moderation wäre schlimmer als gar
       keine Schnellaktion.*
-- [ ] **P2** Echtes Push über FCM als zusätzliche `NewCommentSource`
+      *Beantwortet: Der Receiver reicht nur an eine beschleunigte
+      WorkManager-Arbeit weiter, die dieselben Use Cases nutzt wie die
+      Oberfläche. Scheitert sie, wird nicht still wiederholt – eine später
+      nachgeholte Moderation könnte eine inzwischen im Web getroffene
+      Entscheidung überschreiben. Die Benachrichtigung bleibt stehen und nennt
+      den Grund, eine gescheiterte Antwort steht mit ihrem Text darin.*
+- [x] **P2** Echtes Push über FCM als zusätzliche `NewCommentSource`
       *Technische Frage: Ein Versandweg von WordPress zu FCM benötigt einen
       Dienstkontoschlüssel auf dem WordPress-Server und eine
       Geräteregistrierung im Plugin. Damit entstünden Metadaten bei Google
       und eine Abhängigkeit von den Play Services. Die Abwägung steht in
       `docs/architecture.md`; die Schnittstelle ist vorbereitet.*
+      *Ersetzt: umgesetzt als Sofortmeldung über UnifiedPush, ohne Google;
+      FCM entfällt. Das Plugin (ab 1.5) schickt einen inhaltslosen Weckruf an
+      die hinterlegte Adresse, die App prüft daraufhin sofort. Eine eigene
+      `NewCommentSource` war dafür nicht nötig.*
+- [x] **P2** Benachrichtigungen räumen sich auf
+      *In der App moderiert, beantwortet oder geöffnet: Die Meldung
+      verschwindet sofort. Im Web moderiert: Die Hintergrundprüfung gleicht
+      offene Meldungen mit einer Anfrage (`include`, `status=any`) ab. Was
+      freigegeben gemeldet wurde, bleibt stehen – es wartet womöglich noch
+      auf eine Antwort.*
+- [x] **P2** Blog-Symbol in Benachrichtigungen
+      *Aus demselben Bildspeicher wie in der Kopfleiste; es stammt vom eigenen
+      Blog, eine Verbindung zu Dritten entsteht nicht.*
 - [x] **P3** Benachrichtigung auch für automatisch genehmigte Kommentare
       *Umgesetzt und zur Voreinstellung gemacht: Auf Blogs, die automatisch
       freischalten, kam zuvor nie eine Benachrichtigung an. Ein Schalter
@@ -173,9 +192,10 @@ Alles hier dient einer Frage: Wie komme ich schneller zu einer begründeten
 Entscheidung? Die Punkte wurden gegen eine echte WordPress-Installation
 geprüft, die Abrufe sind belegt.
 
-Alle Punkte dieses Abschnitts sind umgesetzt. „Spam leeren" und das Sperren
-von Absendern nutzen zwei Endpunkte, die das Plugin ab 1.2.0 mitbringt; das
-Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
+Die ursprünglichen Punkte dieses Abschnitts sind umgesetzt. „Spam leeren" und
+das Sperren von Absendern nutzen zwei Endpunkte, die das Plugin ab 1.2.0
+mitbringt; das Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je
+Kommentar. Die offenen Punkte am Ende sind später hinzugekommen.
 
 - [x] **P1** Autorenkontext in der Detailansicht
       *Zeigt, ob jemand zum ersten Mal kommentiert oder schon bekannt ist -
@@ -208,6 +228,18 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
 - [x] **P2** Textbausteine für wiederkehrende Antworten
       *Kein API-Thema, reine lokale Ablage. „Danke für den Hinweis, ist
       korrigiert." tippt man sonst zum zwanzigsten Mal.*
+- [x] **P2** „Freigeben und antworten“
+      *Gegen ein lokales WordPress geprüft: Ohne Freigabe blieb der
+      Elternkommentar offen, und die Antwort war auf der Website unsichtbar.
+      Erst freigeben, dann antworten – scheitert die Freigabe, ist nichts
+      geschehen, und ein zweiter Versuch erzeugt keine doppelte Antwort.*
+
+### Offen
+
+- [ ] **P2** Antwortentwürfe behalten
+- [ ] **P2** Nach einer Aktion zum nächsten offenen Kommentar
+- [ ] **P3** Beim Sperren alle bisherigen Kommentare des Absenders als Spam
+      markieren
 
 ---
 
@@ -218,6 +250,12 @@ Leeren funktioniert auch ohne Plugin, dann mit einer Anfrage je Kommentar.
       Zeichen. Die Treffer landen im Zwischenspeicher und werden von dort
       beobachtet – dadurch wirkt eine Moderation auch in der Trefferliste
       sofort, ohne einen zweiten Weg für Listenzustände.*
+- [x] **P2** Filter „Unbeantwortet“
+      *Freigegebene Leserkommentare ohne freigegebene Antwort aus dem Team.
+      WordPress kennt den Zustand nicht; die App berechnet ihn aus dem
+      Zwischenspeicher und holt dazu die Antworten auf die geladenen
+      Kommentare nach (`parent=<ids>`). Deshalb ohne Zahl an der Marke und nur
+      über die geladenen Seiten. Vorbild ist die WordPress-App.*
 - [ ] **P2** Filter nach Beitrag
 - [ ] **P2** Filter nach Autor
 - [ ] **P3** Lokale Volltextsuche im Cache über Room FTS

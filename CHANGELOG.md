@@ -113,6 +113,64 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 - Play-Store-Symbol als 512 × 512 px großes 32-Bit-PNG unter `store/play/`,
   geprüft gegen die Spezifikationen für das App-Symbol im Play Store.
+- Aktionen in der Benachrichtigung: „Antworten“, „Freigeben“ und „Spam“.
+  Geantwortet wird direkt in der Benachrichtigung über `RemoteInput`; bei
+  einem offenen Kommentar heißt der Knopf „Freigeben und antworten“.
+  „Freigeben“ steht nur an offenen Kommentaren, „Spam“ nicht an Spam. Die
+  Knöpfe erscheinen nur bei Konten mit `moderate_comments`. Der nicht
+  exportierte `NotificationActionReceiver` reicht an den
+  `NotificationActionWorker` weiter – beschleunigte WorkManager-Arbeit, je
+  Kommentar höchstens eine laufende Aktion (`ExistingWorkPolicy.KEEP`) – und
+  der nutzt dieselben Use Cases wie die Oberfläche. Bei einem Fehler wird
+  bewusst nicht wiederholt: Eine später still nachgeholte Moderation könnte
+  eine inzwischen im Web getroffene Entscheidung überschreiben. Stattdessen
+  bleibt die Benachrichtigung stehen und nennt den Grund; eine gescheiterte
+  Antwort steht mit ihrem Text darin, damit nichts Geschriebenes verloren
+  geht. Nach einer Direktantwort hält Android ab Version 15 die Meldung fest
+  (`FLAG_LIFETIME_EXTENDED_BY_DIRECT_REPLY`) und übergeht ein bloßes
+  `cancel()`; sie wird deshalb durch eine kurze Bestätigung „Erledigt“
+  ersetzt, die nach zwei Sekunden über `setTimeoutAfter` verschwindet.
+- Benachrichtigungen räumen sich auf. Wird ein Kommentar in der App
+  moderiert, beantwortet oder geöffnet, verschwindet seine Meldung (Schnittstelle
+  `CommentAlerts`, umgesetzt von `CommentNotifier`). Wurde er im Web
+  moderiert, gleicht die Hintergrundprüfung die offenen Meldungen ab, bevor
+  sie Neues meldet – mit genau einer Anfrage
+  (`include=<ids>&status=any`) und nur, wenn überhaupt Meldungen offen sind.
+  Weg kommt, was gelöscht, Spam oder im Papierkorb ist, und was als offen
+  gemeldet und inzwischen freigegeben wurde. Was schon freigegeben gemeldet
+  wurde, bleibt stehen: Es wartet womöglich noch auf eine Antwort. Den Status
+  zum Meldezeitpunkt trägt die Benachrichtigung in ihren Extras. Eine leer
+  gewordene Sammelmeldung verschwindet mit.
+- Filter „Unbeantwortet“ zwischen „Offen“ und „Genehmigt“: freigegebene
+  Kommentare von Lesern, unter denen keine freigegebene Antwort aus dem Team
+  oder vom eigenen Konto steht. Kommentare des Teams selbst erscheinen dort
+  nicht. WordPress kennt diesen Zustand nicht; die App berechnet ihn per
+  Room-Abfrage über den Zwischenspeicher. Abgerufen wird wie bei „Genehmigt“,
+  ergänzt um eine Anfrage nach den Antworten auf die geladenen Kommentare
+  (`status=approve&parent=<ids>`). Der Filter wirkt deshalb nur über die
+  geladenen Seiten und trägt keine Zahl – der Server kann sie nicht zählen.
+  Vorbild ist der gleichnamige Filter der WordPress-App.
+- Das Symbol des Blogs steht als großes Bild in jeder
+  Kommentar-Benachrichtigung und in der Sammelmeldung. Es kommt über Coil aus
+  demselben Bildspeicher wie in Kopfleiste und Einstellungen
+  (`SiteIconLoader`) und stammt vom eigenen Blog; eine Verbindung zu einem
+  Dritten entsteht nicht.
+- Sofortmeldung über UnifiedPush, je Blog in dessen Einstellungen unter
+  „Sofort melden“ einschaltbar. Die App meldet sich je Blog bei einer
+  UnifiedPush-App auf dem Telefon an, etwa ntfy, und hinterlegt die
+  erhaltene Adresse beim Plugin (`POST /commentator/v1/push`). Beim
+  Ausschalten, beim Entfernen des Blogs, bei einer Abmeldung durch die
+  UnifiedPush-App und beim Ersetzen der Adresse wird sie dort wieder
+  zurückgenommen. Jede eingehende Nachricht stößt eine einmalige,
+  beschleunigte Prüfung aller Blogs an (`CommentSyncWorker`, eindeutig als
+  „commentator-push-sync“); die Nachricht selbst ist bewusst inhaltslos und
+  unverschlüsselt. Die regelmäßige Prüfung läuft weiter und holt verlorene
+  Weckrufe ein. Kein Google, kein Firebase. Die Einstellung nennt ihren
+  Zustand: braucht das Plugin ab 1.5, braucht eine UnifiedPush-App, wird
+  eingerichtet, aktiv über die gewählte App oder der Grund eines Fehlers.
+  Neue Abhängigkeit `org.unifiedpush.android:connector` 3.3.5, die Google Tink
+  mitbringt. Damit ist der Backlog-Punkt „Echtes Push über FCM“ durch eine
+  Lösung ohne Google ersetzt.
 
 **Behoben nach dem ersten Lauf auf einem Gerät**
 
@@ -140,6 +198,17 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **WordPress-Plugin**
 
+- Version 1.5.0: `commentator/v1/push` nimmt Push-Adressen entgegen (`POST`)
+  und gibt sie wieder frei (`DELETE`). Bei jedem neuen Kommentar
+  (`comment_post`) geht an jede hinterlegte Adresse aller Konten mit
+  `moderate_comments` ein nicht blockierender Weckruf mit dem Rumpf „new“ –
+  kein Name, kein Text, keine Kennung –, mit den Kopfzeilen `TTL: 3600` und
+  `Urgency: high`. Als Spam oder Papierkorb eingegangene Kommentare wecken
+  niemanden. Angenommen werden nur öffentliche HTTPS-Adressen
+  (`wp_http_validate_url`, Versand über `wp_safe_remote_post`), höchstens
+  fünf je Konto; die älteste fällt heraus. Abgelegt werden sie in der
+  Benutzermeta `commentator_push_endpoints`. Ohne hinterlegte Adresse sendet
+  das Plugin nichts nach außen.
 - `commentator-bridge` mit den Leseendpunkten `commentator/v1/status` und
   `commentator/v1/summary`, beide abgesichert über `moderate_comments`.
 
@@ -147,6 +216,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 - Room exportiert sein Schema nach `android/app/schemas/`, damit spätere
   Migrationen automatisiert geprüft werden können.
+- `DebugSyncReceiver` stößt die Hintergrundprüfung über `adb` sofort an.
+  WorkManager zieht periodische Arbeit nicht vor; ohne den Empfänger hieß
+  Testen, bis zu 15 Minuten zu warten. Er existiert nur im Debug-Build und ist
+  mit `android.permission.DUMP` geschützt.
+- README: Einrichtung eines Emulators ohne Android Studio, Betrieb der
+  Testumgebung mit Podman statt Docker und Zugriff aus dem Emulator über
+  `adb reverse`.
 
 - Lokale WordPress-Testumgebung über Docker Compose, einschließlich
   TLS-Proxy, Zertifikatsskript und Skript für reproduzierbare Testdaten.
@@ -161,6 +237,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Eine Antwort auf einen offenen Kommentar blieb auf der Website unsichtbar:
+  Der Elternkommentar stand weiter auf „ausstehend“, und WordPress zeigt
+  Antworten darunter nicht an – gegen eine lokale WordPress-Installation
+  nachgeprüft. Die App gibt einen offenen Kommentar jetzt zuerst frei und
+  antwortet dann, wie das WordPress-Backend. Der Knopf in der Detailansicht
+  heißt in diesem Fall „Freigeben und antworten“. Die Reihenfolge ist
+  Absicht: Scheitert die Freigabe, ist noch nichts geschehen, und ein zweiter
+  Versuch erzeugt keine doppelte Antwort.
 - Die Auswahl des Prüfintervalls stand in einer einzeiligen Reihe. Für die
   fünfte Option blieben nur 39 dp Breite, ihr Text brach senkrecht um und riss
   eine hohe leere Fläche in die Einstellungen; bedienbar war sie damit auch
@@ -449,6 +533,6 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 - Keine Analytics, keine Absturzberichte, keine Telemetrie, keine Werbung.
 - Keine Firebase- oder Google-Play-Services-Abhängigkeit. Die Erkennung neuer
-  Kommentare liegt hinter der Schnittstelle `NewCommentSource`, sodass eine
-  Push-Variante später ergänzt werden kann, ohne die Benachrichtigungslogik
-  anzufassen.
+  Kommentare liegt hinter der Schnittstelle `NewCommentSource`. Die optionale
+  Sofortmeldung über UnifiedPush stößt nur diese Prüfung früher an und kam
+  deshalb ohne Eingriff in die Benachrichtigungslogik aus.

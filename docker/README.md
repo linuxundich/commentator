@@ -42,11 +42,15 @@ vertrauen Benutzerzertifikaten, Release-Builds ausdrücklich nicht.
 | Zugriff von | Adresse |
 |---|---|
 | Entwicklungsrechner | `https://localhost:8443` |
-| Android-Emulator | `https://10.0.2.2:8443` |
+| Android-Emulator | `https://localhost:8443` nach `adb reverse tcp:8443 tcp:8443`, sonst `https://10.0.2.2:8443` |
 | Echtes Gerät im LAN | `https://<IP des Rechners>:8443` |
 
-Für den Emulator oder ein echtes Gerät muss die Adresse vor dem ersten Start
-gesetzt werden, damit WordPress sie in seine Konfiguration übernimmt:
+Am einfachsten für den Emulator: `adb reverse tcp:8443 tcp:8443` leitet den
+Port des Emulators auf den Rechner um. Dann gilt `https://localhost:8443`
+überall, und WordPress braucht keine eigene Adresse.
+
+Ohne Umleitung, und für ein echtes Gerät, muss die Adresse vor dem ersten
+Start gesetzt werden, damit WordPress sie in seine Konfiguration übernimmt:
 
 ```bash
 WP_SITE_URL=https://10.0.2.2:8443 docker compose up -d
