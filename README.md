@@ -42,11 +42,15 @@ senders for good.
 notification. Replying to a pending comment approves it at the same time.
 Saved replies for the answers you type over and over.
 
-**Know what's new – instantly.** Notifications with Approve, Reply and Spam
-buttons. With [UnifiedPush](https://unifiedpush.org) and an app like
-[ntfy](https://ntfy.sh), new comments arrive within a second – no Google, no
-Firebase. Notifications clear themselves once a comment is handled, even if
-you handled it on the web.
+**Know what's new.** Notifications with Approve, Reply and Spam buttons, and
+they clear themselves once a comment is handled, even if you handled it on
+the web. Out of the box, the app checks your blog on its own every 15 minutes
+(adjustable) – nothing else needed.
+
+**Optional: instant notifications.** Want new comments within a second? Add
+[UnifiedPush](https://unifiedpush.org) with an app like
+[ntfy](https://ntfy.sh) – either the free public ntfy.sh or your own
+self-hosted server. Still no Google, no Firebase.
 
 **Never miss a question.** The *Unanswered* filter shows every approved
 comment your team hasn't replied to yet. Threads show what a reply refers to.
@@ -75,8 +79,8 @@ Material 3, dark mode, English and German.
    [application password](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/),
    never your account password.
 3. **Optional: install the plugin.** [Commentator Bridge](wordpress-plugin/commentator-bridge)
-   enables instant notifications, faster checks and a few extras like blocking
-   senders. Copy it to `wp-content/plugins/` and activate it.
+   enables instant notifications (together with ntfy or another UnifiedPush
+   app), faster checks and a few extras like blocking senders. Copy it to `wp-content/plugins/` and activate it.
 
 **Requirements:** Android 8.0 or newer · WordPress 5.6 or newer, served over
 HTTPS · an account that may moderate comments (Editor or Administrator).
