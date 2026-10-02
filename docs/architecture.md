@@ -539,8 +539,9 @@ Notifications, deduplication, deep links and UI remained untouched.
 
 What the push server learns: that and when a comment was posted on a blog,
 nothing more. Anyone running their own ntfy keeps even that to themselves. The
-plugin only accepts public HTTPS addresses and sends via
-`wp_safe_remote_post`, so that the blog cannot be abused as a stepping stone
+plugin only accepts public HTTPS addresses (IPv4 or IPv6, resolved by the
+plugin itself) and checks them again before every send, so that the blog
+cannot be abused as a stepping stone
 into its own network.
 
 The code lives in `push/`. `PushSetup` is the interface through which the blog

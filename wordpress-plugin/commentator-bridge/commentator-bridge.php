@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/linuxundich/commentator
  * Description:       Lean REST endpoints for the Commentator Android app: cheap checks for new comments, bulk actions the core API lacks, and optional instant notifications via UnifiedPush.
- * Version:           1.8.0
+ * Version:           1.8.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -60,7 +60,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.8.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.8.1';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -623,10 +623,53 @@ function commentator_bridge_push_endpoint_valid( string $endpoint ): bool {
 	if ( 'https' !== wp_parse_url( $endpoint, PHP_URL_SCHEME ) ) {
 		return false;
 	}
-	if ( ! commentator_bridge_push_allow_local() && ! wp_http_validate_url( $endpoint ) ) {
+	$port = wp_parse_url( $endpoint, PHP_URL_PORT );
+	if ( null !== $port && 443 !== (int) $port ) {
+		return false;
+	}
+	$host = (string) wp_parse_url( $endpoint, PHP_URL_HOST );
+	if ( '' === $host ) {
+		return false;
+	}
+	if ( ! commentator_bridge_push_allow_local() && ! commentator_bridge_push_host_public( $host ) ) {
 		return false;
 	}
 	return (bool) apply_filters( 'commentator_bridge_push_endpoint_allowed', true, $endpoint );
+}
+
+/**
+ * Ob ein Host ausschließlich auf öffentliche Adressen zeigt.
+ *
+ * Eigene Prüfung statt wp_http_validate_url(): Die löst nur über IPv4 auf
+ * (gethostbyname) und hält einen Push-Server, der nur per IPv6 erreichbar ist
+ * - typisch für einen eigenen ntfy hinter Carrier-Grade-NAT -, für ungültig.
+ * Hier zählen A- und AAAA-Einträge; jede Adresse muss öffentlich sein, sonst
+ * ließe sich der Blog als Sprungbrett ins eigene Netz benutzen.
+ */
+function commentator_bridge_push_host_public( string $host ): bool {
+	$host = trim( $host, '[]' );
+	if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+		$ips = array( $host );
+	} else {
+		$ips     = array();
+		$records = @dns_get_record( $host, DNS_A | DNS_AAAA ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		foreach ( is_array( $records ) ? $records : array() as $record ) {
+			if ( isset( $record['ip'] ) ) {
+				$ips[] = $record['ip'];
+			} elseif ( isset( $record['ipv6'] ) ) {
+				$ips[] = $record['ipv6'];
+			}
+		}
+	}
+	if ( empty( $ips ) ) {
+		return false;
+	}
+	foreach ( $ips as $ip ) {
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /**
@@ -648,9 +691,13 @@ function commentator_bridge_push_send( string $endpoint, string $body, string $u
 			'Urgency'      => $urgency,
 		),
 	);
-	return commentator_bridge_push_allow_local()
-		? wp_remote_post( $endpoint, $args )
-		: wp_safe_remote_post( $endpoint, $args );
+	// Vor jedem Versand erneut geprüft: Zeigt der Name inzwischen ins eigene
+	// Netz, geht nichts hinaus. wp_safe_remote_post() scheidet aus, es prüft
+	// wie wp_http_validate_url() nur IPv4.
+	if ( ! commentator_bridge_push_endpoint_valid( $endpoint ) ) {
+		return new WP_Error( 'commentator_invalid_endpoint', 'Push endpoint not allowed.' );
+	}
+	return wp_remote_post( $endpoint, $args );
 }
 
 /** @return string[] */

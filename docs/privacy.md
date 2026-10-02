@@ -206,6 +206,7 @@ in the admin.
 `moderate_comments` has stored a push address. Then, for every new comment
 that does not arrive as spam or trash, a non-blocking `POST` with the body
 "new" goes to every stored address – without the comment's name, text or ID.
-Only publicly reachable HTTPS addresses are accepted; sending uses
-`wp_safe_remote_post`, which rejects destinations on the local network.
+Only publicly reachable HTTPS addresses are accepted, over IPv4 or IPv6; the
+check is repeated before every send and rejects destinations on the local
+network.
 Without a stored address, the plugin sends nothing.

@@ -4,7 +4,7 @@ Tags: comments, moderation, rest-api
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -56,8 +56,8 @@ wake-up, with the body "status". The app then immediately withdraws its
 notification for that comment. Changes made from the app itself do not
 trigger a wake-up.
 
-Only publicly reachable HTTPS addresses are accepted; sending uses
-`wp_safe_remote_post`. At most five addresses apply per account; the oldest
+Only publicly reachable HTTPS addresses are accepted, over IPv4 or IPv6;
+the check is repeated before every send. At most five addresses apply per account; the oldest
 one is dropped. They are stored in the user meta
 `commentator_push_endpoints`. Without a stored address, nothing happens.
 
@@ -110,6 +110,11 @@ The app detects the plugin automatically by the `commentator/v1` namespace in
 the response from `/wp-json/`.
 
 == Changelog ==
+
+= 1.8.1 =
+* Push servers reachable only over IPv6 are accepted. The address check
+  resolves A and AAAA records instead of relying on WordPress' IPv4-only
+  `wp_http_validate_url`; private and reserved addresses are still rejected.
 
 = 1.8.0 =
 * English user interface, translatable; German translation included.

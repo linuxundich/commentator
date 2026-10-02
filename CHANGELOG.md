@@ -206,6 +206,12 @@ is listed under `[Unreleased]`.
 
 **WordPress plugin**
 
+- Version 1.8.1: Push servers reachable only over IPv6 were rejected as
+  invalid. WordPress' own URL check (`wp_http_validate_url`, also used by
+  `wp_safe_remote_post`) resolves host names over IPv4 only. The plugin now
+  resolves A and AAAA records itself and still accepts only public addresses
+  on HTTPS port 443; the check is repeated before every send. Found while
+  setting up a self-hosted ntfy behind carrier-grade NAT.
 - Version 1.8.0: English user interface with a German translation. All texts
   the plugin shows - the profile section, error messages of its REST routes,
   the plugin description - are now English in the code and translatable

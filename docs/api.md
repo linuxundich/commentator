@@ -335,7 +335,9 @@ DELETE /wp-json/commentator/v1/push?endpoint=https://…
 
 Stores or removes, for the signed-in account, the endpoint address the app
 received from the UnifiedPush app on the phone. Only publicly reachable HTTPS
-addresses are accepted (`wp_http_validate_url`); a private address is
+addresses on port 443 are accepted, reachable over IPv4 or IPv6 (the plugin
+resolves A and AAAA records itself, since `wp_http_validate_url` only knows
+IPv4); a private or reserved address is
 rejected with 400 (`commentator_invalid_endpoint`). At most five addresses
 apply per account; the oldest one is dropped. They are stored in the user
 meta `commentator_push_endpoints`.
@@ -363,8 +365,7 @@ For admins, without a settings page:
 * `define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true );` in `wp-config.php`
   disables instant notifications: no new addresses, no sending.
 * The filter `commentator_bridge_push_allow_local` (`bool`, default `false`)
-  allows push servers on the local network; sending then uses
-  `wp_remote_post` instead of `wp_safe_remote_post`.
+  allows push servers on the local network.
 * The filter `commentator_bridge_push_endpoint_allowed` (`bool $allowed,
   string $endpoint`) restricts addresses further, for example to your own
   ntfy server.
@@ -381,7 +382,7 @@ Urgency: high
 new
 ```
 
-Sending is non-blocking and uses `wp_safe_remote_post`. The body deliberately
+Sending is non-blocking; the address is checked again right before. The body deliberately
 contains nothing – no name, no text, no ID. The app then checks on its own
 via the endpoints described above.
 
