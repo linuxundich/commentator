@@ -338,6 +338,12 @@ is listed under `[Unreleased]`.
 
 **Android app**
 
+- Settings screens: consistent spacing from one place in the code. Everything
+  starts at the same 16 dp edge, including the labels of text buttons, rows
+  have even vertical spacing, and "Test" lines up with the switch above it.
+  "Notify about" is a radio list with a one-line explanation per option
+  instead of three chips with a paragraph below.
+
 - Role badge and status indicator sit side by side on one line, with the same
   height and shape. Previously they were offset one above the other and had
   different heights.
