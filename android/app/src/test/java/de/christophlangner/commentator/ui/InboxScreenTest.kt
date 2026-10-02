@@ -251,7 +251,7 @@ class InboxScreenTest {
             ),
         )
 
-        composeRule.onAllNodesWithContentDescription("Spam leeren")
+        composeRule.onAllNodesWithText("Spam leeren")
             .fetchSemanticsNodes()
             .let { assertTrue("Bei Offen darf es das nicht geben", it.isEmpty()) }
     }
@@ -267,9 +267,23 @@ class InboxScreenTest {
             ),
         )
 
-        composeRule.onAllNodesWithContentDescription("Spam leeren")
+        composeRule.onAllNodesWithText("Spam leeren")
             .fetchSemanticsNodes()
             .let { assertTrue("Ohne Spam kein Knopf", it.isEmpty()) }
+    }
+
+    @Test
+    fun `Spam zeigt ueber der Liste, wie viel darin liegt`() {
+        render(
+            InboxUiState(
+                instance = testInstance(),
+                filter = CommentFilter.SPAM,
+                comments = listOf(testComment(1, status = CommentStatus.SPAM)),
+                counts = mapOf(CommentFilter.SPAM to 12),
+            ),
+        )
+
+        composeRule.onNodeWithText("12 Kommentare im Spam").assertIsDisplayed()
     }
 
     @Test
@@ -278,11 +292,12 @@ class InboxScreenTest {
             InboxUiState(
                 instance = testInstance(),
                 filter = CommentFilter.SPAM,
+                comments = listOf(testComment(1, status = CommentStatus.SPAM)),
                 counts = mapOf(CommentFilter.SPAM to 7),
             ),
         )
 
-        composeRule.onNodeWithContentDescription("Spam leeren").performClick()
+        composeRule.onNodeWithText("Spam leeren").performClick()
 
         assertEquals(1, emptyRequested)
     }

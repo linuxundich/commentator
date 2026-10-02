@@ -112,6 +112,14 @@
     <string name="about_open_repository">Open source code</string>
 
     <!-- Bulk actions and blocklist -->
+    <plurals name="inbox_spam_count">
+        <item quantity="one">%d comment in spam</item>
+        <item quantity="other">%d comments in spam</item>
+    </plurals>
+    <plurals name="inbox_trash_count">
+        <item quantity="one">%d comment in the trash</item>
+        <item quantity="other">%d comments in the trash</item>
+    </plurals>
     <string name="action_empty_spam">Empty spam</string>
     <string name="action_empty_trash">Empty trash</string>
     <string name="dialog_empty_title">Delete permanently?</string>

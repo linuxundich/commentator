@@ -14,6 +14,11 @@ is listed under `[Unreleased]`.
 
 **Android app**
 
+- "Empty spam" and "Empty trash" now sit in a labelled bar above the list of
+  the Spam and Trash filters, with the number of comments in it ("12 comments
+  in spam"), instead of an unlabelled bin icon in the top bar that only
+  appeared in those two filters.
+
 - Debug build: redirection of a blog to the local test environment, enabled
   only via the system property `debug.commentator.demo`. For screenshots and
   videos that show a real blog address without touching the real blog. Along

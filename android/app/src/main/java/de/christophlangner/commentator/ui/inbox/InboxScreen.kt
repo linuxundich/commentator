@@ -5,33 +5,31 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.ui.draw.rotate
-import de.christophlangner.commentator.ui.theme.Bewegung
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -42,26 +40,27 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -76,34 +75,36 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
-import androidx.core.content.ContextCompat
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentSignals
+import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.ThreadEntry
 import de.christophlangner.commentator.domain.model.TimelineRow
-import de.christophlangner.commentator.domain.model.ModerationAction
-import de.christophlangner.commentator.ui.common.ErrorTexts
+import de.christophlangner.commentator.ui.common.CommentSkeletonList
 import de.christophlangner.commentator.ui.common.EmptyState
 import de.christophlangner.commentator.ui.common.ErrorState
-import de.christophlangner.commentator.ui.common.CommentSkeletonList
+import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.common.OfflineBanner
 import de.christophlangner.commentator.ui.common.SessionInvalidBanner
+import de.christophlangner.commentator.ui.theme.Bewegung
 import de.christophlangner.commentator.ui.theme.CommentatorFormen
 
 /**
@@ -321,26 +322,6 @@ internal fun InboxScreenContent(
                     // ueberlassen; die uebrigen Knoepfe passen ohnehin nicht
                     // mehr daneben.
                     if (!state.searchActive) {
-                        // Nur bei Spam und Papierkorb, und nur wenn dort
-                        // ueberhaupt etwas liegt: Ein Knopf, der nichts tut,
-                        // waere irritierend.
-                        val emptyLabel = when (state.filter) {
-                            CommentFilter.SPAM -> stringResource(R.string.action_empty_spam)
-                            CommentFilter.TRASH -> stringResource(R.string.action_empty_trash)
-                            else -> null
-                        }
-                        if (emptyLabel != null && (state.counts[state.filter] ?: 0) > 0) {
-                            IconButton(
-                                onClick = onEmptyRequest,
-                                enabled = state.moderationEnabled && !state.isRefreshing,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = emptyLabel,
-                                )
-                            }
-                        }
-
                         IconButton(onClick = onOpenSearch) {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -393,6 +374,7 @@ internal fun InboxScreenContent(
                     onModerate = onModerate,
                     onLoadMore = onLoadMore,
                     onRetry = onRefresh,
+                    onEmptyRequest = onEmptyRequest,
                 )
             }
         }
@@ -407,6 +389,7 @@ private fun InboxContent(
     onModerate: (Comment, ModerationAction) -> Unit,
     onLoadMore: () -> Unit,
     onRetry: () -> Unit,
+    onEmptyRequest: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     // Welche zusammengefassten Gruppen aufgeklappt sind. Ueber den
@@ -470,6 +453,20 @@ private fun InboxContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
+            // Leeren steht als beschriftete Zeile über der Liste, nicht als
+            // Symbol in der Kopfleiste: Dort fand es niemand, weil es nur in
+            // zwei Filtern auftauchte und nichts darüber sagte, was es tut.
+            if (!state.searchActive && state.filter.emptiable) {
+                item(key = "empty-folder") {
+                    EmptyFolderBar(
+                        filter = state.filter,
+                        count = state.counts[state.filter] ?: state.comments.size,
+                        enabled = state.moderationEnabled && !state.isRefreshing,
+                        onEmpty = onEmptyRequest,
+                    )
+                }
+            }
+
             items(rows, key = { it.key }) { row ->
                 when (row) {
                     is TimelineRow.Single -> InboxEntry(
@@ -841,3 +838,46 @@ private fun SearchField(
             .focusRequester(fokus),
     )
 }
+
+private val CommentFilter.emptiable: Boolean
+    get() = this == CommentFilter.SPAM || this == CommentFilter.TRASH
+
+/** „12 Kommentare im Spam – Spam leeren“, über der Liste von Spam und Papierkorb. */
+@Composable
+private fun EmptyFolderBar(
+    filter: CommentFilter,
+    count: Int,
+    enabled: Boolean,
+    onEmpty: () -> Unit,
+) {
+    val (plural, action) = when (filter) {
+        CommentFilter.TRASH -> R.plurals.inbox_trash_count to R.string.action_empty_trash
+        else -> R.plurals.inbox_spam_count to R.string.action_empty_spam
+    }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+        ) {
+            Text(
+                text = pluralStringResource(plural, count, count),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onEmpty, enabled = enabled && count > 0) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(action))
+            }
+        }
+    }
+}
+

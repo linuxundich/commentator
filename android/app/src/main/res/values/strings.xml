@@ -126,6 +126,14 @@
     <string name="about_open_repository">Quelltext öffnen</string>
 
     <!-- Sammelaktionen und Sperrliste -->
+    <plurals name="inbox_spam_count">
+        <item quantity="one">%d Kommentar im Spam</item>
+        <item quantity="other">%d Kommentare im Spam</item>
+    </plurals>
+    <plurals name="inbox_trash_count">
+        <item quantity="one">%d Kommentar im Papierkorb</item>
+        <item quantity="other">%d Kommentare im Papierkorb</item>
+    </plurals>
     <string name="action_empty_spam">Spam leeren</string>
     <string name="action_empty_trash">Papierkorb leeren</string>
     <string name="dialog_empty_title">Endgültig löschen?</string>
