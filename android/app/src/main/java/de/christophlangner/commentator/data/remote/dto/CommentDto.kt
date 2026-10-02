@@ -106,6 +106,13 @@ data class PushRequest(
     val endpoint: String,
 )
 
+/** Antwort von `commentator/v1/push/test`: wie viele Adressen den Testweckruf angenommen haben. */
+@Serializable
+data class PushTestDto(
+    val sent: Int = 0,
+    val failed: Int = 0,
+)
+
 /** Anfrage an `commentator/v1/blocklist`. */
 @Serializable
 data class BlocklistRequest(

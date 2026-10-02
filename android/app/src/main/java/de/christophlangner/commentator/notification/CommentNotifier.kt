@@ -335,6 +335,21 @@ class CommentNotifier @Inject constructor(
         post(instanceId, id, done)
     }
 
+    /** Bestätigt, dass ein Testweckruf über UnifiedPush angekommen ist. */
+    fun notifyPushTest(instance: WordPressInstance) {
+        if (!canPost()) return
+        channels.ensureCreated()
+        val notification = NotificationCompat.Builder(context, NotificationChannels.SYNC_STATUS)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.notification_push_test_title))
+            .setContentText(context.getString(R.string.notification_push_test_text, instance.displayName))
+            .setContentIntent(openInboxIntent(instance.id))
+            .setAutoCancel(true)
+            .setTimeoutAfter(PUSH_TEST_MILLIS)
+            .build()
+        post(instance.id, PUSH_TEST_ID, notification)
+    }
+
     /**
      * Die offenen Meldungen eines Blogs: Kommentar-ID und der Status, mit
      * dem sie gemeldet wurden.
@@ -501,5 +516,7 @@ class CommentNotifier @Inject constructor(
          */
         private const val SESSION_INVALID_ID = -1
         private const val SUMMARY_ID = -2
+        private const val PUSH_TEST_ID = -3
+        private const val PUSH_TEST_MILLIS = 60_000L
     }
 }

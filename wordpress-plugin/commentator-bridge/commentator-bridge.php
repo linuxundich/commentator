@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/christophlangner/commentator
  * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
- * Version:           1.6.0
+ * Version:           1.7.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -39,6 +39,18 @@
  * Seit 1.6.0 weckt auch eine Statusänderung - etwa eine Freigabe im
  * Backend -, damit die App ihre Benachrichtigung zu dem Kommentar sofort
  * zurücknimmt statt erst bei der nächsten regelmäßigen Prüfung.
+ *
+ * Seit 1.7.0 zeigt das Benutzerprofil die hinterlegten Adressen, mit
+ * Entfernen und Testweckruf. Für Admins gibt es zwei Stellschrauben, bewusst
+ * ohne Einstellungsseite:
+ *
+ * - define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true ); in wp-config.php
+ *   schaltet die Sofortmeldung ab. Das Plugin sendet dann nichts nach außen
+ *   und nimmt keine Adressen an; alles andere bleibt.
+ * - Der Filter commentator_bridge_push_allow_local erlaubt Push-Server im
+ *   eigenen Netz, etwa wenn Blog und ntfy auf demselben Rechner laufen.
+ *   Der Filter commentator_bridge_push_endpoint_allowed kann Adressen
+ *   zusätzlich einschränken, etwa auf den eigenen Server.
  */
 
 declare( strict_types = 1 );
@@ -47,7 +59,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.6.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.7.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -66,9 +78,22 @@ const COMMENTATOR_BRIDGE_PUSH_META = 'commentator_push_endpoints';
  */
 const COMMENTATOR_BRIDGE_PUSH_LIMIT = 5;
 
+/**
+ * Mindestabstand zwischen zwei Weckrufen wegen Statusänderungen, in
+ * Sekunden. Sammelmoderation im Backend ändert Dutzende Kommentare auf
+ * einmal; ein Weckruf genügt, die App gleicht alles in einem Durchgang ab.
+ * Neue Kommentare wecken immer - einen davon zu verschlucken hieße, ihn erst
+ * Stunden später zu melden.
+ */
+const COMMENTATOR_BRIDGE_PUSH_STATUS_GAP = 30;
+
 add_action( 'rest_api_init', 'commentator_bridge_register_routes' );
 add_action( 'wp_insert_comment', 'commentator_bridge_push_new_comment', 10, 2 );
 add_action( 'transition_comment_status', 'commentator_bridge_push_status_change', 10, 3 );
+add_action( 'show_user_profile', 'commentator_bridge_profile_section' );
+add_action( 'edit_user_profile', 'commentator_bridge_profile_section' );
+add_action( 'admin_post_commentator_push_remove', 'commentator_bridge_profile_remove' );
+add_action( 'admin_post_commentator_push_test', 'commentator_bridge_profile_test' );
 
 function commentator_bridge_register_routes(): void {
 	register_rest_route(
@@ -146,6 +171,16 @@ function commentator_bridge_register_routes(): void {
 					),
 				),
 			),
+		)
+	);
+
+	register_rest_route(
+		COMMENTATOR_BRIDGE_NAMESPACE,
+		'/push/test',
+		array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => 'commentator_bridge_push_test',
+			'permission_callback' => 'commentator_bridge_can_moderate',
 		)
 	);
 
@@ -487,8 +522,16 @@ function commentator_bridge_blocklist_save( array $entries ): void {
  * erführe trotzdem, wann der Blog Kommentare bekommt.
  */
 function commentator_bridge_push_add( WP_REST_Request $request ) {
+	if ( ! commentator_bridge_push_enabled() ) {
+		return new WP_Error(
+			'commentator_push_disabled',
+			'Die Sofortmeldung ist auf diesem Blog abgeschaltet.',
+			array( 'status' => 403 )
+		);
+	}
+
 	$endpoint = esc_url_raw( (string) $request->get_param( 'endpoint' ), array( 'https' ) );
-	if ( '' === $endpoint || ! wp_http_validate_url( $endpoint ) ) {
+	if ( '' === $endpoint || ! commentator_bridge_push_endpoint_valid( $endpoint ) ) {
 		return new WP_Error(
 			'commentator_invalid_endpoint',
 			'Die Push-Adresse muss eine öffentlich erreichbare HTTPS-Adresse sein.',
@@ -519,6 +562,85 @@ function commentator_bridge_push_remove( WP_REST_Request $request ): WP_REST_Res
 	}
 
 	return new WP_REST_Response( array( 'removed' => count( $endpoints ) !== count( $remaining ) ) );
+}
+
+/**
+ * Schickt an alle Adressen des angemeldeten Kontos einen Testweckruf und
+ * wartet dabei auf die Antwort des Push-Servers - anders als im Betrieb:
+ * Hier ist gerade die Frage, ob er ankommt.
+ */
+function commentator_bridge_push_test(): WP_REST_Response {
+	return new WP_REST_Response( commentator_bridge_push_test_user( get_current_user_id() ) );
+}
+
+/** @return array{sent: int, failed: int} */
+function commentator_bridge_push_test_user( int $user_id ): array {
+	$sent   = 0;
+	$failed = 0;
+	if ( commentator_bridge_push_enabled() ) {
+		foreach ( commentator_bridge_push_endpoints( $user_id ) as $endpoint ) {
+			$response = commentator_bridge_push_send( $endpoint, 'test', 'high', true );
+			$code     = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+			if ( $code >= 200 && $code < 300 ) {
+				++$sent;
+			} else {
+				++$failed;
+			}
+		}
+	}
+	return array(
+		'sent'   => $sent,
+		'failed' => $failed,
+	);
+}
+
+/** Ob die Sofortmeldung auf diesem Blog erlaubt ist. */
+function commentator_bridge_push_enabled(): bool {
+	return ! ( defined( 'COMMENTATOR_BRIDGE_DISABLE_PUSH' ) && COMMENTATOR_BRIDGE_DISABLE_PUSH );
+}
+
+/** Ob Push-Server im eigenen Netz erlaubt sind. Voreingestellt: nein. */
+function commentator_bridge_push_allow_local(): bool {
+	return (bool) apply_filters( 'commentator_bridge_push_allow_local', false );
+}
+
+/**
+ * Prüft eine Push-Adresse: HTTPS, öffentlich erreichbar - sonst ließe sich
+ * der Blog als Sprungbrett ins eigene Netz benutzen -, und was der Filter
+ * commentator_bridge_push_endpoint_allowed dazu sagt.
+ */
+function commentator_bridge_push_endpoint_valid( string $endpoint ): bool {
+	if ( 'https' !== wp_parse_url( $endpoint, PHP_URL_SCHEME ) ) {
+		return false;
+	}
+	if ( ! commentator_bridge_push_allow_local() && ! wp_http_validate_url( $endpoint ) ) {
+		return false;
+	}
+	return (bool) apply_filters( 'commentator_bridge_push_endpoint_allowed', true, $endpoint );
+}
+
+/**
+ * Der eine Weg, auf dem das Plugin nach außen sendet.
+ *
+ * @return array|WP_Error
+ */
+function commentator_bridge_push_send( string $endpoint, string $body, string $urgency, bool $blocking ) {
+	$args = array(
+		'body'     => $body,
+		'blocking' => $blocking,
+		'timeout'  => $blocking ? 5 : 3,
+		'headers'  => array(
+			'Content-Type' => 'text/plain',
+			// Web-Push-Kopfzeilen, die auch ntfy versteht: höchstens eine
+			// Stunde vorhalten - was später käme, holt die regelmäßige
+			// Prüfung ohnehin ein.
+			'TTL'          => '3600',
+			'Urgency'      => $urgency,
+		),
+	);
+	return commentator_bridge_push_allow_local()
+		? wp_remote_post( $endpoint, $args )
+		: wp_safe_remote_post( $endpoint, $args );
 }
 
 /** @return string[] */
@@ -552,7 +674,7 @@ function commentator_bridge_push_new_comment( $comment_id, $comment ): void {
 		return;
 	}
 
-	commentator_bridge_push_wake( (int) $comment->user_id, 'new', 'high' );
+	commentator_bridge_push_wake( (int) $comment->user_id, 'new', 'high', false );
 }
 
 /**
@@ -574,17 +696,23 @@ function commentator_bridge_push_status_change( $new_status, $old_status, $comme
 	if ( 0 === strpos( $agent, 'Commentator/' ) ) {
 		return;
 	}
-	commentator_bridge_push_wake( 0, 'status', 'normal' );
+	commentator_bridge_push_wake( 0, 'status', 'normal', true );
 }
 
 /**
  * Schickt den Weckruf an die hinterlegten Adressen aller Moderatoren.
  *
  * [$skip_user_id] wird nicht geweckt - niemand braucht eine Meldung über den
- * eigenen Kommentar. Gesendet wird nicht blockierend: Wer gerade kommentiert
- * oder moderiert, soll nicht auf einen Push-Server warten.
+ * eigenen Kommentar. Mit [$throttle] geht an eine Adresse höchstens alle
+ * COMMENTATOR_BRIDGE_PUSH_STATUS_GAP Sekunden ein Weckruf. Gesendet wird
+ * nicht blockierend: Wer gerade kommentiert oder moderiert, soll nicht auf
+ * einen Push-Server warten.
  */
-function commentator_bridge_push_wake( int $skip_user_id, string $body, string $urgency ): void {
+function commentator_bridge_push_wake( int $skip_user_id, string $body, string $urgency, bool $throttle ): void {
+	if ( ! commentator_bridge_push_enabled() ) {
+		return;
+	}
+
 	$users = get_users(
 		array(
 			'meta_key' => COMMENTATOR_BRIDGE_PUSH_META, // phpcs:ignore WordPress.DB.SlowDBQuery
@@ -597,22 +725,117 @@ function commentator_bridge_push_wake( int $skip_user_id, string $body, string $
 			continue;
 		}
 		foreach ( commentator_bridge_push_endpoints( (int) $user_id ) as $endpoint ) {
-			wp_safe_remote_post(
-				$endpoint,
-				array(
-					'body'     => $body,
-					'blocking' => false,
-					'timeout'  => 3,
-					'headers'  => array(
-						'Content-Type' => 'text/plain',
-						// Web-Push-Kopfzeilen, die auch ntfy versteht:
-						// höchstens eine Stunde vorhalten - was später
-						// käme, holt die regelmäßige Prüfung ohnehin ein.
-						'TTL'          => '3600',
-						'Urgency'      => $urgency,
-					),
-				)
-			);
+			if ( $throttle ) {
+				$key = 'commentator_push_' . md5( $endpoint );
+				if ( get_transient( $key ) ) {
+					continue;
+				}
+				set_transient( $key, 1, COMMENTATOR_BRIDGE_PUSH_STATUS_GAP );
+			}
+			commentator_bridge_push_send( $endpoint, $body, $urgency, false );
 		}
 	}
+}
+
+/**
+ * Abschnitt im Benutzerprofil: wohin dieser Blog Weckrufe schickt.
+ *
+ * Nur zur Übersicht und zum Aufräumen - angelegt werden die Adressen von der
+ * App. Gezeigt wird der Server und das Ende des Themas, nicht die ganze
+ * Adresse: Wer sie kennt, kann das Telefon wecken.
+ */
+function commentator_bridge_profile_section( WP_User $user ): void {
+	if ( ! user_can( $user, 'moderate_comments' ) || ! current_user_can( 'edit_user', $user->ID ) ) {
+		return;
+	}
+	$endpoints = commentator_bridge_push_endpoints( (int) $user->ID );
+	$notice    = isset( $_GET['commentator_push'] ) ? sanitize_key( wp_unslash( $_GET['commentator_push'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+	?>
+	<h2 id="commentator-push">Commentator: Sofortmeldung</h2>
+	<?php if ( 'removed' === $notice ) : ?>
+		<p><strong>Die Adresse wurde entfernt.</strong></p>
+	<?php elseif ( 0 === strpos( $notice, 'tested' ) ) : ?>
+		<?php $parts = explode( '_', $notice ); ?>
+		<p><strong>Testweckruf: <?php echo (int) ( $parts[1] ?? 0 ); ?> angenommen, <?php echo (int) ( $parts[2] ?? 0 ); ?> abgelehnt.</strong>
+		Angenommen heißt, der Push-Server hat ihn entgegengenommen. Ob er auf dem Telefon ankommt, zeigt dort eine Benachrichtigung von Commentator.</p>
+	<?php endif; ?>
+	<?php if ( ! commentator_bridge_push_enabled() ) : ?>
+		<p>Die Sofortmeldung ist auf diesem Blog abgeschaltet (<code>COMMENTATOR_BRIDGE_DISABLE_PUSH</code>).</p>
+	<?php elseif ( empty( $endpoints ) ) : ?>
+		<p>Keine Geräte hinterlegt. Eingerichtet wird die Sofortmeldung in der App Commentator unter den Einstellungen des Blogs.</p>
+	<?php else : ?>
+		<p>Bei jedem neuen Kommentar und jeder Statusänderung geht an diese Adressen ein Weckruf ohne Inhalt.</p>
+		<table class="widefat striped" style="max-width:40em">
+			<tbody>
+			<?php foreach ( $endpoints as $endpoint ) : ?>
+				<tr>
+					<td><code><?php echo esc_html( commentator_bridge_push_label( $endpoint ) ); ?></code></td>
+					<td style="text-align:right">
+						<a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_remove', (int) $user->ID, $endpoint ) ); ?>">Entfernen</a>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<p><a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_test', (int) $user->ID ) ); ?>">Testweckruf senden</a></p>
+	<?php endif; ?>
+	<?php
+}
+
+/** Server und Ende des Themas, etwa "ntfy.sh … x8Kq2a". */
+function commentator_bridge_push_label( string $endpoint ): string {
+	$host = (string) wp_parse_url( $endpoint, PHP_URL_HOST );
+	$path = (string) wp_parse_url( $endpoint, PHP_URL_PATH );
+	return $host . ' … ' . substr( $path, -6 );
+}
+
+function commentator_bridge_profile_action_url( string $action, int $user_id, string $endpoint = '' ): string {
+	$args = array(
+		'action'  => $action,
+		'user_id' => $user_id,
+	);
+	if ( '' !== $endpoint ) {
+		$args['endpoint'] = md5( $endpoint );
+	}
+	return wp_nonce_url( add_query_arg( $args, admin_url( 'admin-post.php' ) ), $action . '_' . $user_id );
+}
+
+/** Prüft Nonce und Recht und liefert das betroffene Konto. */
+function commentator_bridge_profile_target( string $action ): int {
+	$user_id = isset( $_GET['user_id'] ) ? absint( $_GET['user_id'] ) : 0;
+	check_admin_referer( $action . '_' . $user_id );
+	if ( ! $user_id || ! current_user_can( 'edit_user', $user_id ) ) {
+		wp_die( 'Keine Berechtigung.', 403 );
+	}
+	return $user_id;
+}
+
+function commentator_bridge_profile_back( int $user_id, string $notice ): void {
+	wp_safe_redirect( add_query_arg( 'commentator_push', $notice, get_edit_user_link( $user_id ) ) . '#commentator-push' );
+	exit;
+}
+
+function commentator_bridge_profile_remove(): void {
+	$user_id = commentator_bridge_profile_target( 'commentator_push_remove' );
+	$hash    = isset( $_GET['endpoint'] ) ? sanitize_key( wp_unslash( $_GET['endpoint'] ) ) : '';
+	$keep    = array_values(
+		array_filter(
+			commentator_bridge_push_endpoints( $user_id ),
+			static function ( string $endpoint ) use ( $hash ): bool {
+				return md5( $endpoint ) !== $hash;
+			}
+		)
+	);
+	if ( empty( $keep ) ) {
+		delete_user_meta( $user_id, COMMENTATOR_BRIDGE_PUSH_META );
+	} else {
+		update_user_meta( $user_id, COMMENTATOR_BRIDGE_PUSH_META, $keep );
+	}
+	commentator_bridge_profile_back( $user_id, 'removed' );
+}
+
+function commentator_bridge_profile_test(): void {
+	$user_id = commentator_bridge_profile_target( 'commentator_push_test' );
+	$result  = commentator_bridge_push_test_user( $user_id );
+	commentator_bridge_profile_back( $user_id, 'tested_' . $result['sent'] . '_' . $result['failed'] );
 }

@@ -23,6 +23,7 @@ object ErrorTexts {
     const val PUSH_NO_DISTRIBUTOR = "push_no_distributor"
     const val PUSH_REGISTRATION_FAILED = "push_registration_failed"
     const val PUSH_PLUGIN_OUTDATED = "push_plugin_outdated"
+    const val PUSH_DISABLED_BY_SITE = "push_disabled_by_site"
 
     fun message(resources: Resources, error: AppError): String = when (error) {
         AppError.NoConnection -> resources.getString(R.string.error_no_connection)
@@ -68,6 +69,7 @@ object ErrorTexts {
             PUSH_NO_DISTRIBUTOR -> resources.getString(R.string.error_push_no_distributor)
             PUSH_REGISTRATION_FAILED -> resources.getString(R.string.error_push_registration_failed)
             PUSH_PLUGIN_OUTDATED -> resources.getString(R.string.error_push_plugin_outdated)
+            PUSH_DISABLED_BY_SITE -> resources.getString(R.string.error_push_disabled_by_site)
             else -> resources.getString(R.string.error_unknown, error.marker)
         }
     }

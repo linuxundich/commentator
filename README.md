@@ -241,6 +241,12 @@ Adressen im lokalen Netz ab. Und er muss **vom Blog-Server aus** erreichbar
 sein – ein Server, der nur per IPv6 erreichbar ist (typisch hinter
 Carrier-Grade-NAT), hilft nichts, wenn das Hosting des Blogs nur IPv4 kann.
 
+Ob der Weg trägt, zeigt **Testen** unter „Sofort melden“: Das Plugin schickt
+einen Testweckruf, und kommt er an, erscheint die Benachrichtigung
+„Sofortmeldung funktioniert“. Im WordPress-Profil steht im Abschnitt
+„Commentator: Sofortmeldung“, wohin der Blog Weckrufe schickt, mit
+„Entfernen“ und demselben Test (ab Plugin 1.7.0).
+
 Seit Plugin 1.6.0 weckt auch eine Moderation im Web: Die Benachrichtigung zu
 einem dort erledigten Kommentar verschwindet dann sofort. Ist jeder
 benachrichtigende Blog auf diese Weise angebunden, prüft die App nur noch alle

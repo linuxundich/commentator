@@ -4,6 +4,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -109,6 +111,7 @@ fun SiteSettingsScreen(
             state = state,
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
             onNotifyScope = viewModel::setNotifyScope,
+            onPushTest = viewModel::sendPushTest,
             onInstantPush = { an ->
                 when {
                     !an -> viewModel.disableInstantPush()
@@ -199,6 +202,7 @@ internal fun SiteSettingsContent(
     onNotifyScope: (NotifyScope) -> Unit,
     onOpenRole: (TeamRole) -> Unit,
     onInstantPush: (Boolean) -> Unit = {},
+    onPushTest: () -> Unit = {},
     onAddTemplate: () -> Unit,
     onEditTemplate: (ReplyTemplate) -> Unit,
     onDeleteTemplate: (String) -> Unit,
@@ -274,6 +278,9 @@ internal fun SiteSettingsContent(
         )
 
         InstantPushRow(state = state, onInstantPush = onInstantPush)
+        if (state.settings.instantPush && state.settings.pushEndpoint != null) {
+            PushTestRow(test = state.pushTest, onPushTest = onPushTest)
+        }
 
         HorizontalDivider()
         SectionTitle(stringResource(R.string.settings_team))
@@ -415,4 +422,43 @@ private const val PUBLIC_NTFY = "ntfy.sh"
 /** Der Server hinter einer Push-Adresse, so wie man ihn in ntfy einträgt. */
 internal fun pushServer(endpoint: String): String =
     runCatching { java.net.URI(endpoint).host }.getOrNull() ?: endpoint
+
+/**
+ * Selbsttest der Sofortmeldung: Das Plugin schickt einen Weckruf, und kommt
+ * er an, bestätigt das eine Benachrichtigung. Beantwortet die Frage, die sonst
+ * nur Warten beantwortet - ob der Weg über Blog, Push-Server und
+ * UnifiedPush-App wirklich trägt.
+ */
+@Composable
+private fun PushTestRow(test: PushTest?, onPushTest: () -> Unit) {
+    val resources = LocalResources.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        Text(
+            text = when (test) {
+                null -> stringResource(R.string.settings_push_test_hint)
+                PushTest.Sending -> stringResource(R.string.settings_push_test_sending)
+                is PushTest.Sent -> if (test.accepted > 0) {
+                    stringResource(R.string.settings_push_test_sent)
+                } else {
+                    stringResource(R.string.settings_push_test_none)
+                }
+                is PushTest.Failed -> stringResource(
+                    R.string.settings_push_test_failed,
+                    ErrorTexts.message(resources, test.error),
+                )
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onPushTest, enabled = test != PushTest.Sending) {
+            Text(stringResource(R.string.settings_push_test))
+        }
+    }
+}
 

@@ -348,7 +348,32 @@ Adressen, die älteste fällt heraus. Gespeichert werden sie in der Benutzermeta
 `commentator_push_endpoints`.
 
 Antwortet `POST` mit 404, ist das Plugin älter als 1.5.0; die App zeigt das in
-den Einstellungen des Blogs an.
+den Einstellungen des Blogs an. Mit 403 (`commentator_push_disabled`) ist die
+Sofortmeldung auf dem Blog abgeschaltet (seit 1.7.0, siehe unten).
+
+```
+POST /wp-json/commentator/v1/push/test
+```
+
+```json
+{ "sent": 1, "failed": 0 }
+```
+
+Seit 1.7.0. Schickt an alle Adressen des angemeldeten Kontos einen Weckruf mit
+dem Rumpf `test` und wartet – anders als im Betrieb – auf die Antwort des
+Push-Servers. `sent` zählt die Adressen, die mit 2xx angenommen haben. Die App
+erkennt den Rumpf `test` und bestätigt mit einer eigenen Benachrichtigung,
+statt nach Kommentaren zu sehen.
+
+Für Admins, ohne Einstellungsseite:
+
+* `define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true );` in `wp-config.php`
+  schaltet die Sofortmeldung ab: keine neuen Adressen, kein Versand.
+* Filter `commentator_bridge_push_allow_local` (`bool`, Vorgabe `false`)
+  erlaubt Push-Server im eigenen Netz; versendet wird dann über
+  `wp_remote_post` statt `wp_safe_remote_post`.
+* Filter `commentator_bridge_push_endpoint_allowed` (`bool $allowed, string
+  $endpoint`) schränkt Adressen weiter ein, etwa auf den eigenen ntfy-Server.
 
 Bei jedem neuen Kommentar, der nicht als Spam oder Papierkorb eingeht, sendet
 das Plugin an jede hinterlegte Adresse aller Konten mit `moderate_comments`:

@@ -143,6 +143,12 @@ interface CommentRepository {
      */
     suspend fun registerPush(instanceId: String, endpoint: String): Outcome<Unit>
 
+    /**
+     * Lässt das Plugin einen Testweckruf an die eigenen Adressen schicken.
+     * Ergebnis: wie viele der Push-Server angenommen hat.
+     */
+    suspend fun testPush(instanceId: String): Outcome<Int>
+
     /** Nimmt eine hinterlegte Push-Adresse wieder zurück. */
     suspend fun unregisterPush(instanceId: String, endpoint: String): Outcome<Unit>
 

@@ -31,6 +31,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** Was aus einem Testweckruf geworden ist. */
+sealed interface PushTest {
+    data object Sending : PushTest
+
+    /** [accepted]: wie viele Adressen der Push-Server angenommen hat. */
+    data class Sent(val accepted: Int) : PushTest
+
+    data class Failed(val error: AppError) : PushTest
+}
+
 data class SiteSettingsUiState(
     val instance: WordPressInstance? = null,
     val settings: SiteSettings = SiteSettings.DEFAULT,
@@ -58,6 +68,8 @@ data class SiteSettingsUiState(
     val pushDistributor: String? = null,
     /** Warum die Sofortmeldung zuletzt nicht eingerichtet werden konnte. */
     val pushError: AppError? = null,
+    /** Stand des Testweckrufs; null, solange keiner geschickt wurde. */
+    val pushTest: PushTest? = null,
 ) {
     val canAddTemplate: Boolean get() = templates.size < ReplyTemplate.MAX_TEMPLATES
 }
@@ -86,6 +98,7 @@ class SiteSettingsViewModel @Inject constructor(
     private val availableRoles = MutableStateFlow<List<TeamRole>>(emptyList())
     private val pushAvailable = MutableStateFlow(false)
     private val choiceFailed = MutableStateFlow<AppError?>(null)
+    private val pushTest = MutableStateFlow<PushTest?>(null)
 
     val state: StateFlow<SiteSettingsUiState> = combine(
         authRepository.observeInstances().map { liste ->
@@ -105,10 +118,10 @@ class SiteSettingsViewModel @Inject constructor(
             wasLast = warLetzter,
         )
     }.combine(
-        combine(pushAvailable, pushSetup.errors, choiceFailed) { verfuegbar, fehler, auswahl ->
-            verfuegbar to (fehler[instanceId] ?: auswahl)
+        combine(pushAvailable, pushSetup.errors, choiceFailed, pushTest) { verfuegbar, fehler, auswahl, test ->
+            Triple(verfuegbar, fehler[instanceId] ?: auswahl, test)
         },
-    ) { zustand, (verfuegbar, fehler) ->
+    ) { zustand, (verfuegbar, fehler, test) ->
         zustand.copy(
             pushAvailable = verfuegbar,
             // Hier und nicht oben: Gewählt wird die UnifiedPush-App erst beim
@@ -116,6 +129,7 @@ class SiteSettingsViewModel @Inject constructor(
             // oben. Dort gelesen stand bis zum nächsten Öffnen kein Name da.
             pushDistributor = if (zustand.settings.instantPush) pushSetup.currentDistributor() else null,
             pushError = fehler,
+            pushTest = test,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -158,6 +172,17 @@ class SiteSettingsViewModel @Inject constructor(
         }
         choiceFailed.value = null
         viewModelScope.launch { pushSetup.enable(instanceId) }
+    }
+
+    /** Lässt das Plugin einen Testweckruf schicken. */
+    fun sendPushTest() {
+        pushTest.value = PushTest.Sending
+        viewModelScope.launch {
+            pushTest.value = when (val outcome = pushSetup.sendTest(instanceId)) {
+                is Outcome.Success -> PushTest.Sent(outcome.value)
+                is Outcome.Failure -> PushTest.Failed(outcome.error)
+            }
+        }
     }
 
     fun disableInstantPush() {

@@ -386,6 +386,11 @@ class DefaultCommentRepository @Inject constructor(
         return executor.callIgnoringBody { api.bridgePushRegister(PushRequest(endpoint)) }
     }
 
+    override suspend fun testPush(instanceId: String): Outcome<Int> {
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+        return executor.call { api.bridgePushTest() }.map { it.body.sent }
+    }
+
     override suspend fun unregisterPush(instanceId: String, endpoint: String): Outcome<Unit> {
         val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
         return executor.callIgnoringBody { api.bridgePushRemove(endpoint) }

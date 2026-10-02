@@ -30,7 +30,7 @@ class CommentatorPushService : PushService() {
     }
 
     override fun onMessage(message: PushMessage, instance: String) {
-        instantPush.onMessage()
+        scope.launch { instantPush.onMessage(instance, message.content) }
     }
 
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {

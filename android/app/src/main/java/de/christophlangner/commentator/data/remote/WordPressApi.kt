@@ -11,8 +11,9 @@ import de.christophlangner.commentator.data.remote.dto.EmptyRequest
 import de.christophlangner.commentator.data.remote.dto.EmptyResultDto
 import de.christophlangner.commentator.data.remote.dto.PostDto
 import de.christophlangner.commentator.data.remote.dto.PushRequest
-import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
+import de.christophlangner.commentator.data.remote.dto.PushTestDto
 import de.christophlangner.commentator.data.remote.dto.TeamDto
+import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
 import de.christophlangner.commentator.data.remote.dto.UserDto
 import kotlinx.serialization.json.JsonElement
 import okhttp3.ResponseBody
@@ -176,6 +177,9 @@ interface WordPressApi {
 
     @POST("commentator/v1/push")
     suspend fun bridgePushRegister(@Body body: PushRequest): Response<ResponseBody>
+
+    @POST("commentator/v1/push/test")
+    suspend fun bridgePushTest(): Response<PushTestDto>
 
     @DELETE("commentator/v1/push")
     suspend fun bridgePushRemove(@Query("endpoint") endpoint: String): Response<ResponseBody>

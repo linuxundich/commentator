@@ -4,7 +4,7 @@ Tags: comments, moderation, rest-api
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -63,6 +63,34 @@ Angenommen werden nur öffentlich erreichbare HTTPS-Adressen; versendet wird
 älteste fällt heraus. Gespeichert werden sie in der Benutzermeta
 `commentator_push_endpoints`. Ohne hinterlegte Adresse passiert nichts.
 
+Weckrufe wegen Statusänderungen gehen an eine Adresse höchstens alle 30
+Sekunden; Sammelmoderation im Backend löst so einen statt Dutzender aus. Neue
+Kommentare wecken immer.
+
+Im Benutzerprofil zeigt der Abschnitt „Commentator: Sofortmeldung“, wohin der
+Blog Weckrufe schickt, mit „Entfernen“ und „Testweckruf senden“.
+
+== Für Admins ==
+
+Es gibt keine Einstellungsseite. Für seltene Fälle:
+
+* `define( 'COMMENTATOR_BRIDGE_DISABLE_PUSH', true );` in der `wp-config.php`
+  schaltet die Sofortmeldung ab. Das Plugin nimmt dann keine Adressen an und
+  sendet nichts nach außen; alles andere bleibt.
+* Laufen Blog und ntfy im selben Netz, erlaubt
+  `add_filter( 'commentator_bridge_push_allow_local', '__return_true' );`
+  Adressen im lokalen Netz.
+* Der Filter `commentator_bridge_push_endpoint_allowed` schränkt Adressen
+  weiter ein, etwa auf den eigenen Server:
+
+    add_filter( 'commentator_bridge_push_endpoint_allowed', function ( $ok, $endpoint ) {
+        return $ok && 'ntfy.example.org' === wp_parse_url( $endpoint, PHP_URL_HOST );
+    }, 10, 2 );
+
+Einen ntfy-Server stellt man nicht hier ein, sondern in der ntfy-App auf dem
+Telefon: Die App gibt die Adresse, die sie von dort bekommt, an das Plugin
+weiter.
+
 == Was dieses Plugin nicht tut ==
 
 * Es ändert kein Verhalten von WordPress.
@@ -84,6 +112,14 @@ Die App erkennt das Plugin automatisch am Namensraum `commentator/v1` in der
 Antwort von `/wp-json/`.
 
 == Changelog ==
+
+= 1.7.0 =
+* `/push/test` und Abschnitt im Benutzerprofil: hinterlegte Adressen sehen,
+  entfernen, Testweckruf senden.
+* Weckrufe wegen Statusänderungen höchstens alle 30 Sekunden je Adresse.
+* `COMMENTATOR_BRIDGE_DISABLE_PUSH`, Filter
+  `commentator_bridge_push_allow_local` und
+  `commentator_bridge_push_endpoint_allowed`.
 
 = 1.6.0 =
 * Auch Statusänderungen wecken die App (`transition_comment_status`), außer

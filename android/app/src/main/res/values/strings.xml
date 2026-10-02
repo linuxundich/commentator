@@ -265,6 +265,12 @@
     <string name="settings_push_pending">Wird eingerichtet …</string>
     <string name="settings_push_active">Aktiv über %1$s, Server %2$s. Über den Push-Server geht nur ein Weckruf, kein Kommentarinhalt. Kommt nichts an, die Akku-Optimierung für diese App abschalten.</string>
     <string name="settings_push_public_server">Das ist der öffentliche Server von ntfy. Einen eigenen stellst du in ntfy als Standardserver ein und schaltest „Sofort melden“ danach aus und wieder ein.</string>
+    <string name="settings_push_test">Testen</string>
+    <string name="settings_push_test_hint">Testweckruf über den Blog schicken.</string>
+    <string name="settings_push_test_sending">Wird gesendet …</string>
+    <string name="settings_push_test_sent">Vom Push-Server angenommen. Gleich sollte eine Bestätigung als Benachrichtigung erscheinen – sonst hängt es an der UnifiedPush-App.</string>
+    <string name="settings_push_test_none">Beim Blog ist für dieses Konto keine Adresse hinterlegt. Sofortmeldung aus- und wieder einschalten.</string>
+    <string name="settings_push_test_failed">Test fehlgeschlagen: %1$s</string>
     <string name="settings_push_distributor_fallback">UnifiedPush</string>
     <string name="settings_push_error">Nicht eingerichtet: %1$s</string>
     <string name="settings_interval">Prüfintervall</string>
@@ -298,6 +304,8 @@
     <string name="notification_action_done">Erledigt</string>
     <string name="notification_sync_running">Suche nach neuen Kommentaren …</string>
     <string name="notification_action_running">Wird an den Blog übertragen …</string>
+    <string name="notification_push_test_title">Sofortmeldung funktioniert</string>
+    <string name="notification_push_test_text">Der Testweckruf von %1$s ist angekommen.</string>
     <string name="notification_session_invalid_title">Anmeldung abgelaufen</string>
     <string name="notification_session_invalid_text">Commentator kann %1$s nicht mehr abfragen. Bitte neu anmelden.</string>
     <plurals name="notification_new_comments_summary">
@@ -332,5 +340,6 @@
     <string name="error_push_no_distributor">Es wurde keine UnifiedPush-App gewählt.</string>
     <string name="error_push_registration_failed">Die UnifiedPush-App hat die Anmeldung abgelehnt.</string>
     <string name="error_push_plugin_outdated">Das Plugin auf dem Blog ist zu alt, es braucht Version 1.5.</string>
+    <string name="error_push_disabled_by_site">Auf dem Blog ist die Sofortmeldung abgeschaltet.</string>
     <string name="error_unknown">Unerwarteter Fehler (%1$s).</string>
 </resources>

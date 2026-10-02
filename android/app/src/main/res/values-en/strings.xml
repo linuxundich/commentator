@@ -244,6 +244,12 @@
     <string name="settings_push_pending">Setting up …</string>
     <string name="settings_push_active">Active via %1$s, server %2$s. Only a wake-up signal passes through the push server, never comment content. If nothing arrives, turn off battery optimization for that app.</string>
     <string name="settings_push_public_server">This is ntfy’s public server. To use your own, set it as the default server in ntfy, then turn “Notify instantly” off and on again.</string>
+    <string name="settings_push_test">Test</string>
+    <string name="settings_push_test_hint">Send a test wake-up through the blog.</string>
+    <string name="settings_push_test_sending">Sending …</string>
+    <string name="settings_push_test_sent">Accepted by the push server. A confirmation should appear as a notification shortly – if not, the UnifiedPush app is the problem.</string>
+    <string name="settings_push_test_none">The blog has no address on file for this account. Turn instant notifications off and on again.</string>
+    <string name="settings_push_test_failed">Test failed: %1$s</string>
     <string name="settings_push_distributor_fallback">UnifiedPush</string>
     <string name="settings_push_error">Not set up: %1$s</string>
     <string name="settings_interval">Check interval</string>
@@ -275,6 +281,8 @@
     <string name="notification_action_done">Done</string>
     <string name="notification_sync_running">Checking for new comments …</string>
     <string name="notification_action_running">Sending to the blog …</string>
+    <string name="notification_push_test_title">Instant notifications work</string>
+    <string name="notification_push_test_text">The test wake-up from %1$s arrived.</string>
     <string name="notification_session_invalid_title">Sign-in expired</string>
     <string name="notification_session_invalid_text">Commentator can no longer reach %1$s. Please sign in again.</string>
     <plurals name="notification_new_comments_summary">
@@ -308,5 +316,6 @@
     <string name="error_push_no_distributor">No UnifiedPush app was selected.</string>
     <string name="error_push_registration_failed">The UnifiedPush app declined the registration.</string>
     <string name="error_push_plugin_outdated">The plugin on the blog is too old; version 1.5 is required.</string>
+    <string name="error_push_disabled_by_site">Instant notifications are disabled on the blog.</string>
     <string name="error_unknown">Unexpected error (%1$s).</string>
 </resources>

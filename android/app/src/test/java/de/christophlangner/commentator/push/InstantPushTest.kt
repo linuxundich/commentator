@@ -9,6 +9,8 @@ import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.fake.FakeCommentRepository
 import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.testInstance
+import de.christophlangner.commentator.notification.CommentNotifier
+import de.christophlangner.commentator.notification.NotificationChannels
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +58,7 @@ class InstantPushTest {
             ),
         )
         instanceStore.upsert(instance)
-        push = InstantPush(context, settings, repository, instanceStore)
+        push = InstantPush(context, settings, repository, instanceStore, CommentNotifier(context, NotificationChannels(context)))
     }
 
     private suspend fun site() = settings.siteSettings(instance.id).first()
@@ -114,5 +116,28 @@ class InstantPushTest {
         assertFalse(site().instantPush)
         assertNull(site().pushEndpoint)
         assertEquals(listOf("https://ntfy.example/up1"), repository.unregisteredPush)
+    }
+
+    @Test
+    fun `Plugin mit abgeschalteter Sofortmeldung wird als solches benannt`() = runTest {
+        settings.setInstantPush(instance.id, true)
+        repository.registerPushResult = Outcome.Failure(AppError.Forbidden)
+
+        push.onNewEndpoint(instance.id, "https://ntfy.example/up1")
+
+        assertEquals(
+            AppError.Unknown(ErrorTexts.PUSH_DISABLED_BY_SITE),
+            push.errors.value[instance.id],
+        )
+    }
+
+    @Test
+    fun `Test bei zu altem Plugin wird als solches benannt`() = runTest {
+        repository.testPushResult = Outcome.Failure(AppError.NotFound)
+
+        assertEquals(
+            Outcome.Failure(AppError.Unknown(ErrorTexts.PUSH_PLUGIN_OUTDATED)),
+            push.sendTest(instance.id),
+        )
     }
 }

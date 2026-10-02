@@ -13,6 +13,7 @@ import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.domain.repository.CommentRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
+import de.christophlangner.commentator.notification.CommentNotifier
 import de.christophlangner.commentator.notification.CommentSyncWorker
 import de.christophlangner.commentator.ui.common.ErrorTexts
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,7 @@ class InstantPush @Inject constructor(
     private val settings: SettingsRepository,
     private val repository: CommentRepository,
     private val instanceStore: InstanceStore,
+    private val notifier: CommentNotifier,
 ) : PushSetup {
 
     private val _errors = MutableStateFlow<Map<String, AppError>>(emptyMap())
@@ -106,11 +108,12 @@ class InstantPush @Inject constructor(
 
             is Outcome.Failure -> {
                 AppLog.d("Push-Adresse nicht hinterlegt: ${outcome.error}")
-                // Ein Plugin vor 1.5 kennt die Route nicht.
-                val error = if (outcome.error == AppError.NotFound) {
-                    AppError.Unknown(ErrorTexts.PUSH_PLUGIN_OUTDATED)
-                } else {
-                    outcome.error
+                val error = when (outcome.error) {
+                    // Ein Plugin vor 1.5 kennt die Route nicht.
+                    AppError.NotFound -> AppError.Unknown(ErrorTexts.PUSH_PLUGIN_OUTDATED)
+                    // Der Admin hat sie mit COMMENTATOR_BRIDGE_DISABLE_PUSH abgeschaltet.
+                    AppError.Forbidden -> AppError.Unknown(ErrorTexts.PUSH_DISABLED_BY_SITE)
+                    else -> outcome.error
                 }
                 _errors.update { it + (instanceId to error) }
             }
@@ -133,6 +136,32 @@ class InstantPush @Inject constructor(
      * Für alle Blogs, nicht nur den gemeldeten - es ist derselbe Durchgang,
      * und das Gerät ist ohnehin wach. Liegt schon einer an, genügt der.
      */
+    override suspend fun sendTest(instanceId: String): Outcome<Int> =
+        when (val outcome = repository.testPush(instanceId)) {
+            // Ein Plugin vor 1.7 kennt den Test nicht.
+            is Outcome.Failure -> if (outcome.error == AppError.NotFound) {
+                Outcome.Failure(AppError.Unknown(ErrorTexts.PUSH_PLUGIN_OUTDATED))
+            } else {
+                outcome
+            }
+            is Outcome.Success -> outcome
+        }
+
+    /**
+     * Ein Weckruf ist eingetroffen.
+     *
+     * Der Inhalt zählt nur in einem Fall: „test" kommt vom Testknopf und
+     * bestätigt mit einer eigenen Meldung, dass der Weg funktioniert. Alles
+     * andere heißt „sieh nach".
+     */
+    suspend fun onMessage(instanceId: String, content: ByteArray) {
+        if (content.decodeToString().trim() == TEST_MESSAGE) {
+            instanceStore.byId(instanceId)?.let { notifier.notifyPushTest(it) }
+            return
+        }
+        onMessage()
+    }
+
     fun onMessage() {
         val request = OneTimeWorkRequestBuilder<CommentSyncWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
@@ -154,5 +183,6 @@ class InstantPush @Inject constructor(
 
     private companion object {
         const val PUSH_SYNC_NAME = "commentator-push-sync"
+        const val TEST_MESSAGE = "test"
     }
 }

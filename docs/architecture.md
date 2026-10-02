@@ -705,6 +705,7 @@ derselben Authentifizierung wie die Kern-API:
 | `POST /empty` | `moderate_comments` | Spam oder Papierkorb stapelweise endgültig leeren (seit 1.2.0) |
 | `GET`, `POST`, `DELETE /blocklist` | `manage_options` | Die Sperrliste `disallowed_keys` lesen und pflegen (seit 1.2.0) |
 | `POST`, `DELETE /push` | `moderate_comments` | Push-Adresse für die Sofortmeldung hinterlegen und zurücknehmen (seit 1.5.0) |
+| `POST /push/test` | `moderate_comments` | Testweckruf an die eigenen Adressen, wartet auf den Push-Server (seit 1.7.0) |
 
 Geschrieben wird nur an zwei Stellen, und beide entsprechen dem, was im Backend
 ohnehin möglich ist: `/blocklist` ändert die Option `disallowed_keys` – dieselbe

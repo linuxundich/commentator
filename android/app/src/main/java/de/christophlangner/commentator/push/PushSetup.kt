@@ -1,7 +1,9 @@
 package de.christophlangner.commentator.push
 
 import android.app.Activity
+import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
+import de.christophlangner.commentator.ui.common.ErrorTexts
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -33,6 +35,9 @@ interface PushSetup {
 
     suspend fun disable(instanceId: String)
 
+    /** Lässt das Plugin einen Testweckruf schicken; Ergebnis: angenommene Adressen. */
+    suspend fun sendTest(instanceId: String): Outcome<Int>
+
     companion object {
         /** Für Tests: keine UnifiedPush-App vorhanden. */
         val NONE: PushSetup = object : PushSetup {
@@ -43,6 +48,8 @@ interface PushSetup {
                 onResult(false)
             override suspend fun enable(instanceId: String) = Unit
             override suspend fun disable(instanceId: String) = Unit
+            override suspend fun sendTest(instanceId: String): Outcome<Int> =
+                Outcome.Failure(AppError.Unknown(ErrorTexts.PUSH_NO_DISTRIBUTOR))
         }
     }
 }

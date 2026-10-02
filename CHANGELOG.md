@@ -14,6 +14,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Knopf „Testen“ unter „Sofort melden“: Das Plugin schickt einen
+  Testweckruf, und kommt er an, bestätigt das eine Benachrichtigung
+  („Sofortmeldung funktioniert“). Die Zeile sagt, ob der Push-Server ihn
+  angenommen hat – bleibt die Bestätigung trotzdem aus, liegt es an der
+  UnifiedPush-App. Am Emulator kam sie 0,6 s nach dem Tippen. Hat der Admin die
+  Sofortmeldung auf dem Blog abgeschaltet, sagt die App das.
+
 - Ist die Sofortmeldung für jeden benachrichtigenden Blog eingerichtet, prüft
   die App nur noch alle sechs Stunden nach (oder seltener, wenn so
   eingestellt). Die Prüfung bleibt als Sicherheitsnetz für verlorene
@@ -206,6 +213,17 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **WordPress-Plugin**
 
+- Version 1.7.0: `POST commentator/v1/push/test` schickt einen Testweckruf an
+  die eigenen Adressen und meldet, wie viele der Push-Server angenommen hat.
+  Das Benutzerprofil zeigt im Abschnitt „Commentator: Sofortmeldung“ die
+  hinterlegten Adressen (Server und Ende des Themas, nicht die ganze Adresse)
+  mit „Entfernen“ und „Testweckruf senden“. Weckrufe wegen Statusänderungen
+  gehen an eine Adresse höchstens alle 30 Sekunden; neue Kommentare wecken
+  immer. Für Admins ohne Einstellungsseite: `COMMENTATOR_BRIDGE_DISABLE_PUSH`
+  schaltet die Sofortmeldung ab, die Filter
+  `commentator_bridge_push_allow_local` und
+  `commentator_bridge_push_endpoint_allowed` erlauben Push-Server im eigenen
+  Netz beziehungsweise schränken Adressen ein.
 - Version 1.6.0: Auch eine Statusänderung (`transition_comment_status`) weckt
   die App, mit dem Rumpf „status“ und `Urgency: normal`. Eine im Backend
   erledigte Moderation nimmt die Benachrichtigung damit sofort zurück statt

@@ -186,6 +186,10 @@ class FakeCommentRepository : CommentRepository {
         return registerPushResult
     }
 
+    var testPushResult: Outcome<Int> = Outcome.Success(1)
+
+    override suspend fun testPush(instanceId: String): Outcome<Int> = testPushResult
+
     override suspend fun unregisterPush(instanceId: String, endpoint: String): Outcome<Unit> {
         unregisteredPush += endpoint
         return Outcome.Success(Unit)
