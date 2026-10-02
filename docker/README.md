@@ -76,3 +76,43 @@ EXTRA_SAN=IP:192.168.1.42 ./scripts/generate-cert.sh
 
 Die Kommentartexte und Zeitstempel sind fest vorgegeben, damit Tests
 wiederholbar sind. Mehrfaches Ausführen legt nichts doppelt an.
+
+## Screenshots und Demo-Video
+
+Die Bilder und das Video in `docs/screenshots/` entstehen im Emulator gegen
+diese Umgebung, mit erfundenen Kommentaren unter Namen und Logo von
+linuxundich.de:
+
+```bash
+WP_SITE_URL=https://linuxundich.de docker compose up -d
+docker compose restart proxy          # nach dem Neuerzeugen von WordPress
+./scripts/seed.sh
+./scripts/seed-screenshots.sh
+
+adb reverse tcp:8443 tcp:8443
+adb shell setprop debug.commentator.demo linuxundich.de=localhost:8443
+```
+
+Die Systemeigenschaft schaltet im **Debug-Build** eine Umleitung ein: Die App
+zeigt `linuxundich.de`, spricht aber mit dieser Umgebung. Im Release-Build
+gibt es sie nicht. Das Logo lädt die App vom echten Blog; ein
+Must-Use-Plugin (`screenshots/demo-site-icon.php`) liefert dafür dessen
+Adresse als Site-Icon.
+
+`./scripts/seed-screenshots.sh --notify` legt danach einen weiteren offenen
+Kommentar an – für die Benachrichtigung, nachdem die App ihren Ausgangszustand
+festgehalten hat.
+
+Gravatare erscheinen nur für Adressen, die wirklich einen haben. Die App fragt
+mit `d=404` an und zeigt sonst ihren eigenen Platzhalter; die erfundenen Leser
+bekommen deshalb keinen, das Teamkonto zeigt den des Betreibers.
+
+Eine aufgeräumte Statusleiste gibt der Demo-Modus von SystemUI:
+
+```bash
+adb shell settings put global sysui_demo_allowed 1
+adb shell am broadcast -a com.android.systemui.demo -e command enter
+adb shell am broadcast -a com.android.systemui.demo -e command network -e mobile hide
+adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 -e fully true
+adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+```

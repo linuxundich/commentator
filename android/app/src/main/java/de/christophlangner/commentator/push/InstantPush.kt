@@ -16,11 +16,15 @@ import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.notification.CommentNotifier
 import de.christophlangner.commentator.notification.CommentSyncWorker
 import de.christophlangner.commentator.ui.common.ErrorTexts
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.unifiedpush.android.connector.UnifiedPush
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,6 +52,13 @@ class InstantPush @Inject constructor(
     private val instanceStore: InstanceStore,
     private val notifier: CommentNotifier,
 ) : PushSetup {
+
+    /**
+     * Für Arbeit, die den Push-Dienst überdauern muss: Der Connector beendet
+     * ihn unmittelbar nach der Zustellung, und was an seinem Lebenszyklus
+     * hinge, würde mittendrin abgebrochen.
+     */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _errors = MutableStateFlow<Map<String, AppError>>(emptyMap())
 
@@ -154,12 +165,24 @@ class InstantPush @Inject constructor(
      * bestätigt mit einer eigenen Meldung, dass der Weg funktioniert. Alles
      * andere heißt „sieh nach".
      */
-    suspend fun onMessage(instanceId: String, content: ByteArray) {
+    fun onMessage(instanceId: String, content: ByteArray) {
         if (content.decodeToString().trim() == TEST_MESSAGE) {
-            instanceStore.byId(instanceId)?.let { notifier.notifyPushTest(it) }
+            scope.launch { instanceStore.byId(instanceId)?.let { notifier.notifyPushTest(it) } }
             return
         }
+        // Ohne Umweg: Das Einplanen ist schnell und darf nicht davon
+        // abhängen, wie lange der Dienst noch lebt.
         onMessage()
+    }
+
+    /** Wie [onNewEndpoint], aber unabhängig vom Lebenszyklus des Dienstes. */
+    fun onNewEndpointAsync(instanceId: String, endpoint: String) {
+        scope.launch { onNewEndpoint(instanceId, endpoint) }
+    }
+
+    /** Wie [onUnregistered], aber unabhängig vom Lebenszyklus des Dienstes. */
+    fun onUnregisteredAsync(instanceId: String) {
+        scope.launch { onUnregistered(instanceId) }
     }
 
     fun onMessage() {

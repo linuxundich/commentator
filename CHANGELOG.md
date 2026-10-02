@@ -14,6 +14,13 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Debug-Build: Umleitung eines Blogs auf die lokale Testumgebung, nur über
+  die Systemeigenschaft `debug.commentator.demo` eingeschaltet. Für
+  Screenshots und Videos, die eine echte Blog-Adresse zeigen, ohne den echten
+  Blog zu berühren. Dazu `docker/scripts/seed-screenshots.sh` mit erfundenen
+  Kommentaren und die ersten Screenshots samt Demo-Video unter
+  `docs/screenshots/`.
+
 - Knopf „Testen“ unter „Sofort melden“: Das Plugin schickt einen
   Testweckruf, und kommt er an, bestätigt das eine Benachrichtigung
   („Sofortmeldung funktioniert“). Die Zeile sagt, ob der Push-Server ihn
@@ -268,6 +275,11 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 ### Fixed
 
 **Android-App**
+
+- Ein Weckruf bei beendetem App-Prozess blieb wirkungslos: Die Verarbeitung
+  hing am Lebenszyklus des Push-Dienstes, den der UnifiedPush-Connector
+  unmittelbar nach der Zustellung beendet. Jetzt wird die Prüfung ohne Umweg
+  eingeplant, und die Bestätigung des Testweckrufs läuft unabhängig vom Dienst.
 
 - Eine Antwort auf einen offenen Kommentar blieb auf der Website unsichtbar:
   Der Elternkommentar stand weiter auf „ausstehend“, und WordPress zeigt
