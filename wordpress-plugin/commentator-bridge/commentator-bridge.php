@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/christophlangner/commentator
  * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
- * Version:           1.4.0
+ * Version:           1.5.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -14,9 +14,9 @@
  * Dieses Plugin ist optional. Ohne es funktioniert die App vollständig, sie
  * stellt dann lediglich etwas teurere Anfragen an die Kern-API.
  *
- * Bewusste Beschränkung: Das Plugin hängt sich nicht in die
- * Kommentarverarbeitung ein, ändert kein Verhalten von WordPress und sendet
- * nichts nach außen.
+ * Bewusste Beschränkung: Das Plugin ändert kein Verhalten von WordPress.
+ * Nach außen sendet es nur, wenn ein Moderator das ausdrücklich eingerichtet
+ * hat (siehe /push unten), und dann nichts als einen inhaltslosen Weckruf.
  *
  * Seit 1.2.0 gibt es zwei schreibende Endpunkte. Beide tun ausschließlich
  * das, was im Backend ohnehin möglich ist, und prüfen dieselben Rechte:
@@ -27,6 +27,13 @@
  *   Einstellungen → Diskussion. Verlangt `manage_options`, weil es eine
  *   seitenweite Option ist; ein Redakteur darf moderieren, aber keine
  *   Optionen ändern.
+ *
+ * Seit 1.5.0 kann die App eine UnifiedPush-Adresse hinterlegen (/push). Bei
+ * jedem neuen Kommentar, der nicht als Spam erkannt wurde, geht dorthin ein
+ * Weckruf ohne Inhalt: kein Name, kein Text, keine Kennung. Die App holt die
+ * Kommentare danach wie gewohnt selbst über die REST-API. Der Push-Server -
+ * etwa ein eigener ntfy - erfährt damit nur, dass und wann kommentiert wurde.
+ * Ohne hinterlegte Adresse passiert nichts.
  */
 
 declare( strict_types = 1 );
@@ -35,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.4.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.5.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -44,7 +51,18 @@ const COMMENTATOR_BRIDGE_EMPTY_BATCH = 200;
 /** Hoechstzahl der Teammitglieder, die /team zurueckgibt. */
 const COMMENTATOR_BRIDGE_TEAM_LIMIT = 200;
 
+/** Benutzermeta mit den hinterlegten Push-Adressen eines Moderators. */
+const COMMENTATOR_BRIDGE_PUSH_META = 'commentator_push_endpoints';
+
+/**
+ * Höchstzahl der Push-Adressen je Konto. Eine deinstallierte App meldet sich
+ * nicht ab; die Obergrenze verhindert, dass sich Verwaistes ansammelt - die
+ * älteste Adresse fällt heraus.
+ */
+const COMMENTATOR_BRIDGE_PUSH_LIMIT = 5;
+
 add_action( 'rest_api_init', 'commentator_bridge_register_routes' );
+add_action( 'comment_post', 'commentator_bridge_push_new_comment', 10, 2 );
 
 function commentator_bridge_register_routes(): void {
 	register_rest_route(
@@ -90,6 +108,36 @@ function commentator_bridge_register_routes(): void {
 					'type'              => 'string',
 					'enum'              => array( 'spam', 'trash' ),
 					'sanitize_callback' => 'sanitize_key',
+				),
+			),
+		)
+	);
+
+	register_rest_route(
+		COMMENTATOR_BRIDGE_NAMESPACE,
+		'/push',
+		array(
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => 'commentator_bridge_push_add',
+				'permission_callback' => 'commentator_bridge_can_moderate',
+				'args'                => array(
+					'endpoint' => array(
+						'required' => true,
+						'type'     => 'string',
+						'format'   => 'uri',
+					),
+				),
+			),
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => 'commentator_bridge_push_remove',
+				'permission_callback' => 'commentator_bridge_can_moderate',
+				'args'                => array(
+					'endpoint' => array(
+						'required' => true,
+						'type'     => 'string',
+					),
 				),
 			),
 		)
@@ -424,4 +472,98 @@ function commentator_bridge_blocklist_entries(): array {
  */
 function commentator_bridge_blocklist_save( array $entries ): void {
 	update_option( 'disallowed_keys', implode( "\n", $entries ) );
+}
+
+/**
+ * Hinterlegt eine Push-Adresse für das angemeldete Konto.
+ *
+ * Nur HTTPS: Über die Adresse geht zwar kein Inhalt, aber wer mitliest,
+ * erführe trotzdem, wann der Blog Kommentare bekommt.
+ */
+function commentator_bridge_push_add( WP_REST_Request $request ) {
+	$endpoint = esc_url_raw( (string) $request->get_param( 'endpoint' ), array( 'https' ) );
+	if ( '' === $endpoint || ! wp_http_validate_url( $endpoint ) ) {
+		return new WP_Error(
+			'commentator_invalid_endpoint',
+			'Die Push-Adresse muss eine öffentlich erreichbare HTTPS-Adresse sein.',
+			array( 'status' => 400 )
+		);
+	}
+
+	$user_id   = get_current_user_id();
+	$endpoints = commentator_bridge_push_endpoints( $user_id );
+	$endpoints = array_values( array_diff( $endpoints, array( $endpoint ) ) );
+	$endpoints[] = $endpoint;
+	$endpoints   = array_slice( $endpoints, -COMMENTATOR_BRIDGE_PUSH_LIMIT );
+	update_user_meta( $user_id, COMMENTATOR_BRIDGE_PUSH_META, $endpoints );
+
+	return new WP_REST_Response( array( 'registered' => true ) );
+}
+
+function commentator_bridge_push_remove( WP_REST_Request $request ): WP_REST_Response {
+	$endpoint  = (string) $request->get_param( 'endpoint' );
+	$user_id   = get_current_user_id();
+	$endpoints = commentator_bridge_push_endpoints( $user_id );
+	$remaining = array_values( array_diff( $endpoints, array( $endpoint ) ) );
+
+	if ( empty( $remaining ) ) {
+		delete_user_meta( $user_id, COMMENTATOR_BRIDGE_PUSH_META );
+	} else {
+		update_user_meta( $user_id, COMMENTATOR_BRIDGE_PUSH_META, $remaining );
+	}
+
+	return new WP_REST_Response( array( 'removed' => count( $endpoints ) !== count( $remaining ) ) );
+}
+
+/** @return string[] */
+function commentator_bridge_push_endpoints( int $user_id ): array {
+	$stored = get_user_meta( $user_id, COMMENTATOR_BRIDGE_PUSH_META, true );
+	return is_array( $stored ) ? array_values( array_filter( $stored, 'is_string' ) ) : array();
+}
+
+/**
+ * Weckt die Apps der Moderatoren, sobald ein Kommentar eingeht.
+ *
+ * Als Spam Erkanntes weckt niemanden. Gesendet wird nicht blockierend: Der
+ * Besucher, der gerade kommentiert, soll nicht auf einen Push-Server warten.
+ * Der Rumpf ist absichtlich bedeutungslos - die App prüft danach selbst.
+ *
+ * @param int        $comment_id
+ * @param int|string $approved 1, 0, 'spam' oder 'trash'.
+ */
+function commentator_bridge_push_new_comment( $comment_id, $approved ): void {
+	if ( 'spam' === $approved || 'trash' === $approved ) {
+		return;
+	}
+
+	$users = get_users(
+		array(
+			'meta_key' => COMMENTATOR_BRIDGE_PUSH_META, // phpcs:ignore WordPress.DB.SlowDBQuery
+			'fields'   => 'ID',
+		)
+	);
+
+	foreach ( $users as $user_id ) {
+		if ( ! user_can( (int) $user_id, 'moderate_comments' ) ) {
+			continue;
+		}
+		foreach ( commentator_bridge_push_endpoints( (int) $user_id ) as $endpoint ) {
+			wp_safe_remote_post(
+				$endpoint,
+				array(
+					'body'     => 'new',
+					'blocking' => false,
+					'timeout'  => 3,
+					'headers'  => array(
+						'Content-Type' => 'text/plain',
+						// Web-Push-Kopfzeilen, die auch ntfy versteht:
+						// höchstens eine Stunde vorhalten - was später
+						// käme, holt die regelmäßige Prüfung ohnehin ein.
+						'TTL'          => '3600',
+						'Urgency'      => 'high',
+					),
+				)
+			);
+		}
+	}
 }
