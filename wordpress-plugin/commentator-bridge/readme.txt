@@ -4,7 +4,7 @@ Tags: comments, moderation, rest-api
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -110,6 +110,11 @@ The app detects the plugin automatically by the `commentator/v1` namespace in
 the response from `/wp-json/`.
 
 == Changelog ==
+
+= 1.8.2 =
+* Wake-ups are sent at the end of the request and wait for the push server's
+  answer instead of giving up silently. The profile section shows the result
+  of the last wake-up.
 
 = 1.8.1 =
 * Push servers reachable only over IPv6 are accepted. The address check

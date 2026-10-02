@@ -1,7 +1,7 @@
 # German translation of Commentator Bridge.
 msgid ""
 msgstr ""
-"Project-Id-Version: Commentator Bridge 1.8.0\n"
+"Project-Id-Version: Commentator Bridge 1.8.2\n"
 "PO-Revision-Date: 2026-10-02 14:20+0200\n"
 "Last-Translator: Christoph Langner\n"
 "Language-Team: German\n"
@@ -82,3 +82,21 @@ msgstr "Testweckruf senden"
 #: commentator-bridge.php:827
 msgid "You are not allowed to do this."
 msgstr "Keine Berechtigung."
+
+#. translators: %s: date and time
+#: commentator-bridge.php:927
+#, php-format
+msgid "Last wake-up: %s"
+msgstr "Letzter Weckruf: %s"
+
+#. translators: 1: HTTP status code, 2: duration in seconds
+#: commentator-bridge.php:935
+#, php-format
+msgid "delivered (HTTP %1$d, %2$s s)"
+msgstr "zugestellt (HTTP %1$d, %2$s s)"
+
+#. translators: %s: error message or HTTP status
+#: commentator-bridge.php:942
+#, php-format
+msgid "failed: %s"
+msgstr "fehlgeschlagen: %s"

@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/linuxundich/commentator
  * Description:       Lean REST endpoints for the Commentator Android app: cheap checks for new comments, bulk actions the core API lacks, and optional instant notifications via UnifiedPush.
- * Version:           1.8.1
+ * Version:           1.8.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -60,7 +60,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.8.1';
+const COMMENTATOR_BRIDGE_VERSION   = '1.8.2';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -681,7 +681,7 @@ function commentator_bridge_push_send( string $endpoint, string $body, string $u
 	$args = array(
 		'body'     => $body,
 		'blocking' => $blocking,
-		'timeout'  => $blocking ? 5 : 3,
+		'timeout'  => 5,
 		'headers'  => array(
 			'Content-Type' => 'text/plain',
 			// Web-Push-Kopfzeilen, die auch ntfy versteht: höchstens eine
@@ -789,9 +789,74 @@ function commentator_bridge_push_wake( int $skip_user_id, string $body, string $
 				}
 				set_transient( $key, 1, COMMENTATOR_BRIDGE_PUSH_STATUS_GAP );
 			}
-			commentator_bridge_push_send( $endpoint, $body, $urgency, false );
+			commentator_bridge_push_queue( $endpoint, $body, $urgency );
 		}
 	}
+}
+
+/** Option mit dem Ergebnis des letzten Weckrufs - zur Fehlersuche im Profil. */
+const COMMENTATOR_BRIDGE_PUSH_LAST = 'commentator_bridge_push_last';
+
+/**
+ * Merkt einen Weckruf vor; verschickt wird am Ende der Anfrage.
+ *
+ * WordPress' "nicht blockierender" Versand wartet trotzdem auf den
+ * Verbindungsaufbau und gibt nach dem Timeout still auf. Zu einem eigenen
+ * Server über IPv6 dauerte das auf dem Live-Blog zu lange: Der Weckruf zu
+ * einem neuen Kommentar kam nie an, und niemand sah es. Deshalb wird hier
+ * gesammelt, je Adresse höchstens einmal, und erst beim Herunterfahren der
+ * Anfrage blockierend verschickt - mit Antwort, die festgehalten wird.
+ */
+function commentator_bridge_push_queue( string $endpoint, string $body, string $urgency ): void {
+	global $commentator_bridge_push_pending;
+	if ( ! is_array( $commentator_bridge_push_pending ) ) {
+		$commentator_bridge_push_pending = array();
+		add_action( 'shutdown', 'commentator_bridge_push_flush', 1000 );
+	}
+	// Ein neuer Kommentar hat Vorrang vor einer Statusänderung.
+	if ( ! isset( $commentator_bridge_push_pending[ $endpoint ] ) || 'new' === $body ) {
+		$commentator_bridge_push_pending[ $endpoint ] = array( $body, $urgency );
+	}
+}
+
+/**
+ * Verschickt die vorgemerkten Weckrufe.
+ *
+ * Wo PHP-FPM es erlaubt, geht die Antwort an den Besucher vorher hinaus; sonst
+ * wartet er die wenigen hundert Millisekunden mit.
+ */
+function commentator_bridge_push_flush(): void {
+	global $commentator_bridge_push_pending;
+	if ( empty( $commentator_bridge_push_pending ) ) {
+		return;
+	}
+	$pending                         = $commentator_bridge_push_pending;
+	$commentator_bridge_push_pending = array();
+
+	if ( function_exists( 'fastcgi_finish_request' ) ) {
+		fastcgi_finish_request();
+	}
+
+	$results = array();
+	foreach ( $pending as $endpoint => list( $body, $urgency ) ) {
+		$start    = microtime( true );
+		$response = commentator_bridge_push_send( $endpoint, $body, $urgency, true );
+		$results[] = array(
+			'server'   => (string) wp_parse_url( $endpoint, PHP_URL_HOST ),
+			'code'     => is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response ),
+			'error'    => is_wp_error( $response ) ? $response->get_error_message() : '',
+			'duration' => round( microtime( true ) - $start, 2 ),
+		);
+	}
+	update_option(
+		COMMENTATOR_BRIDGE_PUSH_LAST,
+		array(
+			'time'    => time(),
+			'trigger' => $body,
+			'results' => $results,
+		),
+		false
+	);
 }
 
 /**
@@ -844,8 +909,42 @@ function commentator_bridge_profile_section( WP_User $user ): void {
 			</tbody>
 		</table>
 		<p><a class="button" href="<?php echo esc_url( commentator_bridge_profile_action_url( 'commentator_push_test', (int) $user->ID ) ); ?>"><?php esc_html_e( 'Send test wake-up', 'commentator-bridge' ); ?></a></p>
+		<?php commentator_bridge_profile_last_wake(); ?>
 	<?php endif; ?>
 	<?php
+}
+
+/** Ergebnis des letzten Weckrufs, damit sich ein Ausbleiben nachvollziehen lässt. */
+function commentator_bridge_profile_last_wake(): void {
+	$last = get_option( COMMENTATOR_BRIDGE_PUSH_LAST );
+	if ( ! is_array( $last ) || empty( $last['results'] ) ) {
+		return;
+	}
+	$when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $last['time'] );
+	echo '<p class="description">';
+	printf(
+		/* translators: %s: date and time */
+		esc_html__( 'Last wake-up: %s', 'commentator-bridge' ),
+		esc_html( $when )
+	);
+	foreach ( $last['results'] as $result ) {
+		echo '<br><code>', esc_html( $result['server'] ), '</code> – ';
+		if ( $result['code'] >= 200 && $result['code'] < 300 ) {
+			printf(
+				/* translators: 1: HTTP status code, 2: duration in seconds */
+				esc_html__( 'delivered (HTTP %1$d, %2$s s)', 'commentator-bridge' ),
+				(int) $result['code'],
+				esc_html( number_format_i18n( (float) $result['duration'], 2 ) )
+			);
+		} else {
+			printf(
+				/* translators: %s: error message or HTTP status */
+				esc_html__( 'failed: %s', 'commentator-bridge' ),
+				esc_html( '' !== $result['error'] ? $result['error'] : 'HTTP ' . (int) $result['code'] )
+			);
+		}
+	}
+	echo '</p>';
 }
 
 /** Server und Ende des Themas, etwa "ntfy.sh … x8Kq2a". */

@@ -2,14 +2,14 @@
 # This file is distributed under the MIT.
 msgid ""
 msgstr ""
-"Project-Id-Version: Commentator Bridge 1.8.0\n"
+"Project-Id-Version: Commentator Bridge 1.8.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/commentator-bridge\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-02T12:18:27+00:00\n"
+"POT-Creation-Date: 2026-10-02T14:05:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: commentator-bridge\n"
@@ -39,7 +39,7 @@ msgid "An empty entry is not allowed."
 msgstr ""
 
 #: commentator-bridge.php:538
-#: commentator-bridge.php:782
+#: commentator-bridge.php:894
 msgid "Instant notifications are disabled on this site."
 msgstr ""
 
@@ -47,40 +47,58 @@ msgstr ""
 msgid "The push address must be a publicly reachable HTTPS address."
 msgstr ""
 
-#: commentator-bridge.php:764
+#: commentator-bridge.php:876
 msgid "Commentator: instant notifications"
 msgstr ""
 
-#: commentator-bridge.php:766
+#: commentator-bridge.php:878
 msgid "The address has been removed."
 msgstr ""
 
 #. translators: 1: number of accepted test wake-ups, 2: number of rejected ones
-#: commentator-bridge.php:773
+#: commentator-bridge.php:885
 #, php-format
 msgid "Test wake-up: %1$d accepted, %2$d rejected."
 msgstr ""
 
-#: commentator-bridge.php:779
+#: commentator-bridge.php:891
 msgid "Accepted means the push server took it. Whether it reaches the phone is shown there by a notification from Commentator."
 msgstr ""
 
-#: commentator-bridge.php:784
+#: commentator-bridge.php:896
 msgid "No devices registered. Instant notifications are set up in the Commentator app, in the settings of this blog."
 msgstr ""
 
-#: commentator-bridge.php:786
+#: commentator-bridge.php:898
 msgid "On every new comment and every status change, these addresses receive a wake-up call without any content."
 msgstr ""
 
-#: commentator-bridge.php:793
+#: commentator-bridge.php:905
 msgid "Remove"
 msgstr ""
 
-#: commentator-bridge.php:799
+#: commentator-bridge.php:911
 msgid "Send test wake-up"
 msgstr ""
 
-#: commentator-bridge.php:827
+#. translators: %s: date and time
+#: commentator-bridge.php:927
+#, php-format
+msgid "Last wake-up: %s"
+msgstr ""
+
+#. translators: 1: HTTP status code, 2: duration in seconds
+#: commentator-bridge.php:935
+#, php-format
+msgid "delivered (HTTP %1$d, %2$s s)"
+msgstr ""
+
+#. translators: %s: error message or HTTP status
+#: commentator-bridge.php:942
+#, php-format
+msgid "failed: %s"
+msgstr ""
+
+#: commentator-bridge.php:973
 msgid "You are not allowed to do this."
 msgstr ""

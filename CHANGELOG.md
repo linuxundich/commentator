@@ -206,6 +206,13 @@ is listed under `[Unreleased]`.
 
 **WordPress plugin**
 
+- Version 1.8.2: A wake-up for a new comment on linuxundich.de never reached
+  the self-hosted ntfy, and nothing showed why. WordPress' "non-blocking"
+  requests still wait for the connection and give up silently at the timeout.
+  Wake-ups are now collected during the request and sent at shutdown, with a
+  proper response (timeout 5 s); under PHP-FPM the visitor's response goes out
+  first. The result of the last wake-up - time, server, HTTP status or error,
+  duration - is stored and shown in the profile section.
 - Version 1.8.1: Push servers reachable only over IPv6 were rejected as
   invalid. WordPress' own URL check (`wp_http_validate_url`, also used by
   `wp_safe_remote_post`) resolves host names over IPv4 only. The plugin now
