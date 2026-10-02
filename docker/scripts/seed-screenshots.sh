@@ -15,12 +15,12 @@
 # Letzteres wirkt nur im Debug-Build (DemoHostInterceptor). Die Zeitpunkte liegen relativ zu jetzt, damit die App
 # „vor 12 Min.“ statt eines alten Datums zeigt.
 #
-# Ein Kommentar - der von „Lena Krüger“ - wird bewusst nicht angelegt. Er
+# Ein Kommentar - der von „Fedora Hutmacher“ - wird bewusst nicht angelegt. Er
 # ist für die Benachrichtigung gedacht und kommt erst, nachdem die App ihren
 # Ausgangszustand festgehalten hat:
 #
 #   ./scripts/seed-screenshots.sh            # Blog vorbereiten
-#   ./scripts/seed-screenshots.sh --notify   # danach: Lenas Kommentar
+#   ./scripts/seed-screenshots.sh --notify   # danach: den von Fedora Hutmacher
 #
 # Verwendung:
 #   docker compose up -d && ./scripts/seed.sh && ./scripts/seed-screenshots.sh
@@ -68,7 +68,7 @@ P_GNOME="GNOME 51: Die wichtigsten Neuerungen"
 P_NTFY="ntfy: Benachrichtigungen ohne Google"
 
 if [[ "${1:-}" == "--notify" ]]; then
-    kommentar "$(post_id "$P_BTRFS")" "Lena Krüger" "lena@example.test" 0 \
+    kommentar "$(post_id "$P_BTRFS")" "Fedora Hutmacher" "fedora@example.test" 0 \
         "Danke für die Anleitung! Funktioniert das auch, wenn /home auf einem eigenen Subvolume liegt?" 0
     exit 0
 fi
@@ -114,25 +114,25 @@ wp option delete site_icon >/dev/null || true
 
 echo "== Kommentare anlegen =="
 # Freigegeben und vom Team beantwortet.
-tobias=$(kommentar "$NTFY" "Tobias Brandt" "tobias@example.test" 1 \
+tina=$(kommentar "$NTFY" "Tina Tux" "tina@example.test" 1 \
     "Endlich eine Lösung ohne Firebase. Läuft bei mir seit einer Woche stabil." 1500)
 kommentar "$NTFY" "$TEAM_NAME" "$TEAM_MAIL" 1 \
-    "Freut mich! Danke für die Rückmeldung." 1440 "$tobias" "$MOD" >/dev/null
+    "Freut mich! Danke für die Rückmeldung." 1440 "$tina" "$MOD" >/dev/null
 
 # Freigegeben, aber noch ohne Antwort - für den Filter „Unbeantwortet“.
-kommentar "$BTRFS" "Jonas Weber" "jonas@example.test" 1 \
+kommentar "$BTRFS" "Arch Ibald" "arch@example.test" 1 \
     "Snapper nutze ich seit Jahren, bei Updates ist das unschlagbar." 4300 >/dev/null
-kommentar "$GNOME" "Kai Schmitt" "kai@example.test" 1 \
+kommentar "$GNOME" "Debby Ann" "debby@example.test" 1 \
     "Ist GNOME 51 unter Arch schon in den Paketquellen?" 300 >/dev/null
 
-# Offen. Jonas ist bekannt, Mira antwortet auf einen freigegebenen Kommentar
+# Offen. Arch Ibald ist bekannt, Penny Guin antwortet auf einen freigegebenen Kommentar
 # (Gesprächsfaden), die „Agentur“ trägt die Spam-Merkmale.
-kommentar "$GNOME" "Jonas Weber" "jonas@example.test" 0 \
+kommentar "$GNOME" "Arch Ibald" "arch@example.test" 0 \
     "Die neue Schnelleinstellung für Bluetooth finde ich klasse. Lässt sich die alte Ansicht zurückholen?" 35 >/dev/null
-kommentar "$NTFY" "Mira Hoffmann" "mira@example.test" 0 \
-    "Bei mir läuft ntfy im Docker-Container hinter Nginx. Braucht es dafür besondere Einstellungen für WebSockets?" 70 "$tobias" >/dev/null
+kommentar "$NTFY" "Penny Guin" "penny@example.test" 0 \
+    "Bei mir läuft ntfy im Docker-Container hinter Nginx. Braucht es dafür besondere Einstellungen für WebSockets?" 70 "$tina" >/dev/null
 kommentar "$BTRFS" "SEO Agentur Profi" "info@example.test" 0 \
-    'Top-Rankings garantiert! <a href="https://example.test/a">Jetzt buchen</a>, <a href="https://example.test/b">Preise</a>, <a href="https://example.test/c">Referenzen</a>' 120 >/dev/null
+    'Top-Rankings garantiert! <a href="https://example.test/a">Jetzt buchen</a>, <a href="https://example.test/b">Preise</a>, <a href="https://example.test/c">Referenzen</a>' 12 >/dev/null
 
 # Spam und Papierkorb, damit die Zahlen an den Filtern nicht leer sind.
 kommentar "$GNOME" "Billig Uhren" "uhren@example.test" spam \

@@ -13,3 +13,13 @@ add_filter(
 		return $demo ? $demo : $url;
 	}
 );
+
+// Ebenfalls nur hier: Kommentare ohne Anmeldung über die REST-API, damit das
+// Demo-Video Leserkommentare ohne Verzögerung anlegen kann - so, wie sie über
+// das Formular der Website hereinkämen.
+add_filter( 'rest_allow_anonymous_comments', '__return_true' );
+
+// Und ohne Flood-Schutz: In der Testumgebung kommt jeder Kommentar von
+// derselben Adresse, und WordPress lehnte die Rückfrage im Video sonst als zu
+// schnell ab.
+add_filter( 'wp_is_comment_flood', '__return_false', PHP_INT_MAX );
