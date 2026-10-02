@@ -154,6 +154,66 @@ class DefaultCommentRepositoryTest {
         )
     }
 
+    /** Zwei Abrufe: zuerst Kommentar 1 und 2, danach nur noch der neuere 2. */
+    private suspend fun zweiAbrufe() {
+        server.enqueue(listResponse(comments(listOf(1L, 2L)), totalPages = 1))
+        server.enqueue(jsonResponse("[]"))
+        server.enqueue(jsonResponse("[]"))
+        repository.refresh(instance.id, CommentFilter.PENDING)
+
+        server.enqueue(listResponse(comments(listOf(2L)), totalPages = 1))
+        server.enqueue(jsonResponse("[]"))
+        server.enqueue(jsonResponse("[]"))
+    }
+
+    @Test
+    fun `aeltere Kommentare, die der Blog nicht mehr kennt, fallen aus dem Cache`() = runTest {
+        zweiAbrufe()
+        // Die Gegenprüfung des älteren Kommentars 1: Der Blog kennt ihn nicht mehr.
+        server.enqueue(jsonResponse("[]"))
+        repository.refresh(instance.id, CommentFilter.PENDING)
+
+        assertEquals(
+            listOf(2L),
+            repository.observeComments(instance.id, CommentFilter.PENDING).first().map { it.id },
+        )
+        val pruefung = (1..server.requestCount).map { server.takeRequest() }.last()
+        assertEquals("1", pruefung.url.queryParameter("include"))
+        assertEquals("any", pruefung.url.queryParameter("status"))
+    }
+
+    @Test
+    fun `aeltere Kommentare, die anderswo freigegeben wurden, wechseln den Filter`() = runTest {
+        zweiAbrufe()
+        server.enqueue(jsonResponse("[${comment(1L, status = "approved")}]"))
+        repository.refresh(instance.id, CommentFilter.PENDING)
+
+        assertEquals(
+            listOf(2L),
+            repository.observeComments(instance.id, CommentFilter.PENDING).first().map { it.id },
+        )
+        assertEquals(
+            listOf(1L),
+            repository.observeComments(instance.id, CommentFilter.APPROVED).first().map { it.id },
+        )
+    }
+
+    @Test
+    fun `die Gegenpruefung laeuft nicht bei jedem Aktualisieren`() = runTest {
+        zweiAbrufe()
+        server.enqueue(jsonResponse("[${comment(1L)}]"))
+        repository.refresh(instance.id, CommentFilter.PENDING)
+        val nachErster = server.requestCount
+
+        server.enqueue(listResponse(comments(listOf(2L)), totalPages = 1))
+        server.enqueue(jsonResponse("[]"))
+        server.enqueue(jsonResponse("[]"))
+        repository.refresh(instance.id, CommentFilter.PENDING)
+
+        // Liste und Titel, aber keine zweite Gegenprüfung innerhalb des Intervalls.
+        assertEquals(nachErster + 3, server.requestCount)
+    }
+
     @Test
     fun `Genehmigen sendet den Schreibwert und aktualisiert den Cache`() = runTest {
         server.enqueue(listResponse(comments(listOf(1L)), totalPages = 1))

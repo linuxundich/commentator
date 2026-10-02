@@ -54,6 +54,9 @@ class DefaultCommentRepository @Inject constructor(
 
     private data class PageState(val nextPage: Int, val totalPages: Int)
 
+    /** Wann ältere Einträge je Blog und Filter zuletzt gegengeprüft wurden. */
+    private val lastPrune = ConcurrentHashMap<String, Instant>()
+
     private val paging = ConcurrentHashMap<String, PageState>()
 
     /**
@@ -142,6 +145,7 @@ class DefaultCommentRepository @Inject constructor(
                     resolvePostTitles(instanceId, api, entities)
                     resolveThreadParents(instanceId, api, entities)
                     if (filter == CommentFilter.UNANSWERED) resolveReplies(instanceId, api, entities)
+                    pruneOlder(instanceId, api, filter, entities)
                     lastRefresh[pageKey(instanceId, filter)] = Instant.now()
                     recordSuccessfulSync(instanceId)
                     Outcome.Success(Unit)
@@ -597,6 +601,58 @@ class DefaultCommentRepository @Inject constructor(
     }
 
     /**
+     * Prüft zwischengespeicherte Kommentare, die älter sind als die eben
+     * geladene erste Seite.
+     *
+     * Die erste Seite räumt nur in ihrem eigenen Zeitfenster auf. Was älter
+     * ist, blieb bisher ungeprüft liegen - auch wenn es im Web längst gelöscht
+     * oder umgestuft war. Sichtbar wurde das unter „Unbeantwortet“ und an
+     * „Text kommt mehrfach vor“, das solche Leichen mitzählte.
+     *
+     * Eine Anfrage mit include für höchstens [MAX_PER_PAGE] Einträge: Was der
+     * Blog nicht mehr kennt, fliegt hinaus, der Rest wird mit seinem aktuellen
+     * Status übernommen. Je Blog und Filter höchstens alle
+     * [PRUNE_INTERVAL] - sonst kostete jedes Aktualisieren eine Anfrage mehr.
+     * Scheitert sie, bleibt alles, wie es war.
+     */
+    private suspend fun pruneOlder(
+        instanceId: String,
+        api: WordPressApi,
+        filter: CommentFilter,
+        page: List<CommentEntity>,
+    ) {
+        if (page.isEmpty()) return
+        val key = pageKey(instanceId, filter)
+        val now = Instant.now()
+        if (lastPrune[key]?.let { it.plus(PRUNE_INTERVAL).isAfter(now) } == true) return
+
+        val ids = dao.idsOlderThan(
+            instanceId = instanceId,
+            status = filter.status?.name,
+            beforeEpochMillis = page.minOf { it.dateEpochMillis },
+            limit = MAX_PER_PAGE,
+        )
+        // Ohne Kandidaten kein Zeitstempel: Sonst sperrte ein Abruf ohne
+        // ältere Einträge die Prüfung für den nächsten, der welche hat.
+        if (ids.isEmpty()) return
+
+        val result = executor.call {
+            api.listComments(
+                status = "any",
+                page = 1,
+                perPage = ids.size,
+                include = ids.joinToString(","),
+            )
+        }
+        val found = result.valueOrNull?.body ?: return
+        val entities = found.map { CommentMapper.toEntity(it, instanceId) }
+        if (entities.isNotEmpty()) dao.upsertComments(entities)
+        val gone = ids - entities.map { it.id }.toSet()
+        if (gone.isNotEmpty()) dao.deleteComments(instanceId, gone.toList())
+        lastPrune[key] = now
+    }
+
+    /**
      * Holt die freigegebenen Antworten auf die geladenen Kommentare - mit
      * einer Anfrage. Erst damit lässt sich sagen, ob einer schon beantwortet
      * ist; die Antworten stehen sonst oft auf einer anderen Seite.
@@ -649,6 +705,9 @@ class DefaultCommentRepository @Inject constructor(
         const val EMPTY_BATCH = 100
 
         const val PAGE_SIZE = 20
+
+        /** Wie oft ältere Einträge eines Filters höchstens gegengeprüft werden. */
+        val PRUNE_INTERVAL: java.time.Duration = java.time.Duration.ofMinutes(10)
 
         /** Obergrenze der WordPress-API für `per_page`. */
         const val MAX_PER_PAGE = 100

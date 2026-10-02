@@ -92,6 +92,22 @@ class FakeCommentDao : CommentDao {
                 .map(::withTitle)
         }
 
+    override suspend fun idsOlderThan(
+        instanceId: String,
+        status: String?,
+        beforeEpochMillis: Long,
+        limit: Int,
+    ): List<Long> = stored.value
+        .filter { it.instanceId == instanceId && (status == null || it.status == status) }
+        .filter { it.dateEpochMillis < beforeEpochMillis }
+        .sortedByDescending { it.dateEpochMillis }
+        .take(limit)
+        .map { it.id }
+
+    override suspend fun deleteComments(instanceId: String, ids: List<Long>) {
+        stored.value = stored.value.filterNot { it.instanceId == instanceId && it.id in ids }
+    }
+
     override fun observeUnanswered(instanceId: String, ownUserId: Long): Flow<List<CommentWithPost>> =
         combine(stored, teamMembers) { list, members ->
             val team = members.filter { it.instanceId == instanceId }.map { it.userId }.toSet() +

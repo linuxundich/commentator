@@ -182,15 +182,14 @@ Instanz erzeugt. Die Oberfläche ist nachgezogen.
       die App fremde Entscheidungen. Denkbar ist, den Status beim Absenden
       erneut zu lesen und bei Abweichung nachzufragen statt zu überschreiben.
       Erst mit dieser Strategie ist das Merkmal sinnvoll.*
-- [ ] **P2** Im Web gelöschte Kommentare verschwinden nicht aus dem
+- [x] **P2** Im Web gelöschte Kommentare verschwinden nicht aus dem
       Zwischenspeicher
-      *Gefunden bei den README-Aufnahmen (2026-10-02): Nach einem Neuaufsetzen
-      des Testblogs standen gelöschte Kommentare weiter unter „Unbeantwortet“,
-      und der Hinweis „Text kommt mehrfach vor“ zählte sie mit. Ein Abruf
-      räumt nur innerhalb des Zeitfensters der geladenen Seite auf; was älter
-      ist, bleibt liegen. Denkbar: beim Laden von „Unbeantwortet“ und beim
-      Abgleich der Benachrichtigungen die IDs per `include` gegenprüfen und
-      Fehlendes löschen.*
+      *Gefunden bei den README-Aufnahmen (2026-10-02), behoben: Nach dem
+      Laden der ersten Seite prüft die App die älteren zwischengespeicherten
+      Einträge desselben Filters mit einer Anfrage (`include`, `status=any`,
+      bis zu 100). Was der Blog nicht mehr kennt, fliegt hinaus, der Rest
+      übernimmt seinen aktuellen Status. Höchstens alle zehn Minuten je Blog
+      und Filter.*
 - [ ] **P3** Cache-Obergrenze und Aufräumen alter Kommentare
 
 ---

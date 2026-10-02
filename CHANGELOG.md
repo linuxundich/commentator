@@ -276,6 +276,12 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Im Web gelöschte oder umgestufte Kommentare blieben im Zwischenspeicher
+  liegen, wenn sie älter waren als die geladene erste Seite. Sie standen dann
+  weiter unter „Unbeantwortet“, und „Text kommt mehrfach vor“ zählte sie mit.
+  Jetzt prüft die App solche Einträge nach dem Aktualisieren mit einer Anfrage
+  gegen, höchstens alle zehn Minuten je Blog und Filter.
+
 - Ein Weckruf bei beendetem App-Prozess blieb wirkungslos: Die Verarbeitung
   hing am Lebenszyklus des Push-Dienstes, den der UnifiedPush-Connector
   unmittelbar nach der Zustellung beendet. Jetzt wird die Prüfung ohne Umweg

@@ -140,6 +140,32 @@ interface CommentDao {
     suspend fun deleteAllComments(instanceId: String)
 
     /**
+     * Zwischengespeicherte Kommentare eines Status, die älter sind als die
+     * eben geladene Seite - deren Abruf hat sie weder bestätigt noch
+     * widerlegt. Die neuesten zuerst, damit eine Prüfung mit Obergrenze das
+     * erwischt, was man am ehesten sieht.
+     */
+    @Query(
+        """
+        SELECT id FROM comments
+        WHERE instanceId = :instanceId
+          AND (:status IS NULL OR status = :status)
+          AND dateEpochMillis < :beforeEpochMillis
+        ORDER BY dateEpochMillis DESC
+        LIMIT :limit
+        """,
+    )
+    suspend fun idsOlderThan(
+        instanceId: String,
+        status: String?,
+        beforeEpochMillis: Long,
+        limit: Int,
+    ): List<Long>
+
+    @Query("DELETE FROM comments WHERE instanceId = :instanceId AND id IN (:ids)")
+    suspend fun deleteComments(instanceId: String, ids: List<Long>)
+
+    /**
      * Entfernt Einträge, die der Server in diesem Zeitfenster nicht mehr
      * liefert - sie wurden also umgestuft oder gelöscht.
      *
