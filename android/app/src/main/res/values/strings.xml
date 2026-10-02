@@ -263,7 +263,8 @@
     <string name="settings_push_needs_plugin">Braucht auf dem Blog das Plugin Commentator Bridge ab Version 1.5.</string>
     <string name="settings_push_needs_distributor">Braucht eine UnifiedPush-App wie ntfy auf diesem Telefon.</string>
     <string name="settings_push_pending">Wird eingerichtet …</string>
-    <string name="settings_push_active">Aktiv über %1$s. Über den Push-Server geht nur ein Weckruf, kein Kommentarinhalt. Kommt nichts an, die Akku-Optimierung für diese App abschalten.</string>
+    <string name="settings_push_active">Aktiv über %1$s, Server %2$s. Über den Push-Server geht nur ein Weckruf, kein Kommentarinhalt. Kommt nichts an, die Akku-Optimierung für diese App abschalten.</string>
+    <string name="settings_push_public_server">Das ist der öffentliche Server von ntfy. Einen eigenen stellst du in ntfy als Standardserver ein und schaltest „Sofort melden“ danach aus und wieder ein.</string>
     <string name="settings_push_distributor_fallback">UnifiedPush</string>
     <string name="settings_push_error">Nicht eingerichtet: %1$s</string>
     <string name="settings_interval">Prüfintervall</string>

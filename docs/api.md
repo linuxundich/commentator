@@ -249,7 +249,7 @@ GET /wp-json/commentator/v1/status
   "latest_comment_date_gmt": "2026-09-19T10:00:00",
   "latest_any_comment_id": 101,
   "latest_any_comment_date_gmt": "2026-09-19T11:30:00",
-  "plugin_version": "1.5.0"
+  "plugin_version": "1.6.0"
 }
 ```
 

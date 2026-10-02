@@ -232,9 +232,19 @@ Weckrufe kommen erst an, wenn sie das nächste Mal geöffnet wird. ntfy weist
 beim ersten Start selbst darauf hin. Mit Ausnahme kam eine Meldung im Test
 rund eine halbe Sekunde nach dem Kommentar an.
 
-Ein eigener ntfy-Server geht ebenso, solange er öffentlich per HTTPS
-erreichbar ist: Das Plugin lehnt Adressen im lokalen Netz ab. Den Server
-stellt man in der ntfy-App ein, bevor man „Sofort melden“ einschaltet.
+Ohne weiteres läuft das über den öffentlichen Server ntfy.sh. Ein eigener
+ntfy-Server geht ebenso: In der ntfy-App als Standardserver eintragen, dann
+„Sofort melden“ aus- und wieder einschalten; die App holt sich dabei eine neue
+Adresse und nennt den Server in der Einstellungszeile. Zwei Bedingungen: Der
+Server muss öffentlich per HTTPS erreichbar sein, denn das Plugin lehnt
+Adressen im lokalen Netz ab. Und er muss **vom Blog-Server aus** erreichbar
+sein – ein Server, der nur per IPv6 erreichbar ist (typisch hinter
+Carrier-Grade-NAT), hilft nichts, wenn das Hosting des Blogs nur IPv4 kann.
+
+Seit Plugin 1.6.0 weckt auch eine Moderation im Web: Die Benachrichtigung zu
+einem dort erledigten Kommentar verschwindet dann sofort. Ist jeder
+benachrichtigende Blog auf diese Weise angebunden, prüft die App nur noch alle
+sechs Stunden als Sicherheitsnetz nach.
 
 Die Knöpfe in den Benachrichtigungen erscheinen nur bei Konten, die
 Kommentare moderieren dürfen.

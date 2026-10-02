@@ -715,7 +715,8 @@ Backend der Knopf „Spam leeren“ beziehungsweise „Papierkorb leeren“ lös
 Seit 1.5.0 hängt sich das Plugin an `wp_insert_comment` und **sendet optional nach
 außen**: Ist für ein Konto mit `moderate_comments` eine Push-Adresse
 hinterlegt, geht dorthin bei jedem neuen Kommentar, der nicht als Spam oder
-Papierkorb eingeht, ein inhaltsloser Weckruf (Abschnitt 9). Ohne hinterlegte
+Papierkorb eingeht, ein inhaltsloser Weckruf (Abschnitt 9); seit 1.6.0 auch
+bei jeder Statusänderung, die nicht aus der App kommt. Ohne hinterlegte
 Adresse sendet es nichts. Tabellen legt es nicht an, Cookies setzt es nicht.
 
 ---

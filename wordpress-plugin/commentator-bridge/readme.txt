@@ -4,7 +4,7 @@ Tags: comments, moderation, rest-api
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -54,6 +54,10 @@ Kennung des Kommentars. Die App holt die Kommentare danach wie gewohnt selbst
 über die REST-API. Der Push-Server erfährt damit nur, dass und wann
 kommentiert wurde.
 
+Seit 1.6.0 weckt auch eine Statusänderung, etwa eine Freigabe im Backend, mit
+dem Rumpf "status". Die App nimmt ihre Benachrichtigung zu dem Kommentar dann
+sofort zurück. Änderungen, die aus der App selbst kommen, wecken nicht.
+
 Angenommen werden nur öffentlich erreichbare HTTPS-Adressen; versendet wird
 über `wp_safe_remote_post`. Je Konto gelten höchstens fünf Adressen, die
 älteste fällt heraus. Gespeichert werden sie in der Benutzermeta
@@ -80,6 +84,10 @@ Die App erkennt das Plugin automatisch am Namensraum `commentator/v1` in der
 Antwort von `/wp-json/`.
 
 == Changelog ==
+
+= 1.6.0 =
+* Auch Statusänderungen wecken die App (`transition_comment_status`), außer
+  sie kommen aus der App selbst.
 
 = 1.5.0 =
 * Neuer Endpunkt `/push` für die Sofortmeldung über UnifiedPush. Bei neuen

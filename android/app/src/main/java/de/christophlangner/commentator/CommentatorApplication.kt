@@ -10,13 +10,18 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import dagger.hilt.android.HiltAndroidApp
+import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.notification.NotificationChannels
 import de.christophlangner.commentator.notification.SyncScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,6 +38,8 @@ class CommentatorApplication :
     @Inject lateinit var settingsRepository: SettingsRepository
 
     @Inject lateinit var syncScheduler: SyncScheduler
+
+    @Inject lateinit var instanceStore: InstanceStore
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -76,20 +83,36 @@ class CommentatorApplication :
         observeSyncSettings()
     }
 
-    /** Hält die geplante Hintergrundprüfung mit den Einstellungen im Gleichklang. */
+    /**
+     * Hält die geplante Hintergrundprüfung mit den Einstellungen im Gleichklang.
+     *
+     * Meldet jeder benachrichtigende Blog sofort über UnifiedPush, wird die
+     * Prüfung zum Sicherheitsnetz und läuft seltener - siehe
+     * [SyncScheduler.effectiveInterval].
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeSyncSettings() {
-        applicationScope.launch {
-            settingsRepository.settings
-                .distinctUntilChanged { old, new ->
-                    old.notificationsEnabled == new.notificationsEnabled &&
-                        old.syncIntervalMinutes == new.syncIntervalMinutes
+        val pushDecktAlles = instanceStore.instances.flatMapLatest { blogs ->
+            if (blogs.isEmpty()) {
+                flowOf(false)
+            } else {
+                combine(blogs.map { settingsRepository.siteSettings(it.id) }) { alle ->
+                    SyncScheduler.pushCoversAll(alle.toList())
                 }
-                .collect { settings ->
-                    if (settings.notificationsEnabled) {
-                        syncScheduler.schedule(settings.syncIntervalMinutes)
-                    } else {
-                        syncScheduler.cancel()
-                    }
+            }
+        }
+
+        applicationScope.launch {
+            combine(settingsRepository.settings, pushDecktAlles) { settings, push ->
+                if (settings.notificationsEnabled) {
+                    SyncScheduler.effectiveInterval(settings.syncIntervalMinutes, push)
+                } else {
+                    null
+                }
+            }
+                .distinctUntilChanged()
+                .collect { minuten ->
+                    if (minuten != null) syncScheduler.schedule(minuten) else syncScheduler.cancel()
                 }
         }
     }

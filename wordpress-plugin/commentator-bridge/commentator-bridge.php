@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/christophlangner/commentator
  * Description:       Stellt der Android-App Commentator schlanke REST-Endpunkte bereit: für die regelmäßige Prüfung auf neue Kommentare sowie für Sammelaktionen, die die Kern-API nicht kennt.
- * Version:           1.5.0
+ * Version:           1.6.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -35,6 +35,10 @@
  * Kommentare danach wie gewohnt selbst über die REST-API. Der Push-Server -
  * etwa ein eigener ntfy - erfährt damit nur, dass und wann kommentiert wurde.
  * Ohne hinterlegte Adresse passiert nichts.
+ *
+ * Seit 1.6.0 weckt auch eine Statusänderung - etwa eine Freigabe im
+ * Backend -, damit die App ihre Benachrichtigung zu dem Kommentar sofort
+ * zurücknimmt statt erst bei der nächsten regelmäßigen Prüfung.
  */
 
 declare( strict_types = 1 );
@@ -43,7 +47,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.5.0';
+const COMMENTATOR_BRIDGE_VERSION   = '1.6.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -64,6 +68,7 @@ const COMMENTATOR_BRIDGE_PUSH_LIMIT = 5;
 
 add_action( 'rest_api_init', 'commentator_bridge_register_routes' );
 add_action( 'wp_insert_comment', 'commentator_bridge_push_new_comment', 10, 2 );
+add_action( 'transition_comment_status', 'commentator_bridge_push_status_change', 10, 3 );
 
 function commentator_bridge_register_routes(): void {
 	register_rest_route(
@@ -547,6 +552,39 @@ function commentator_bridge_push_new_comment( $comment_id, $comment ): void {
 		return;
 	}
 
+	commentator_bridge_push_wake( (int) $comment->user_id, 'new', 'high' );
+}
+
+/**
+ * Weckt die Apps, wenn sich der Status eines Kommentars ändert.
+ *
+ * Damit verschwindet die Benachrichtigung zu einem im Backend erledigten
+ * Kommentar sofort. Kommt die Änderung aus der App selbst, hat die sie schon
+ * zurückgenommen; ein Weckruf löste dann nur eine überflüssige Prüfung aus.
+ *
+ * @param string     $new_status
+ * @param string     $old_status
+ * @param WP_Comment $comment
+ */
+function commentator_bridge_push_status_change( $new_status, $old_status, $comment ): void {
+	if ( $new_status === $old_status || ! $comment instanceof WP_Comment ) {
+		return;
+	}
+	$agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? (string) $_SERVER['HTTP_USER_AGENT'] : '';
+	if ( 0 === strpos( $agent, 'Commentator/' ) ) {
+		return;
+	}
+	commentator_bridge_push_wake( 0, 'status', 'normal' );
+}
+
+/**
+ * Schickt den Weckruf an die hinterlegten Adressen aller Moderatoren.
+ *
+ * [$skip_user_id] wird nicht geweckt - niemand braucht eine Meldung über den
+ * eigenen Kommentar. Gesendet wird nicht blockierend: Wer gerade kommentiert
+ * oder moderiert, soll nicht auf einen Push-Server warten.
+ */
+function commentator_bridge_push_wake( int $skip_user_id, string $body, string $urgency ): void {
 	$users = get_users(
 		array(
 			'meta_key' => COMMENTATOR_BRIDGE_PUSH_META, // phpcs:ignore WordPress.DB.SlowDBQuery
@@ -555,14 +593,14 @@ function commentator_bridge_push_new_comment( $comment_id, $comment ): void {
 	);
 
 	foreach ( $users as $user_id ) {
-		if ( (int) $user_id === (int) $comment->user_id || ! user_can( (int) $user_id, 'moderate_comments' ) ) {
+		if ( (int) $user_id === $skip_user_id || ! user_can( (int) $user_id, 'moderate_comments' ) ) {
 			continue;
 		}
 		foreach ( commentator_bridge_push_endpoints( (int) $user_id ) as $endpoint ) {
 			wp_safe_remote_post(
 				$endpoint,
 				array(
-					'body'     => 'new',
+					'body'     => $body,
 					'blocking' => false,
 					'timeout'  => 3,
 					'headers'  => array(
@@ -571,7 +609,7 @@ function commentator_bridge_push_new_comment( $comment_id, $comment ): void {
 						// höchstens eine Stunde vorhalten - was später
 						// käme, holt die regelmäßige Prüfung ohnehin ein.
 						'TTL'          => '3600',
-						'Urgency'      => 'high',
+						'Urgency'      => $urgency,
 					),
 				)
 			);

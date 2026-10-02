@@ -14,6 +14,14 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **Android-App**
 
+- Ist die Sofortmeldung für jeden benachrichtigenden Blog eingerichtet, prüft
+  die App nur noch alle sechs Stunden nach (oder seltener, wenn so
+  eingestellt). Die Prüfung bleibt als Sicherheitsnetz für verlorene
+  Weckrufe. Erst eine beim Plugin hinterlegte Adresse zählt.
+- „Sofort melden“ nennt den Server der Push-Adresse. Beim öffentlichen
+  ntfy.sh steht dazu, wie man auf einen eigenen ntfy-Server wechselt: dort als
+  Standardserver eintragen, dann die Sofortmeldung aus- und wieder einschalten.
+
 - Einrichtung einer WordPress-Verbindung über den Autorisierungs-Flow für
   Application Passwords, mit manueller Eingabe als Rückfallebene.
 - Kommentar-Posteingang mit Autor, Zeitpunkt, Text, zugehörigem Beitrag und
@@ -198,6 +206,12 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 **WordPress-Plugin**
 
+- Version 1.6.0: Auch eine Statusänderung (`transition_comment_status`) weckt
+  die App, mit dem Rumpf „status“ und `Urgency: normal`. Eine im Backend
+  erledigte Moderation nimmt die Benachrichtigung damit sofort zurück statt
+  erst bei der nächsten regelmäßigen Prüfung; am Emulator gemessen 0,6 s.
+  Änderungen aus der App selbst wecken nicht – sie hat die Meldung schon
+  zurückgenommen; erkannt wird das an ihrem User-Agent `Commentator/`.
 - Version 1.5.0: `commentator/v1/push` nimmt Push-Adressen entgegen (`POST`)
   und gibt sie wieder frei (`DELETE`). Bei jedem neuen Kommentar
   (`wp_insert_comment`) geht an jede hinterlegte Adresse aller Konten mit

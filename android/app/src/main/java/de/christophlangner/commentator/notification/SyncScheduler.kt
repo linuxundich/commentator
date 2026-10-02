@@ -7,6 +7,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import de.christophlangner.commentator.domain.repository.SiteSettings
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,7 +49,28 @@ class SyncScheduler @Inject constructor(
         WorkManager.getInstance(context).cancelUniqueWork(CommentSyncWorker.UNIQUE_NAME)
     }
 
-    private companion object {
-        const val MIN_INTERVAL_MINUTES = 15L
+    companion object {
+        private const val MIN_INTERVAL_MINUTES = 15L
+
+        /**
+         * Abstand der Prüfung, solange die Sofortmeldung alles abdeckt.
+         *
+         * Sie fällt nicht ganz weg: Sie holt Weckrufe ein, die unterwegs
+         * verloren gingen - etwa weil der Push-Server gerade neu startete.
+         */
+        const val SAFETY_NET_MINUTES = 360
+
+        /**
+         * Ob jeder Blog, der benachrichtigt, über UnifiedPush meldet. Erst
+         * eine beim Plugin hinterlegte Adresse zählt; eingeschaltet allein
+         * heißt noch nicht, dass etwas ankommt.
+         */
+        fun pushCoversAll(sites: List<SiteSettings>): Boolean {
+            val meldend = sites.filter { it.notificationsEnabled }
+            return meldend.isNotEmpty() && meldend.all { it.instantPush && it.pushEndpoint != null }
+        }
+
+        fun effectiveInterval(configuredMinutes: Int, pushCoversAll: Boolean): Int =
+            if (pushCoversAll) maxOf(configuredMinutes, SAFETY_NET_MINUTES) else configuredMinutes
     }
 }

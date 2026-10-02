@@ -380,10 +380,21 @@ private fun InstantPushRow(state: SiteSettingsUiState, onInstantPush: (Boolean) 
             R.string.settings_push_error,
             ErrorTexts.message(resources, state.pushError),
         )
-        an && state.settings.pushEndpoint != null -> stringResource(
-            R.string.settings_push_active,
-            state.pushDistributor ?: stringResource(R.string.settings_push_distributor_fallback),
-        )
+        an && state.settings.pushEndpoint != null -> {
+            val server = pushServer(state.settings.pushEndpoint)
+            val aktiv = stringResource(
+                R.string.settings_push_active,
+                state.pushDistributor ?: stringResource(R.string.settings_push_distributor_fallback),
+                server,
+            )
+            // Der öffentliche Server funktioniert, gehört aber einem Anbieter.
+            // Wer einen eigenen betreibt, soll wissen, wo er umstellt.
+            if (server == PUBLIC_NTFY) {
+                aktiv + " " + stringResource(R.string.settings_push_public_server)
+            } else {
+                aktiv
+            }
+        }
         an -> stringResource(R.string.settings_push_pending)
         !plugin -> stringResource(R.string.settings_push_needs_plugin)
         !state.pushAvailable -> stringResource(R.string.settings_push_needs_distributor)
@@ -398,4 +409,10 @@ private fun InstantPushRow(state: SiteSettingsUiState, onInstantPush: (Boolean) 
         enabled = an || (state.settings.notificationsEnabled && plugin && state.pushAvailable),
     )
 }
+
+private const val PUBLIC_NTFY = "ntfy.sh"
+
+/** Der Server hinter einer Push-Adresse, so wie man ihn in ntfy einträgt. */
+internal fun pushServer(endpoint: String): String =
+    runCatching { java.net.URI(endpoint).host }.getOrNull() ?: endpoint
 
