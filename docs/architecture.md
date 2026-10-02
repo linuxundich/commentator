@@ -533,7 +533,7 @@ je Blog in dessen Einstellungen unter „Sofort melden“ einschaltbar:
   `POST /commentator/v1/push`. Beim Ausschalten, beim Entfernen des Blogs und
   bei einer Abmeldung durch die UnifiedPush-App nimmt
   `DELETE /commentator/v1/push` sie zurück; eine ersetzte Adresse ebenso.
-* Das Plugin hängt sich an `comment_post` und schickt an jede hinterlegte
+* Das Plugin hängt sich an `wp_insert_comment` (nicht `comment_post`, das nur für das Kommentarformular feuert) und schickt an jede hinterlegte
   Adresse aller Konten mit `moderate_comments` einen nicht blockierenden
   `POST` mit dem Rumpf „new“ – kein Name, kein Text, keine Kennung. Als Spam
   oder Papierkorb eingegangene Kommentare wecken niemanden.
@@ -712,7 +712,7 @@ Liste wie unter Einstellungen → Diskussion –, `/push` die Benutzermeta
 `commentator_push_endpoints` des angemeldeten Kontos. `/empty` löscht, was im
 Backend der Knopf „Spam leeren“ beziehungsweise „Papierkorb leeren“ löscht.
 
-Seit 1.5.0 hängt sich das Plugin an `comment_post` und **sendet optional nach
+Seit 1.5.0 hängt sich das Plugin an `wp_insert_comment` und **sendet optional nach
 außen**: Ist für ein Konto mit `moderate_comments` eine Push-Adresse
 hinterlegt, geht dorthin bei jedem neuen Kommentar, der nicht als Spam oder
 Papierkorb eingeht, ein inhaltsloser Weckruf (Abschnitt 9). Ohne hinterlegte

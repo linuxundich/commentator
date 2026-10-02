@@ -242,7 +242,7 @@
     <string name="settings_push_needs_plugin">Requires the Commentator Bridge plugin 1.5 or later on the blog.</string>
     <string name="settings_push_needs_distributor">Requires a UnifiedPush app such as ntfy on this phone.</string>
     <string name="settings_push_pending">Setting up …</string>
-    <string name="settings_push_active">Active via %1$s. Only a wake-up signal passes through the push server, never comment content.</string>
+    <string name="settings_push_active">Active via %1$s. Only a wake-up signal passes through the push server, never comment content. If nothing arrives, turn off battery optimization for that app.</string>
     <string name="settings_push_distributor_fallback">UnifiedPush</string>
     <string name="settings_push_error">Not set up: %1$s</string>
     <string name="settings_interval">Check interval</string>

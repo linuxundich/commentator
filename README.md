@@ -226,6 +226,16 @@ zu alt ist. Die regelmäßige Prüfung läuft weiter und holt ein, was auf dem
 Push-Weg verloren gegangen ist. Beim Ausschalten oder Entfernen des Blogs wird
 die Adresse beim Plugin wieder zurückgenommen.
 
+Wichtig: Die UnifiedPush-App braucht eine Ausnahme von der Akku-Optimierung.
+Ohne sie verweigert Android ihr ab Version 15 den Dienst im Hintergrund, und
+Weckrufe kommen erst an, wenn sie das nächste Mal geöffnet wird. ntfy weist
+beim ersten Start selbst darauf hin. Mit Ausnahme kam eine Meldung im Test
+rund eine halbe Sekunde nach dem Kommentar an.
+
+Ein eigener ntfy-Server geht ebenso, solange er öffentlich per HTTPS
+erreichbar ist: Das Plugin lehnt Adressen im lokalen Netz ab. Den Server
+stellt man in der ntfy-App ein, bevor man „Sofort melden“ einschaltet.
+
 Die Knöpfe in den Benachrichtigungen erscheinen nur bei Konten, die
 Kommentare moderieren dürfen.
 

@@ -200,7 +200,7 @@ vergeben. Alles Unveröffentlichte steht unter `[Unreleased]`.
 
 - Version 1.5.0: `commentator/v1/push` nimmt Push-Adressen entgegen (`POST`)
   und gibt sie wieder frei (`DELETE`). Bei jedem neuen Kommentar
-  (`comment_post`) geht an jede hinterlegte Adresse aller Konten mit
+  (`wp_insert_comment`) geht an jede hinterlegte Adresse aller Konten mit
   `moderate_comments` ein nicht blockierender Weckruf mit dem Rumpf „new“ –
   kein Name, kein Text, keine Kennung –, mit den Kopfzeilen `TTL: 3600` und
   `Urgency: high`. Als Spam oder Papierkorb eingegangene Kommentare wecken

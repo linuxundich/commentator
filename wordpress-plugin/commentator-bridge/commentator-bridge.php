@@ -29,7 +29,8 @@
  *   Optionen ändern.
  *
  * Seit 1.5.0 kann die App eine UnifiedPush-Adresse hinterlegen (/push). Bei
- * jedem neuen Kommentar, der nicht als Spam erkannt wurde, geht dorthin ein
+ * jedem neuen Kommentar, der nicht als Spam erkannt wurde und nicht vom
+ * Inhaber der Adresse selbst stammt, geht dorthin ein
  * Weckruf ohne Inhalt: kein Name, kein Text, keine Kennung. Die App holt die
  * Kommentare danach wie gewohnt selbst über die REST-API. Der Push-Server -
  * etwa ein eigener ntfy - erfährt damit nur, dass und wann kommentiert wurde.
@@ -62,7 +63,7 @@ const COMMENTATOR_BRIDGE_PUSH_META = 'commentator_push_endpoints';
 const COMMENTATOR_BRIDGE_PUSH_LIMIT = 5;
 
 add_action( 'rest_api_init', 'commentator_bridge_register_routes' );
-add_action( 'comment_post', 'commentator_bridge_push_new_comment', 10, 2 );
+add_action( 'wp_insert_comment', 'commentator_bridge_push_new_comment', 10, 2 );
 
 function commentator_bridge_register_routes(): void {
 	register_rest_route(
@@ -524,14 +525,24 @@ function commentator_bridge_push_endpoints( int $user_id ): array {
 /**
  * Weckt die Apps der Moderatoren, sobald ein Kommentar eingeht.
  *
- * Als Spam Erkanntes weckt niemanden. Gesendet wird nicht blockierend: Der
- * Besucher, der gerade kommentiert, soll nicht auf einen Push-Server warten.
- * Der Rumpf ist absichtlich bedeutungslos - die App prüft danach selbst.
+ * An wp_insert_comment und nicht an comment_post: comment_post feuert nur
+ * für das Kommentarformular der Website. Kommentare über die REST-API, aus
+ * anderen Plugins oder von wp-cli kämen sonst nie an.
+ *
+ * Als Spam Erkanntes weckt niemanden, und niemand wird über den eigenen
+ * Kommentar geweckt - etwa die Antwort, die er gerade aus der App geschickt
+ * hat. Gesendet wird nicht blockierend: Wer gerade kommentiert, soll nicht
+ * auf einen Push-Server warten. Der Rumpf ist absichtlich bedeutungslos - die
+ * App prüft danach selbst.
  *
  * @param int        $comment_id
- * @param int|string $approved 1, 0, 'spam' oder 'trash'.
+ * @param WP_Comment $comment
  */
-function commentator_bridge_push_new_comment( $comment_id, $approved ): void {
+function commentator_bridge_push_new_comment( $comment_id, $comment ): void {
+	if ( ! $comment instanceof WP_Comment ) {
+		return;
+	}
+	$approved = (string) $comment->comment_approved;
 	if ( 'spam' === $approved || 'trash' === $approved ) {
 		return;
 	}
@@ -544,7 +555,7 @@ function commentator_bridge_push_new_comment( $comment_id, $approved ): void {
 	);
 
 	foreach ( $users as $user_id ) {
-		if ( ! user_can( (int) $user_id, 'moderate_comments' ) ) {
+		if ( (int) $user_id === (int) $comment->user_id || ! user_can( (int) $user_id, 'moderate_comments' ) ) {
 			continue;
 		}
 		foreach ( commentator_bridge_push_endpoints( (int) $user_id ) as $endpoint ) {

@@ -106,12 +106,15 @@ class SiteSettingsViewModel @Inject constructor(
         )
     }.combine(
         combine(pushAvailable, pushSetup.errors, choiceFailed) { verfuegbar, fehler, auswahl ->
-            Triple(verfuegbar, fehler[instanceId] ?: auswahl, pushSetup.currentDistributor())
+            verfuegbar to (fehler[instanceId] ?: auswahl)
         },
-    ) { zustand, (verfuegbar, fehler, verteiler) ->
+    ) { zustand, (verfuegbar, fehler) ->
         zustand.copy(
             pushAvailable = verfuegbar,
-            pushDistributor = verteiler.takeIf { zustand.settings.instantPush },
+            // Hier und nicht oben: Gewählt wird die UnifiedPush-App erst beim
+            // Einschalten, und das ändert die Einstellungen, nicht die Flows
+            // oben. Dort gelesen stand bis zum nächsten Öffnen kein Name da.
+            pushDistributor = if (zustand.settings.instantPush) pushSetup.currentDistributor() else null,
             pushError = fehler,
         )
     }.stateIn(
