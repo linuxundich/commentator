@@ -5,6 +5,7 @@ import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.core.net.ConnectivityObserver
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.repository.CommentAlerts
 import de.christophlangner.commentator.domain.repository.CommentRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class ModerateCommentUseCase @Inject constructor(
     private val repository: CommentRepository,
     private val connectivity: ConnectivityObserver,
+    private val alerts: CommentAlerts = CommentAlerts.NONE,
 ) {
 
     data class Result(
@@ -42,12 +44,18 @@ class ModerateCommentUseCase @Inject constructor(
             ?: return Outcome.Failure(AppError.NotFound)
 
         return when (val outcome = repository.moderate(instanceId, commentId, action)) {
-            is Outcome.Success -> Outcome.Success(
+            is Outcome.Success -> {
+                // Erledigt ist erledigt - auch dann, wenn die Aktion später
+                // zurückgenommen wird: Wer zurücknimmt, steht gerade vor dem
+                // Kommentar und braucht keinen Hinweis darauf.
+                alerts.dismiss(instanceId, commentId)
+                Outcome.Success(
                 Result(
                     previousStatus = previous,
                     undoable = action !is ModerationAction.Delete || !action.permanent,
                 ),
             )
+            }
 
             is Outcome.Failure -> outcome
         }

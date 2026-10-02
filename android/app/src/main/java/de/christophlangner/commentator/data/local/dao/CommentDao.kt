@@ -33,6 +33,39 @@ interface CommentDao {
     )
     fun observeComments(instanceId: String, status: String?): Flow<List<CommentWithPost>>
 
+    /**
+     * Freigegebene Kommentare von Lesern ohne Antwort aus dem Team.
+     *
+     * Zum Team zählt, wer in `team_members` steht, und das eigene Konto -
+     * auch dann, wenn das Team noch nicht geholt wurde. Gäste tragen die 0;
+     * eine unbekannte eigene Kennung (ebenfalls 0) darf deshalb nichts
+     * ausschließen.
+     */
+    @Transaction
+    @Query(
+        """
+        SELECT c.*, p.title AS postTitle
+        FROM comments c
+        LEFT JOIN post_titles p ON p.instanceId = c.instanceId AND p.postId = c.postId
+        WHERE c.instanceId = :instanceId
+          AND c.status = 'APPROVED'
+          AND NOT (:ownUserId != 0 AND c.authorId = :ownUserId)
+          AND c.authorId NOT IN (SELECT userId FROM team_members WHERE instanceId = :instanceId)
+          AND NOT EXISTS (
+            SELECT 1 FROM comments r
+            WHERE r.instanceId = c.instanceId
+              AND r.parentId = c.id
+              AND r.status = 'APPROVED'
+              AND (
+                (:ownUserId != 0 AND r.authorId = :ownUserId)
+                OR r.authorId IN (SELECT userId FROM team_members WHERE instanceId = :instanceId)
+              )
+          )
+        ORDER BY c.dateEpochMillis DESC
+        """,
+    )
+    fun observeUnanswered(instanceId: String, ownUserId: Long): Flow<List<CommentWithPost>>
+
     @Transaction
     @Query(
         """

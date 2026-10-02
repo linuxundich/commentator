@@ -88,6 +88,26 @@
         </activity-alias>
 
         <!--
+          Knöpfe in der Benachrichtigung: Freigeben, Spam, Antworten. Nicht
+          exportiert - nur die eigenen Benachrichtigungen dürfen hierher.
+        -->
+        <receiver
+            android:name=".notification.NotificationActionReceiver"
+            android:exported="false" />
+
+        <!--
+          Sofortmeldung über UnifiedPush (optional). Nicht exportiert: Der
+          Connector leitet die Meldungen der UnifiedPush-App intern hierher.
+        -->
+        <service
+            android:name=".push.CommentatorPushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!--
           Der Standard-Initialisierer von WorkManager wird abgeschaltet, weil
           die Konfiguration aus CommentatorApplication kommt - nur so erhält
           der Worker seine Abhängigkeiten über Hilt.

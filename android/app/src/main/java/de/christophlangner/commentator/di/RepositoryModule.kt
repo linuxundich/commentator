@@ -14,12 +14,16 @@ import de.christophlangner.commentator.data.repository.DefaultReplyTemplateRepos
 import de.christophlangner.commentator.data.repository.DefaultSettingsRepository
 import de.christophlangner.commentator.data.repository.DefaultTeamRepository
 import de.christophlangner.commentator.domain.repository.AuthRepository
+import de.christophlangner.commentator.domain.repository.CommentAlerts
 import de.christophlangner.commentator.domain.repository.CommentRepository
 import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.repository.TeamRepository
+import de.christophlangner.commentator.notification.CommentNotifier
 import de.christophlangner.commentator.notification.NewCommentSource
 import de.christophlangner.commentator.notification.PollingNewCommentSource
+import de.christophlangner.commentator.push.InstantPush
+import de.christophlangner.commentator.push.PushSetup
 import javax.inject.Singleton
 
 /**
@@ -61,6 +65,14 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindNewCommentSource(impl: PollingNewCommentSource): NewCommentSource
+
+    @Binds
+    @Singleton
+    abstract fun bindCommentAlerts(impl: CommentNotifier): CommentAlerts
+
+    @Binds
+    @Singleton
+    abstract fun bindPushSetup(impl: InstantPush): PushSetup
 
     @Binds
     @Singleton

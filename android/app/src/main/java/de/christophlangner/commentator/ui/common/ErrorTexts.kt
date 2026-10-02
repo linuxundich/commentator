@@ -19,6 +19,11 @@ import de.christophlangner.commentator.core.error.AppError
  */
 object ErrorTexts {
 
+    /** Kennungen für Fehler der Sofortmeldung, die keine eigene Fehlerart brauchen. */
+    const val PUSH_NO_DISTRIBUTOR = "push_no_distributor"
+    const val PUSH_REGISTRATION_FAILED = "push_registration_failed"
+    const val PUSH_PLUGIN_OUTDATED = "push_plugin_outdated"
+
     fun message(resources: Resources, error: AppError): String = when (error) {
         AppError.NoConnection -> resources.getString(R.string.error_no_connection)
         AppError.Timeout -> resources.getString(R.string.error_timeout)
@@ -59,7 +64,12 @@ object ErrorTexts {
             else -> resources.getString(R.string.error_wordpress, error.code)
         }
 
-        is AppError.Unknown -> resources.getString(R.string.error_unknown, error.marker)
+        is AppError.Unknown -> when (error.marker) {
+            PUSH_NO_DISTRIBUTOR -> resources.getString(R.string.error_push_no_distributor)
+            PUSH_REGISTRATION_FAILED -> resources.getString(R.string.error_push_registration_failed)
+            PUSH_PLUGIN_OUTDATED -> resources.getString(R.string.error_push_plugin_outdated)
+            else -> resources.getString(R.string.error_unknown, error.marker)
+        }
     }
 
     /** Ob der Fehler durch erneutes Anmelden behoben werden kann. */

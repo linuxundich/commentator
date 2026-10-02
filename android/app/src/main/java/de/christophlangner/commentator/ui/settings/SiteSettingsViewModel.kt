@@ -1,11 +1,13 @@
 package de.christophlangner.commentator.ui.settings
 
+import android.app.Activity
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.christophlangner.commentator.core.Outcome
+import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.domain.model.NotifyScope
 import de.christophlangner.commentator.domain.model.RoleStyle
 import de.christophlangner.commentator.domain.model.TeamRole
@@ -16,6 +18,8 @@ import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import de.christophlangner.commentator.domain.repository.SiteSettings
 import de.christophlangner.commentator.domain.repository.TeamRepository
+import de.christophlangner.commentator.push.PushSetup
+import de.christophlangner.commentator.ui.common.ErrorTexts
 import de.christophlangner.commentator.ui.navigation.SiteSettingsRoute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,6 +52,12 @@ data class SiteSettingsUiState(
      */
     val removed: Boolean = false,
     val wasLast: Boolean = false,
+    /** Sofortmeldung: ob eine UnifiedPush-App installiert ist. */
+    val pushAvailable: Boolean = false,
+    /** Name der gewählten UnifiedPush-App, solange die Sofortmeldung läuft. */
+    val pushDistributor: String? = null,
+    /** Warum die Sofortmeldung zuletzt nicht eingerichtet werden konnte. */
+    val pushError: AppError? = null,
 ) {
     val canAddTemplate: Boolean get() = templates.size < ReplyTemplate.MAX_TEMPLATES
 }
@@ -67,12 +77,15 @@ class SiteSettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val replyTemplateRepository: ReplyTemplateRepository,
     private val teamRepository: TeamRepository,
+    private val pushSetup: PushSetup = PushSetup.NONE,
 ) : ViewModel() {
 
     private val instanceId: String = savedStateHandle.toRoute<SiteSettingsRoute>().instanceId
 
     private val removed = MutableStateFlow(false to false)
     private val availableRoles = MutableStateFlow<List<TeamRole>>(emptyList())
+    private val pushAvailable = MutableStateFlow(false)
+    private val choiceFailed = MutableStateFlow<AppError?>(null)
 
     val state: StateFlow<SiteSettingsUiState> = combine(
         authRepository.observeInstances().map { liste ->
@@ -90,6 +103,16 @@ class SiteSettingsViewModel @Inject constructor(
             availableRoles = roles,
             removed = entfernt,
             wasLast = warLetzter,
+        )
+    }.combine(
+        combine(pushAvailable, pushSetup.errors, choiceFailed) { verfuegbar, fehler, auswahl ->
+            Triple(verfuegbar, fehler[instanceId] ?: auswahl, pushSetup.currentDistributor())
+        },
+    ) { zustand, (verfuegbar, fehler, verteiler) ->
+        zustand.copy(
+            pushAvailable = verfuegbar,
+            pushDistributor = verteiler.takeIf { zustand.settings.instantPush },
+            pushError = fehler,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -115,6 +138,33 @@ class SiteSettingsViewModel @Inject constructor(
             settingsRepository.setSiteNotificationsEnabled(instanceId, enabled)
         }
     }
+
+    /**
+     * Ob eine UnifiedPush-App da ist, ändert sich außerhalb der App. Der
+     * Bildschirm fragt deshalb bei jeder Rückkehr nach.
+     */
+    fun refreshPushAvailability() {
+        pushAvailable.value = pushSetup.distributorAvailable()
+    }
+
+    /** Nachdem die Oberfläche eine UnifiedPush-App hat wählen lassen. */
+    fun onDistributorChosen(chosen: Boolean) {
+        if (!chosen) {
+            choiceFailed.value = AppError.Unknown(ErrorTexts.PUSH_NO_DISTRIBUTOR)
+            return
+        }
+        choiceFailed.value = null
+        viewModelScope.launch { pushSetup.enable(instanceId) }
+    }
+
+    fun disableInstantPush() {
+        choiceFailed.value = null
+        viewModelScope.launch { pushSetup.disable(instanceId) }
+    }
+
+    /** Für die Oberfläche, die damit den Auswahldialog öffnet. */
+    fun chooseDistributor(activity: Activity) =
+        pushSetup.chooseDistributor(activity, ::onDistributorChosen)
 
     fun setNotifyScope(scope: NotifyScope) {
         viewModelScope.launch { settingsRepository.setNotifyScope(instanceId, scope) }
@@ -151,6 +201,9 @@ class SiteSettingsViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch {
+            // Zuerst, solange die Zugangsdaten noch da sind: Sonst bliebe
+            // beim Plugin eine Adresse, die niemand mehr abholt.
+            if (state.value.settings.instantPush) pushSetup.disable(instanceId)
             authRepository.signOut(instanceId)
             // Danach gelesen, nicht davor: Ob es der letzte war, entscheidet
             // sich mit dem Entfernen.

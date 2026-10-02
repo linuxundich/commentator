@@ -104,6 +104,15 @@ data class SiteSettings(
      * Rollen eines Blogs stehen erst fest, wenn er befragt wurde.
      */
     val roleStyles: RoleStyles,
+    /**
+     * Ob neue Kommentare sofort über UnifiedPush gemeldet werden sollen.
+     *
+     * Ergänzt die regelmäßige Prüfung, ersetzt sie nicht: Ein verlorener
+     * Weckruf wird beim nächsten Durchgang eingeholt.
+     */
+    val instantPush: Boolean = false,
+    /** Die beim Plugin hinterlegte Push-Adresse, solange eine besteht. */
+    val pushEndpoint: String? = null,
 ) {
     companion object {
         val DEFAULT = SiteSettings(
@@ -139,4 +148,6 @@ interface SettingsRepository {
     suspend fun setNotifyScope(instanceId: String, scope: NotifyScope)
     suspend fun setTeamRoles(instanceId: String, roles: Set<String>)
     suspend fun setRoleStyle(instanceId: String, slug: String, style: RoleStyle)
+    suspend fun setInstantPush(instanceId: String, enabled: Boolean)
+    suspend fun setPushEndpoint(instanceId: String, endpoint: String?)
 }

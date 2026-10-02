@@ -8,6 +8,7 @@
     <string name="action_trash">Trash</string>
     <string name="action_delete_permanently">Delete permanently</string>
     <string name="action_reply">Reply</string>
+    <string name="action_approve_and_reply">Approve and reply</string>
     <string name="action_send_reply">Send reply</string>
     <string name="action_edit">Edit</string>
     <string name="action_save">Save</string>
@@ -38,6 +39,7 @@
 
     <string name="filter_all">All</string>
     <string name="filter_pending">Pending</string>
+    <string name="filter_unanswered">Unanswered</string>
     <string name="filter_approved">Approved</string>
     <string name="filter_spam">Spam</string>
     <string name="filter_trash">Trash</string>
@@ -52,6 +54,8 @@
     <string name="state_loading">Loading comments…</string>
     <string name="time_just_now">Just now</string>
 
+    <string name="empty_unanswered_title">All answered</string>
+    <string name="empty_unanswered_description">Every loaded approved comment has a reply from the team.</string>
     <string name="empty_pending_title">Nothing to moderate</string>
     <string name="empty_pending_description">No comments are waiting for a decision.</string>
     <string name="empty_spam_title">No spam</string>
@@ -233,6 +237,14 @@
     <string name="settings_scope_new">New comments</string>
     <string name="settings_scope_everything">Including spam</string>
     <string name="settings_scope_description">“New comments” leaves out whatever a spam filter has already sorted out. “Including spam” lets you spot misclassifications early – at the cost of far more frequent notifications.</string>
+    <string name="settings_push">Notify instantly</string>
+    <string name="settings_push_description">New comments within seconds instead of at the next check – via a UnifiedPush app such as ntfy, without Google. Regular checks continue.</string>
+    <string name="settings_push_needs_plugin">Requires the Commentator Bridge plugin 1.5 or later on the blog.</string>
+    <string name="settings_push_needs_distributor">Requires a UnifiedPush app such as ntfy on this phone.</string>
+    <string name="settings_push_pending">Setting up …</string>
+    <string name="settings_push_active">Active via %1$s. Only a wake-up signal passes through the push server, never comment content.</string>
+    <string name="settings_push_distributor_fallback">UnifiedPush</string>
+    <string name="settings_push_error">Not set up: %1$s</string>
     <string name="settings_interval">Check interval</string>
     <string name="settings_minutes">%1$d min</string>
     <string name="settings_open_system_notifications">Open system notification settings</string>
@@ -250,6 +262,18 @@
 
     <string name="notification_new_comment_title">New comment from %1$s</string>
     <string name="notification_new_reply_title">New reply from %1$s</string>
+    <string name="notification_action_approve">Approve</string>
+    <string name="notification_action_spam">Spam</string>
+    <string name="notification_action_reply">Reply</string>
+    <string name="notification_action_approve_and_reply">Approve and reply</string>
+    <string name="notification_reply_hint">Reply to %1$s</string>
+    <string name="notification_failed_approve">Approving failed: %1$s</string>
+    <string name="notification_failed_spam">Marking as spam failed: %1$s</string>
+    <string name="notification_failed_reply">Reply not sent: %1$s</string>
+    <string name="notification_lost_reply">Your reply: “%1$s”</string>
+    <string name="notification_action_done">Done</string>
+    <string name="notification_sync_running">Checking for new comments …</string>
+    <string name="notification_action_running">Sending to the blog …</string>
     <string name="notification_session_invalid_title">Sign-in expired</string>
     <string name="notification_session_invalid_text">Commentator can no longer reach %1$s. Please sign in again.</string>
     <plurals name="notification_new_comments_summary">
@@ -280,5 +304,8 @@
     <string name="error_comment_flood">Too quick. WordPress briefly throttles consecutive comments – please wait a moment.</string>
     <string name="error_trash_disabled">Trash is disabled in this installation.</string>
     <string name="error_wordpress">WordPress reports an error (%1$s).</string>
+    <string name="error_push_no_distributor">No UnifiedPush app was selected.</string>
+    <string name="error_push_registration_failed">The UnifiedPush app declined the registration.</string>
+    <string name="error_push_plugin_outdated">The plugin on the blog is too old; version 1.5 is required.</string>
     <string name="error_unknown">Unexpected error (%1$s).</string>
 </resources>

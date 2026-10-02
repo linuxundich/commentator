@@ -323,6 +323,7 @@ internal fun CommentDetailBody(
                     enabled = state.actionsEnabled,
                     isSending = state.isSendingReply,
                     templates = state.templates,
+                    approvesParent = comment.status == CommentStatus.PENDING,
                     onSend = onSendReply,
                 )
             }
@@ -578,6 +579,8 @@ private fun ReplyComposer(
     enabled: Boolean,
     isSending: Boolean,
     onSend: () -> Unit,
+    /** Ob das Senden den Kommentar zugleich freigibt - das soll der Knopf sagen. */
+    approvesParent: Boolean = false,
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         if (templates.isNotEmpty() && enabled && !isSending) {
@@ -623,7 +626,11 @@ private fun ReplyComposer(
                     )
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.action_send_reply))
+                Text(
+                    stringResource(
+                        if (approvesParent) R.string.action_approve_and_reply else R.string.action_send_reply,
+                    ),
+                )
             }
         }
     }

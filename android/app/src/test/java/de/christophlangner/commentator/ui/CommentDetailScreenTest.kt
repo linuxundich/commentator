@@ -219,7 +219,7 @@ class CommentDetailScreenTest {
 
     @Test
     fun `Antwort schreiben und senden`() {
-        render(stateWith(testComment(1)))
+        render(stateWith(testComment(1, status = CommentStatus.APPROVED)))
 
         composeRule.onNodeWithText("Antwort").performTextInput("Danke für den Hinweis")
         composeRule.onNodeWithText("Antwort senden").performClick()
@@ -229,9 +229,16 @@ class CommentDetailScreenTest {
 
     @Test
     fun `Senden bleibt bei leerem Feld gesperrt`() {
-        render(stateWith(testComment(1)))
+        render(stateWith(testComment(1, status = CommentStatus.APPROVED)))
 
         composeRule.onNodeWithText("Antwort senden").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `bei offenem Kommentar sagt der Knopf, dass er freigibt`() {
+        render(stateWith(testComment(1, status = CommentStatus.PENDING)))
+
+        composeRule.onNodeWithText("Freigeben und antworten").assertIsDisplayed()
     }
 
     @Test

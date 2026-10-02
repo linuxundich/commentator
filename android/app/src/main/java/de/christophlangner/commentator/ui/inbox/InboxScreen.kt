@@ -788,6 +788,7 @@ private fun ModerationAction.messageRes(): Int = when (this) {
 fun CommentFilter.labelRes(): Int = when (this) {
     CommentFilter.ALL -> R.string.filter_all
     CommentFilter.PENDING -> R.string.filter_pending
+    CommentFilter.UNANSWERED -> R.string.filter_unanswered
     CommentFilter.APPROVED -> R.string.filter_approved
     CommentFilter.SPAM -> R.string.filter_spam
     CommentFilter.TRASH -> R.string.filter_trash
@@ -795,6 +796,7 @@ fun CommentFilter.labelRes(): Int = when (this) {
 
 private fun CommentFilter.emptyTitleRes(): Int = when (this) {
     CommentFilter.PENDING -> R.string.empty_pending_title
+    CommentFilter.UNANSWERED -> R.string.empty_unanswered_title
     CommentFilter.SPAM -> R.string.empty_spam_title
     CommentFilter.TRASH -> R.string.empty_trash_title
     else -> R.string.empty_generic_title
@@ -802,6 +804,7 @@ private fun CommentFilter.emptyTitleRes(): Int = when (this) {
 
 private fun CommentFilter.emptyDescriptionRes(): Int = when (this) {
     CommentFilter.PENDING -> R.string.empty_pending_description
+    CommentFilter.UNANSWERED -> R.string.empty_unanswered_description
     else -> R.string.empty_generic_description
 }
 

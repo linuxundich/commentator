@@ -14,6 +14,7 @@ import de.christophlangner.commentator.data.remote.WordPressApi
 import de.christophlangner.commentator.data.remote.WordPressApiProvider
 import de.christophlangner.commentator.data.remote.dto.CreateCommentRequest
 import de.christophlangner.commentator.data.remote.dto.BlocklistRequest
+import de.christophlangner.commentator.data.remote.dto.PushRequest
 import de.christophlangner.commentator.data.remote.dto.EmptyRequest
 import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
 import de.christophlangner.commentator.data.remote.mapper.CommentMapper
@@ -24,7 +25,10 @@ import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
 import de.christophlangner.commentator.domain.repository.CommentRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -62,9 +66,16 @@ class DefaultCommentRepository @Inject constructor(
     private val lastRefresh = ConcurrentHashMap<String, Instant>()
     private val syncing = ConcurrentHashMap<String, Boolean>()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeComments(instanceId: String, filter: CommentFilter): Flow<List<Comment>> =
-        dao.observeComments(instanceId, filter.status?.name)
-            .map { rows -> rows.map(CommentMapper::toDomain) }
+        if (filter == CommentFilter.UNANSWERED) {
+            instanceStore.instances
+                .map { liste -> liste.firstOrNull { it.id == instanceId }?.userId ?: 0L }
+                .distinctUntilChanged()
+                .flatMapLatest { eigene -> dao.observeUnanswered(instanceId, eigene) }
+        } else {
+            dao.observeComments(instanceId, filter.status?.name)
+        }.map { rows -> rows.map(CommentMapper::toDomain) }
 
     override fun observeComment(instanceId: String, commentId: Long): Flow<Comment?> =
         dao.observeComment(instanceId, commentId)
@@ -130,6 +141,7 @@ class DefaultCommentRepository @Inject constructor(
                         PageState(nextPage = 2, totalPages = result.value.totalPages)
                     resolvePostTitles(instanceId, api, entities)
                     resolveThreadParents(instanceId, api, entities)
+                    if (filter == CommentFilter.UNANSWERED) resolveReplies(instanceId, api, entities)
                     lastRefresh[pageKey(instanceId, filter)] = Instant.now()
                     recordSuccessfulSync(instanceId)
                     Outcome.Success(Unit)
@@ -194,6 +206,7 @@ class DefaultCommentRepository @Inject constructor(
                 dao.upsertComments(entities)
                 resolvePostTitles(instanceId, api, entities)
                 resolveThreadParents(instanceId, api, entities)
+                if (filter == CommentFilter.UNANSWERED) resolveReplies(instanceId, api, entities)
                 val totalPages = result.value.totalPages
                 paging[key] = PageState(nextPage = state.nextPage + 1, totalPages = totalPages)
                 Outcome.Success(state.nextPage < totalPages)
@@ -252,7 +265,7 @@ class DefaultCommentRepository @Inject constructor(
             val summary = executor.call { api.bridgeSummary() }
             if (summary is Outcome.Success) {
                 CommentFilter.entries
-                    .filter { it != CommentFilter.ALL }
+                    .filter { it != CommentFilter.ALL && it.countedOnServer }
                     .forEach { filter ->
                         summary.value.body.counts[filter.queryValue]?.let { counts[filter] = it }
                     }
@@ -262,7 +275,7 @@ class DefaultCommentRepository @Inject constructor(
         }
 
         for (filter in CommentFilter.entries) {
-            if (filter in counts) continue
+            if (filter in counts || !filter.countedOnServer) continue
             val result = executor.call {
                 api.listComments(
                     status = filter.queryValue,
@@ -366,6 +379,16 @@ class DefaultCommentRepository @Inject constructor(
         val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
 
         return executor.call { api.bridgeBlock(BlocklistRequest(trimmed)) }.map { }
+    }
+
+    override suspend fun registerPush(instanceId: String, endpoint: String): Outcome<Unit> {
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+        return executor.callIgnoringBody { api.bridgePushRegister(PushRequest(endpoint)) }
+    }
+
+    override suspend fun unregisterPush(instanceId: String, endpoint: String): Outcome<Unit> {
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+        return executor.callIgnoringBody { api.bridgePushRemove(endpoint) }
     }
 
     override suspend fun countApprovedByAuthor(
@@ -546,6 +569,52 @@ class DefaultCommentRepository @Inject constructor(
         resolvePostTitles(instanceId, api, gefunden)
     }
 
+    override suspend fun currentStatuses(
+        instanceId: String,
+        ids: List<Long>,
+    ): Outcome<Map<Long, CommentStatus>> {
+        if (ids.isEmpty()) return Outcome.Success(emptyMap())
+        val api = apiFor(instanceId) ?: return Outcome.Failure(AppError.Unauthorized)
+
+        // `any` schließt Spam und Papierkorb ein, anders als `all`.
+        return executor.call {
+            api.listComments(
+                status = "any",
+                page = 1,
+                perPage = ids.size.coerceAtMost(MAX_PER_PAGE),
+                include = ids.take(MAX_PER_PAGE).joinToString(","),
+            )
+        }.map { response ->
+            val entities = response.body.map { CommentMapper.toEntity(it, instanceId) }
+            dao.upsertComments(entities)
+            entities.associate { it.id to CommentMapper.toDomain(it, null).status }
+        }
+    }
+
+    /**
+     * Holt die freigegebenen Antworten auf die geladenen Kommentare - mit
+     * einer Anfrage. Erst damit lässt sich sagen, ob einer schon beantwortet
+     * ist; die Antworten stehen sonst oft auf einer anderen Seite.
+     */
+    private suspend fun resolveReplies(
+        instanceId: String,
+        api: WordPressApi,
+        entities: List<CommentEntity>,
+    ) {
+        if (entities.isEmpty()) return
+        val antworten = executor.call {
+            api.listComments(
+                status = CommentStatus.APPROVED.queryValue,
+                page = 1,
+                perPage = MAX_PER_PAGE,
+                parents = entities.joinToString(",") { it.id.toString() },
+            )
+        }.valueOrNull?.body
+            ?.map { CommentMapper.toEntity(it, instanceId) }
+            .orEmpty()
+        if (antworten.isNotEmpty()) dao.upsertComments(antworten)
+    }
+
     private suspend fun postTitleOf(instanceId: String, postId: Long): String? =
         dao.postTitle(instanceId, postId)
 
@@ -575,5 +644,8 @@ class DefaultCommentRepository @Inject constructor(
         const val EMPTY_BATCH = 100
 
         const val PAGE_SIZE = 20
+
+        /** Obergrenze der WordPress-API für `per_page`. */
+        const val MAX_PER_PAGE = 100
     }
 }

@@ -1,26 +1,30 @@
 package de.christophlangner.commentator.ui
 
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.swipeRight
-import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
 import de.christophlangner.commentator.domain.model.CommentStatus
-import de.christophlangner.commentator.domain.model.Team
-import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.RoleStyles
+import de.christophlangner.commentator.domain.model.Team
+import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
 import de.christophlangner.commentator.ui.inbox.InboxScreenContent
@@ -294,6 +298,7 @@ class InboxScreenTest {
         )
 
         composeRule.onNodeWithText("Offen · 3").assertIsDisplayed()
+        filterleisteZeigt("Spam · 12")
         composeRule.onNodeWithText("Spam · 12").assertIsDisplayed()
     }
 
@@ -310,6 +315,7 @@ class InboxScreenTest {
         )
 
         composeRule.onNodeWithText("Offen · 3").assertIsDisplayed()
+        filterleisteZeigt("Spam")
         composeRule.onNodeWithText("Spam").assertIsDisplayed()
     }
 
@@ -322,11 +328,20 @@ class InboxScreenTest {
         composeRule.onNodeWithText("Beitrag: Linux auf dem Desktop").assertIsDisplayed()
     }
 
+    /** Die Filterleiste ist breiter als der Bildschirm; was rechts liegt, kommt erst beim Scrollen. */
+    private fun filterleisteZeigt(label: String) {
+        composeRule.onNode(
+            hasScrollToNodeAction() and
+                SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange),
+        ).performScrollToNode(hasText(label))
+    }
+
     @Test
     fun `zeigt alle Filter an`() {
         render(stateWith(emptyList()))
 
-        listOf("Alle", "Offen", "Genehmigt", "Spam", "Papierkorb").forEach { label ->
+        listOf("Alle", "Offen", "Unbeantwortet", "Genehmigt", "Spam", "Papierkorb").forEach { label ->
+            filterleisteZeigt(label)
             assertTrue(
                 "Filter $label fehlt",
                 composeRule.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty(),

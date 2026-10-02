@@ -3,6 +3,7 @@ package de.christophlangner.commentator.notification
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -11,6 +12,7 @@ import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.domain.model.WordPressInstance
+import de.christophlangner.commentator.domain.repository.CommentRepository
 import de.christophlangner.commentator.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
 
@@ -35,6 +37,8 @@ class CommentSyncWorker @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
     private val newCommentSource: NewCommentSource,
     private val notifier: CommentNotifier,
+    private val repository: CommentRepository,
+    private val siteIcons: SiteIconLoader,
 ) : CoroutineWorker(context, parameters) {
 
     override suspend fun doWork(): Result {
@@ -70,6 +74,10 @@ class CommentSyncWorker @AssistedInject constructor(
             is Outcome.Success -> {
                 val gefunden = outcome.value
 
+                // Vor dem Melden: Abgeglichen werden nur ältere Meldungen,
+                // die gerade gefundenen sind ohnehin frisch.
+                abgleichen(instance)
+
                 if (!newCommentSource.hasBaseline(instance)) {
                     // Beim allerersten Lauf gibt es keinen Vergleichspunkt.
                     // Der Stand wird festgehalten, ohne zu melden - auch wenn
@@ -82,7 +90,12 @@ class CommentSyncWorker @AssistedInject constructor(
                     // vermerkt wird beides, sonst käme das Stumme bei jedem
                     // Lauf erneut vom Blog.
                     if (gefunden.toReport.isNotEmpty()) {
-                        notifier.notifyNewComments(instance, gefunden.toReport, nameNennen)
+                        notifier.notifyNewComments(
+                            instance,
+                            gefunden.toReport,
+                            nameNennen,
+                            siteIcons.load(instance),
+                        )
                     }
                     newCommentSource.markNotified(instance, gefunden.all)
                 }
@@ -110,7 +123,29 @@ class CommentSyncWorker @AssistedInject constructor(
             }
         }
 
+    /**
+     * Räumt Meldungen weg, die inzwischen im Web erledigt wurden.
+     *
+     * Kostet nur dann eine Anfrage, wenn überhaupt Meldungen dieses Blogs
+     * offen sind. Scheitert sie, bleibt alles stehen - lieber eine Meldung
+     * zu viel als eine verschluckte.
+     */
+    private suspend fun abgleichen(instance: WordPressInstance) {
+        val offen = notifier.openAlerts(instance.id).keys
+        if (offen.isEmpty()) return
+        val stand = repository.currentStatuses(instance.id, offen.toList())
+        if (stand is Outcome.Success) notifier.reconcile(instance.id, stand.value)
+    }
+
+    /**
+     * Nur bis Android 11 nötig: Dort läuft die beschleunigte Prüfung nach
+     * einem Weckruf als Vordergrunddienst.
+     */
+    override suspend fun getForegroundInfo(): ForegroundInfo =
+        ForegroundInfo(FOREGROUND_ID, notifier.syncInProgress())
+
     companion object {
+        private const val FOREGROUND_ID = 0x0C0FFEF
         const val UNIQUE_NAME = "commentator-comment-sync"
     }
 }

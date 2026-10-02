@@ -3,6 +3,7 @@ package de.christophlangner.commentator.domain.repository
 import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.domain.model.Comment
 import de.christophlangner.commentator.domain.model.CommentFilter
+import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.EmptyResult
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.model.SyncState
@@ -83,6 +84,18 @@ interface CommentRepository {
         filter: CommentFilter,
     ): Outcome<List<Long>>
 
+    /**
+     * Der aktuelle Status der genannten Kommentare, frisch vom Blog.
+     *
+     * Ein Kommentar, der in der Antwort fehlt, ist endgültig gelöscht. Mit
+     * einer Anfrage für alle; die Kommentare landen dabei im
+     * Zwischenspeicher.
+     */
+    suspend fun currentStatuses(
+        instanceId: String,
+        ids: List<Long>,
+    ): Outcome<Map<Long, CommentStatus>>
+
     /** Holt einen einzelnen Kommentar frisch vom Server, etwa nach einem Deep Link. */
     suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment>
 
@@ -123,6 +136,15 @@ interface CommentRepository {
      * darf. Wirkt auf kuenftige Kommentare, nicht ruekwirkend.
      */
     suspend fun blockAuthor(instanceId: String, value: String): Outcome<Unit>
+
+    /**
+     * Hinterlegt beim Plugin die Adresse, unter der UnifiedPush die App
+     * weckt. Braucht das Plugin ab 1.5.0.
+     */
+    suspend fun registerPush(instanceId: String, endpoint: String): Outcome<Unit>
+
+    /** Nimmt eine hinterlegte Push-Adresse wieder zurück. */
+    suspend fun unregisterPush(instanceId: String, endpoint: String): Outcome<Unit>
 
     suspend fun moderate(
         instanceId: String,

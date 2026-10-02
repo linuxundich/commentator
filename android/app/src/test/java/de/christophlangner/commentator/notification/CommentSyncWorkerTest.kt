@@ -14,8 +14,10 @@ import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.data.account.InstanceStore
 import de.christophlangner.commentator.domain.model.Comment
+import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.WordPressInstance
 import de.christophlangner.commentator.fake.FakeCommentDao
+import de.christophlangner.commentator.fake.FakeCommentRepository
 import de.christophlangner.commentator.fake.FakeSettingsRepository
 import de.christophlangner.commentator.fake.testComment
 import de.christophlangner.commentator.fake.testInstance
@@ -56,6 +58,7 @@ class CommentSyncWorkerTest {
     private lateinit var source: FakeNewCommentSource
     private lateinit var notifier: CommentNotifier
     private lateinit var instanceStore: InstanceStore
+    private val repository = FakeCommentRepository()
 
     private val instance = testInstance()
 
@@ -137,6 +140,8 @@ class CommentSyncWorkerTest {
                     settings,
                     source,
                     notifier,
+                    repository,
+                    SiteIconLoader(appContext),
                 )
             })
             .build()
@@ -409,5 +414,39 @@ class CommentSyncWorkerTest {
             "Unterzeile war: $unterzeile",
             unterzeile == null || !unterzeile.contains("Testblog"),
         )
+    }
+
+    @Test
+    fun `im Web erledigte Kommentare verlieren ihre Meldung`() = runTest {
+        source.markBaseline(instance.id)
+        notifier.notifyNewComments(
+            instance,
+            listOf(
+                testComment(4, status = CommentStatus.PENDING),
+                testComment(5, status = CommentStatus.PENDING),
+                testComment(6, status = CommentStatus.PENDING),
+            ),
+        )
+        // 4 wurde im Web freigegeben, 5 steht noch aus, 6 ist gelöscht.
+        repository.comments.value = listOf(
+            testComment(4, status = CommentStatus.APPROVED),
+            testComment(5, status = CommentStatus.PENDING),
+        )
+
+        worker().doWork()
+
+        assertEquals(setOf(5L), notifier.openAlerts(instance.id).keys)
+    }
+
+    @Test
+    fun `freigegeben gemeldete Kommentare bleiben stehen`() = runTest {
+        source.markBaseline(instance.id)
+        notifier.notifyNewComments(instance, listOf(testComment(4, status = CommentStatus.APPROVED)))
+        repository.comments.value = listOf(testComment(4, status = CommentStatus.APPROVED))
+
+        worker().doWork()
+
+        // Er wartet womöglich noch auf eine Antwort.
+        assertEquals(setOf(4L), notifier.openAlerts(instance.id).keys)
     }
 }

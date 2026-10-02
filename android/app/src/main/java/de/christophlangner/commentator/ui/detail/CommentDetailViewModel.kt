@@ -13,6 +13,7 @@ import de.christophlangner.commentator.domain.model.CommentSignals
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
 import de.christophlangner.commentator.domain.repository.AuthRepository
+import de.christophlangner.commentator.domain.repository.CommentAlerts
 import de.christophlangner.commentator.domain.repository.CommentRepository
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.domain.repository.ReplyTemplateRepository
@@ -70,6 +71,7 @@ class CommentDetailViewModel @Inject constructor(
     authRepository: AuthRepository,
     settingsRepository: SettingsRepository,
     connectivity: ConnectivityObserver,
+    alerts: CommentAlerts = CommentAlerts.NONE,
 ) : ViewModel() {
 
     sealed interface Event {
@@ -96,6 +98,12 @@ class CommentDetailViewModel @Inject constructor(
     val events: SharedFlow<Event> = _events.asSharedFlow()
 
     private val authorHistory = MutableStateFlow<Int?>(null)
+
+    init {
+        // Wer den Kommentar vor sich hat, braucht die Benachrichtigung dazu
+        // nicht mehr - gleich, ob er über sie oder über die Liste kam.
+        alerts.dismiss(instanceId, commentId)
+    }
 
     /** Zusammengefasst, weil `combine` nur eine begrenzte Stelligkeit hat. */
     private data class Environment(

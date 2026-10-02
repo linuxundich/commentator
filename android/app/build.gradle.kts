@@ -225,6 +225,9 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // Optionale Sofortmeldung ohne Google: Die App wird über eine
+    // UnifiedPush-App (etwa ntfy) geweckt, die der Benutzer selbst wählt.
+    implementation(libs.unifiedpush.connector)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

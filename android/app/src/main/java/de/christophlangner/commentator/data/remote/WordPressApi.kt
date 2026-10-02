@@ -10,6 +10,7 @@ import de.christophlangner.commentator.data.remote.dto.CreateCommentRequest
 import de.christophlangner.commentator.data.remote.dto.EmptyRequest
 import de.christophlangner.commentator.data.remote.dto.EmptyResultDto
 import de.christophlangner.commentator.data.remote.dto.PostDto
+import de.christophlangner.commentator.data.remote.dto.PushRequest
 import de.christophlangner.commentator.data.remote.dto.UpdateCommentRequest
 import de.christophlangner.commentator.data.remote.dto.TeamDto
 import de.christophlangner.commentator.data.remote.dto.UserDto
@@ -86,6 +87,8 @@ interface WordPressApi {
          * und fehlen deshalb in der Liste.
          */
         @Query("include") include: String? = null,
+        /** Nur Antworten auf diese IDs, kommagetrennt. */
+        @Query("parent") parents: String? = null,
         @Query("context") context: String = "edit",
         @Query("orderby") orderBy: String = "date_gmt",
         @Query("order") order: String = "desc",
@@ -170,4 +173,10 @@ interface WordPressApi {
 
     @POST("commentator/v1/blocklist")
     suspend fun bridgeBlock(@Body body: BlocklistRequest): Response<BlocklistDto>
+
+    @POST("commentator/v1/push")
+    suspend fun bridgePushRegister(@Body body: PushRequest): Response<ResponseBody>
+
+    @DELETE("commentator/v1/push")
+    suspend fun bridgePushRemove(@Query("endpoint") endpoint: String): Response<ResponseBody>
 }

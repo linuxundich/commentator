@@ -253,6 +253,14 @@ class FakeSettingsRepository(
     override suspend fun setRoleStyle(instanceId: String, slug: String, style: RoleStyle) {
         aendere(instanceId) { it.copy(roleStyles = it.roleStyles.with(slug, style)) }
     }
+
+    override suspend fun setInstantPush(instanceId: String, enabled: Boolean) {
+        aendere(instanceId) { it.copy(instantPush = enabled) }
+    }
+
+    override suspend fun setPushEndpoint(instanceId: String, endpoint: String?) {
+        aendere(instanceId) { it.copy(pushEndpoint = endpoint) }
+    }
 }
 
 fun testInstance(

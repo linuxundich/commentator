@@ -4,6 +4,7 @@ import de.christophlangner.commentator.core.Outcome
 import de.christophlangner.commentator.core.error.AppError
 import de.christophlangner.commentator.domain.model.CommentStatus
 import de.christophlangner.commentator.domain.model.ModerationAction
+import de.christophlangner.commentator.domain.repository.CommentAlerts
 import de.christophlangner.commentator.domain.usecase.ModerateCommentUseCase
 import de.christophlangner.commentator.domain.usecase.UndoModerationUseCase
 import de.christophlangner.commentator.fake.FakeCommentRepository
@@ -90,5 +91,24 @@ class ModerateCommentUseCaseTest {
 
         assertEquals(AppError.OfflineWriteBlocked, (outcome as Outcome.Failure).error)
         assertTrue(repository.restored.isEmpty())
+    }
+
+    @Test
+    fun `erfolgreiche Moderation nimmt die Benachrichtigung zurueck`() = runTest {
+        val dismissed = mutableListOf<Long>()
+        val alerts = object : CommentAlerts {
+            override fun dismiss(instanceId: String, commentId: Long) {
+                dismissed += commentId
+            }
+        }
+        repository.comments.value = listOf(testComment(3))
+
+        ModerateCommentUseCase(repository, connectivity, alerts)(
+            "instance-1",
+            3,
+            ModerationAction.Approve,
+        )
+
+        assertEquals(listOf(3L), dismissed)
     }
 }

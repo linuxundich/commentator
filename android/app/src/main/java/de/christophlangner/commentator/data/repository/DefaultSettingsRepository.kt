@@ -99,8 +99,24 @@ class DefaultSettingsRepository @Inject constructor(
                     ?: prefs[TEAM_ROLES]
                     ?: Team.DEFAULT_ROLES,
                 roleStyles = roleStylesOf(prefs, instanceId),
+                instantPush = prefs[instantPushKey(instanceId)] ?: false,
+                pushEndpoint = prefs[pushEndpointKey(instanceId)],
             )
         }
+
+    override suspend fun setInstantPush(instanceId: String, enabled: Boolean) {
+        dataStore.edit { it[instantPushKey(instanceId)] = enabled }
+    }
+
+    override suspend fun setPushEndpoint(instanceId: String, endpoint: String?) {
+        dataStore.edit { prefs ->
+            if (endpoint == null) {
+                prefs.remove(pushEndpointKey(instanceId))
+            } else {
+                prefs[pushEndpointKey(instanceId)] = endpoint
+            }
+        }
+    }
 
     override suspend fun setSiteNotificationsEnabled(instanceId: String, enabled: Boolean) {
         dataStore.edit { it[siteNotificationsKey(instanceId)] = enabled }
@@ -237,5 +253,9 @@ class DefaultSettingsRepository @Inject constructor(
         fun teamRolesKey(instanceId: String) = stringSetPreferencesKey("team_roles_$instanceId")
 
         fun roleStylesKey(instanceId: String) = stringPreferencesKey("role_styles_$instanceId")
+
+        fun instantPushKey(instanceId: String) = booleanPreferencesKey("instant_push_$instanceId")
+
+        fun pushEndpointKey(instanceId: String) = stringPreferencesKey("push_endpoint_$instanceId")
     }
 }

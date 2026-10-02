@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Nur im Debug-Build: Hintergrundprüfung über adb sofort anstoßen. -->
+        <receiver
+            android:name=".notification.DebugSyncReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
+    </application>
+</manifest>

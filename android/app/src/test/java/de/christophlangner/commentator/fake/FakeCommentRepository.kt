@@ -166,10 +166,30 @@ class FakeCommentRepository : CommentRepository {
         excludeCommentId: Long,
     ): Outcome<Int> = Outcome.Success(approvedByAuthor[authorEmail] ?: 0)
 
+    override suspend fun currentStatuses(
+        instanceId: String,
+        ids: List<Long>,
+    ): Outcome<Map<Long, CommentStatus>> =
+        Outcome.Success(comments.value.filter { it.id in ids }.associate { it.id to it.status })
+
     override suspend fun fetchComment(instanceId: String, commentId: Long): Outcome<Comment> =
         comments.value.firstOrNull { it.id == commentId }
             ?.let { Outcome.Success(it) }
             ?: Outcome.Failure(AppError.NotFound)
+
+    var registerPushResult: Outcome<Unit> = Outcome.Success(Unit)
+    val registeredPush = mutableListOf<String>()
+    val unregisteredPush = mutableListOf<String>()
+
+    override suspend fun registerPush(instanceId: String, endpoint: String): Outcome<Unit> {
+        if (registerPushResult is Outcome.Success) registeredPush += endpoint
+        return registerPushResult
+    }
+
+    override suspend fun unregisterPush(instanceId: String, endpoint: String): Outcome<Unit> {
+        unregisteredPush += endpoint
+        return Outcome.Success(Unit)
+    }
 
     override suspend fun moderate(
         instanceId: String,

@@ -100,6 +100,12 @@ data class EmptyRequest(
     val status: String,
 )
 
+/** Anfrage an `commentator/v1/push`: die Adresse, unter der die App geweckt wird. */
+@Serializable
+data class PushRequest(
+    val endpoint: String,
+)
+
 /** Anfrage an `commentator/v1/blocklist`. */
 @Serializable
 data class BlocklistRequest(

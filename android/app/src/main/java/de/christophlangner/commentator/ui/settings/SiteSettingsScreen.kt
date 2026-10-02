@@ -1,5 +1,6 @@
 package de.christophlangner.commentator.ui.settings
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -28,9 +29,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.christophlangner.commentator.R
 import de.christophlangner.commentator.domain.model.NotifyScope
@@ -38,6 +41,7 @@ import de.christophlangner.commentator.domain.model.Team
 import de.christophlangner.commentator.domain.model.TeamRole
 import de.christophlangner.commentator.domain.repository.ReplyTemplate
 import de.christophlangner.commentator.ui.common.BlogTitle
+import de.christophlangner.commentator.ui.common.ErrorTexts
 
 /**
  * Die Einstellungen eines einzelnen Blogs.
@@ -63,6 +67,12 @@ fun SiteSettingsScreen(
     var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
     // Das Kuerzel der Rolle, deren Dialog offen ist; null = keiner.
     var editingRole by rememberSaveable { mutableStateOf<String?>(null) }
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshPushAvailability()
+        onPauseOrDispose { }
+    }
+    val activity = LocalActivity.current
 
     LaunchedEffect(state.removed) {
         if (!state.removed) return@LaunchedEffect
@@ -99,6 +109,12 @@ fun SiteSettingsScreen(
             state = state,
             onNotificationsEnabled = viewModel::setNotificationsEnabled,
             onNotifyScope = viewModel::setNotifyScope,
+            onInstantPush = { an ->
+                when {
+                    !an -> viewModel.disableInstantPush()
+                    activity != null -> viewModel.chooseDistributor(activity)
+                }
+            },
             onOpenRole = { editingRole = it.slug },
             onAddTemplate = { editingTemplateId = "" },
             onEditTemplate = { editingTemplateId = it.id },
@@ -182,6 +198,7 @@ internal fun SiteSettingsContent(
     onNotificationsEnabled: (Boolean) -> Unit,
     onNotifyScope: (NotifyScope) -> Unit,
     onOpenRole: (TeamRole) -> Unit,
+    onInstantPush: (Boolean) -> Unit = {},
     onAddTemplate: () -> Unit,
     onEditTemplate: (ReplyTemplate) -> Unit,
     onDeleteTemplate: (String) -> Unit,
@@ -255,6 +272,8 @@ internal fun SiteSettingsContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
+
+        InstantPushRow(state = state, onInstantPush = onInstantPush)
 
         HorizontalDivider()
         SectionTitle(stringResource(R.string.settings_team))
@@ -342,3 +361,41 @@ internal fun SiteSettingsContent(
         }
     }
 }
+
+/**
+ * Sofortmeldung über UnifiedPush.
+ *
+ * Abschalten geht immer, Einschalten nur, wenn alles da ist: das Plugin auf
+ * dem Blog und eine UnifiedPush-App auf dem Telefon. Fehlt etwas, sagt die
+ * Beschreibung, was - statt eines Schalters, der ohne Erklärung grau bleibt.
+ */
+@Composable
+private fun InstantPushRow(state: SiteSettingsUiState, onInstantPush: (Boolean) -> Unit) {
+    val an = state.settings.instantPush
+    val plugin = state.instance?.hasBridgePlugin == true
+    val resources = LocalResources.current
+
+    val beschreibung = when {
+        state.pushError != null -> stringResource(
+            R.string.settings_push_error,
+            ErrorTexts.message(resources, state.pushError),
+        )
+        an && state.settings.pushEndpoint != null -> stringResource(
+            R.string.settings_push_active,
+            state.pushDistributor ?: stringResource(R.string.settings_push_distributor_fallback),
+        )
+        an -> stringResource(R.string.settings_push_pending)
+        !plugin -> stringResource(R.string.settings_push_needs_plugin)
+        !state.pushAvailable -> stringResource(R.string.settings_push_needs_distributor)
+        else -> stringResource(R.string.settings_push_description)
+    }
+
+    SwitchRow(
+        title = stringResource(R.string.settings_push),
+        description = beschreibung,
+        checked = an,
+        onCheckedChange = onInstantPush,
+        enabled = an || (state.settings.notificationsEnabled && plugin && state.pushAvailable),
+    )
+}
+

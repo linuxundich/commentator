@@ -12,6 +12,7 @@ import de.christophlangner.commentator.data.local.entity.TeamMemberEntity
 import de.christophlangner.commentator.data.local.entity.TeamRoleEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 /** In-Memory-Ersatz für die Datenbank, ohne Android-Laufzeit. */
@@ -87,6 +88,18 @@ class FakeCommentDao : CommentDao {
     override fun observeComments(instanceId: String, status: String?): Flow<List<CommentWithPost>> =
         stored.map { list ->
             list.filter { it.instanceId == instanceId && (status == null || it.status == status) }
+                .sortedByDescending { it.dateEpochMillis }
+                .map(::withTitle)
+        }
+
+    override fun observeUnanswered(instanceId: String, ownUserId: Long): Flow<List<CommentWithPost>> =
+        combine(stored, teamMembers) { list, members ->
+            val team = members.filter { it.instanceId == instanceId }.map { it.userId }.toSet() +
+                listOfNotNull(ownUserId.takeIf { it != 0L })
+            val approved = list.filter { it.instanceId == instanceId && it.status == "APPROVED" }
+            approved
+                .filter { it.authorId !in team }
+                .filter { c -> approved.none { it.parentId == c.id && it.authorId in team } }
                 .sortedByDescending { it.dateEpochMillis }
                 .map(::withTitle)
         }

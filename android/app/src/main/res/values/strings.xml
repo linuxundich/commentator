@@ -13,6 +13,7 @@
     <string name="action_trash">Papierkorb</string>
     <string name="action_delete_permanently">Endgültig löschen</string>
     <string name="action_reply">Antworten</string>
+    <string name="action_approve_and_reply">Freigeben und antworten</string>
     <string name="action_send_reply">Antwort senden</string>
     <string name="action_edit">Bearbeiten</string>
     <string name="action_save">Speichern</string>
@@ -45,6 +46,7 @@
     <!-- Filter -->
     <string name="filter_all">Alle</string>
     <string name="filter_pending">Offen</string>
+    <string name="filter_unanswered">Unbeantwortet</string>
     <string name="filter_approved">Genehmigt</string>
     <string name="filter_spam">Spam</string>
     <string name="filter_trash">Papierkorb</string>
@@ -64,6 +66,8 @@
     <string name="time_just_now">Gerade eben</string>
 
     <!-- Leerzustände -->
+    <string name="empty_unanswered_title">Alles beantwortet</string>
+    <string name="empty_unanswered_description">Unter allen geladenen freigegebenen Kommentaren steht eine Antwort aus dem Team.</string>
     <string name="empty_pending_title">Nichts zu moderieren</string>
     <string name="empty_pending_description">Es warten keine Kommentare auf eine Entscheidung.</string>
     <string name="empty_spam_title">Kein Spam</string>
@@ -254,6 +258,14 @@
     <string name="settings_scope_new">Neue Kommentare</string>
     <string name="settings_scope_everything">Auch Spam</string>
     <string name="settings_scope_description">„Neue Kommentare“ lässt aus, was ein Spamfilter bereits aussortiert hat. Mit „Auch Spam“ bemerkst du Fehleinstufungen früh – dafür meldet sich die App deutlich häufiger.</string>
+    <string name="settings_push">Sofort melden</string>
+    <string name="settings_push_description">Neue Kommentare in Sekunden statt bei der nächsten Prüfung – über eine UnifiedPush-App wie ntfy, ohne Google. Die Prüfung läuft weiter.</string>
+    <string name="settings_push_needs_plugin">Braucht auf dem Blog das Plugin Commentator Bridge ab Version 1.5.</string>
+    <string name="settings_push_needs_distributor">Braucht eine UnifiedPush-App wie ntfy auf diesem Telefon.</string>
+    <string name="settings_push_pending">Wird eingerichtet …</string>
+    <string name="settings_push_active">Aktiv über %1$s. Über den Push-Server geht nur ein Weckruf, kein Kommentarinhalt.</string>
+    <string name="settings_push_distributor_fallback">UnifiedPush</string>
+    <string name="settings_push_error">Nicht eingerichtet: %1$s</string>
     <string name="settings_interval">Prüfintervall</string>
     <string name="settings_minutes">%1$d min</string>
     <string name="settings_open_system_notifications">Systemeinstellungen für Benachrichtigungen öffnen</string>
@@ -273,6 +285,18 @@
     <!-- Benachrichtigungen -->
     <string name="notification_new_comment_title">Neuer Kommentar von %1$s</string>
     <string name="notification_new_reply_title">Neue Antwort von %1$s</string>
+    <string name="notification_action_approve">Freigeben</string>
+    <string name="notification_action_spam">Spam</string>
+    <string name="notification_action_reply">Antworten</string>
+    <string name="notification_action_approve_and_reply">Freigeben und antworten</string>
+    <string name="notification_reply_hint">Antwort an %1$s</string>
+    <string name="notification_failed_approve">Freigeben fehlgeschlagen: %1$s</string>
+    <string name="notification_failed_spam">Als Spam markieren fehlgeschlagen: %1$s</string>
+    <string name="notification_failed_reply">Antwort nicht gesendet: %1$s</string>
+    <string name="notification_lost_reply">Deine Antwort: „%1$s“</string>
+    <string name="notification_action_done">Erledigt</string>
+    <string name="notification_sync_running">Suche nach neuen Kommentaren …</string>
+    <string name="notification_action_running">Wird an den Blog übertragen …</string>
     <string name="notification_session_invalid_title">Anmeldung abgelaufen</string>
     <string name="notification_session_invalid_text">Commentator kann %1$s nicht mehr abfragen. Bitte neu anmelden.</string>
     <plurals name="notification_new_comments_summary">
@@ -304,5 +328,8 @@
     <string name="error_comment_flood">Zu schnell hintereinander. WordPress bremst aufeinanderfolgende Kommentare kurz aus – bitte einen Moment warten.</string>
     <string name="error_trash_disabled">Der Papierkorb ist in dieser Installation deaktiviert.</string>
     <string name="error_wordpress">WordPress meldet einen Fehler (%1$s).</string>
+    <string name="error_push_no_distributor">Es wurde keine UnifiedPush-App gewählt.</string>
+    <string name="error_push_registration_failed">Die UnifiedPush-App hat die Anmeldung abgelehnt.</string>
+    <string name="error_push_plugin_outdated">Das Plugin auf dem Blog ist zu alt, es braucht Version 1.5.</string>
     <string name="error_unknown">Unerwarteter Fehler (%1$s).</string>
 </resources>
