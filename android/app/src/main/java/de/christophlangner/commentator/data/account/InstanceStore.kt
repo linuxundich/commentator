@@ -25,6 +25,8 @@ private data class StoredInstance(
     val canManageOptions: Boolean = false,
     val iconUrl: String? = null,
     val themeIconUrl: String? = null,
+    val siteName: String? = null,
+    val customName: String? = null,
 )
 
 @Serializable
@@ -119,7 +121,7 @@ class InstanceStore @Inject constructor(
 
     private fun toDomain(stored: StoredInstance) = WordPressInstance(
         id = stored.id,
-        displayName = stored.displayName,
+        displayName = stored.customName ?: stored.displayName,
         siteUrl = stored.siteUrl,
         username = stored.username,
         userId = stored.userId,
@@ -128,11 +130,14 @@ class InstanceStore @Inject constructor(
         canManageOptions = stored.canManageOptions,
         iconUrl = stored.iconUrl,
         themeIconUrl = stored.themeIconUrl,
+        // Ältere Einträge kennen nur displayName.
+        siteName = stored.siteName ?: stored.displayName,
+        customName = stored.customName,
     )
 
     private fun toStored(instance: WordPressInstance) = StoredInstance(
         id = instance.id,
-        displayName = instance.displayName,
+        displayName = instance.siteName,
         siteUrl = instance.siteUrl,
         username = instance.username,
         userId = instance.userId,
@@ -141,5 +146,7 @@ class InstanceStore @Inject constructor(
         canManageOptions = instance.canManageOptions,
         iconUrl = instance.iconUrl,
         themeIconUrl = instance.themeIconUrl,
+        siteName = instance.siteName,
+        customName = instance.customName,
     )
 }

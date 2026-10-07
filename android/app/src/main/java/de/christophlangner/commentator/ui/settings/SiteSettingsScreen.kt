@@ -69,6 +69,7 @@ fun SiteSettingsScreen(
     var editingTemplateId by rememberSaveable { mutableStateOf<String?>(null) }
     // Das Kuerzel der Rolle, deren Dialog offen ist; null = keiner.
     var editingRole by rememberSaveable { mutableStateOf<String?>(null) }
+    var showRenameDialog by rememberSaveable { mutableStateOf(false) }
 
     LifecycleResumeEffect(Unit) {
         viewModel.refreshPushAvailability()
@@ -122,6 +123,7 @@ fun SiteSettingsScreen(
             onAddTemplate = { editingTemplateId = "" },
             onEditTemplate = { editingTemplateId = it.id },
             onDeleteTemplate = viewModel::removeTemplate,
+            onRename = { showRenameDialog = true },
             onSignOutRequest = { showSignOutDialog = true },
             modifier = Modifier.padding(innerPadding),
         )
@@ -158,6 +160,21 @@ fun SiteSettingsScreen(
                 editingTemplateId = null
             },
         )
+    }
+
+    if (showRenameDialog) {
+        state.instance?.let { instance ->
+            RenameSiteDialog(
+                initialName = instance.displayName,
+                siteName = instance.siteName,
+                canReset = instance.customName != null,
+                onDismiss = { showRenameDialog = false },
+                onConfirm = { name ->
+                    showRenameDialog = false
+                    viewModel.rename(name)
+                },
+            )
+        }
     }
 
     if (showSignOutDialog) {
@@ -208,6 +225,7 @@ internal fun SiteSettingsContent(
     onDeleteTemplate: (String) -> Unit,
     onSignOutRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    onRename: () -> Unit = {},
 ) {
     Column(
         modifier = modifier
@@ -217,6 +235,10 @@ internal fun SiteSettingsContent(
         SectionTitle(stringResource(R.string.settings_section_account))
 
         state.instance?.let { instance ->
+            SettingsTextButton(
+                text = stringResource(R.string.settings_rename, instance.displayName),
+                onClick = onRename,
+            )
             InfoRow(stringResource(R.string.settings_url), instance.siteUrl)
             InfoRow(stringResource(R.string.settings_user), instance.username)
             InfoRow(

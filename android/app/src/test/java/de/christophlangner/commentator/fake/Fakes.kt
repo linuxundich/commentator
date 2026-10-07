@@ -85,6 +85,15 @@ class FakeAuthRepository(
         return Outcome.Success(updated)
     }
 
+    override suspend fun renameInstance(instanceId: String, name: String?) {
+        val custom = name?.trim()?.takeIf { it.isNotEmpty() }
+        instances.value = instances.value.map {
+            if (it.id == instanceId) it.copy(customName = custom, displayName = custom ?: it.siteName) else it
+        }
+        activeInstance.value = instances.value.firstOrNull { it.id == activeInstance.value?.id }
+            ?: activeInstance.value
+    }
+
     override suspend fun signOut(instanceId: String) {
         signedOutIds += instanceId
         instances.value = instances.value.filterNot { it.id == instanceId }

@@ -14,6 +14,11 @@ is listed under `[Unreleased]`.
 
 **Android app**
 
+- Blogs can be renamed: a "Rename" row at the top of the blog's settings
+  opens a dialog. The custom name is used everywhere (title bar, blog
+  switcher, notifications) and survives refreshes from WordPress; "Reset"
+  restores the name WordPress reports.
+
 - "Empty spam" and "Empty trash" now sit in a labelled bar above the list of
   the Spam and Trash filters, with the number of comments in it ("12 comments
   in spam"), instead of an unlabelled bin icon in the top bar that only
@@ -283,6 +288,10 @@ is listed under `[Unreleased]`.
 ### Fixed
 
 **Android app**
+
+- A reply published a moment ago could read "In 0 min." when the phone's
+  clock ran a few seconds behind the blog's. Times up to five minutes in the
+  future now count as "Just now".
 
 - Comments deleted or reclassified on the web stayed in the cache if they were
   older than the loaded first page. They then kept appearing under

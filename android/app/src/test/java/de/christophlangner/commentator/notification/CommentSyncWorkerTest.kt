@@ -281,7 +281,7 @@ class CommentSyncWorkerTest {
      * Melden prüfen und nicht den ersten Lauf.
      */
     private suspend fun zweitblog(): WordPressInstance {
-        val zweiter = testInstance(id = "instance-2").copy(displayName = "Zweitblog")
+        val zweiter = testInstance(id = "instance-2").copy(displayName = "Zweitblog", siteName = "Zweitblog")
         instanceStore.upsert(zweiter, makeActive = false)
         source.markBaseline(instance.id, zweiter.id)
         return zweiter

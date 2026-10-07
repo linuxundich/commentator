@@ -654,3 +654,52 @@ private fun RoleAccent.labelRes(): Int = when (this) {
     RoleAccent.TERRAKOTTA -> R.string.accent_terrakotta
     RoleAccent.PFLAUME -> R.string.accent_pflaume
 }
+
+/**
+ * Dialog zum Umbenennen eines Blogs.
+ *
+ * Leer gespeichert (oder zurückgesetzt) gilt wieder der Name, den WordPress
+ * meldet.
+ */
+@Composable
+internal fun RenameSiteDialog(
+    initialName: String,
+    siteName: String,
+    canReset: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String?) -> Unit,
+) {
+    var text by rememberSaveable { mutableStateOf(initialName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.rename_title)) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(stringResource(R.string.rename_label)) },
+                supportingText = { Text(stringResource(R.string.rename_hint, siteName)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text) }) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            Row {
+                if (canReset) {
+                    TextButton(onClick = { onConfirm(null) }) {
+                        Text(stringResource(R.string.rename_reset))
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        },
+    )
+}

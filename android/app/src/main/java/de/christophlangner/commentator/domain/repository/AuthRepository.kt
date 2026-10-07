@@ -70,6 +70,12 @@ interface AuthRepository {
     suspend fun refreshSiteCapabilities(instanceId: String): Outcome<WordPressInstance>
 
     /**
+     * Vergibt einen eigenen Namen für den Blog; leer oder null stellt den
+     * Namen wieder her, den WordPress meldet.
+     */
+    suspend fun renameInstance(instanceId: String, name: String?)
+
+    /**
      * Entfernt einen Blog: Zugangsdaten, Zwischenspeicher und Meldestand.
      *
      * Das Schlüsselmaterial im Keystore verschwindet erst mit dem letzten

@@ -143,7 +143,9 @@ class DefaultAuthRepository @Inject constructor(
 
         val instance = WordPressInstance(
             id = bestehend?.id ?: UUID.randomUUID().toString(),
-            displayName = index?.name?.ifBlank { normalized } ?: normalized,
+            displayName = bestehend?.customName ?: index?.name?.ifBlank { normalized } ?: normalized,
+            siteName = index?.name?.ifBlank { normalized } ?: normalized,
+            customName = bestehend?.customName,
             siteUrl = normalized,
             username = credentials.username,
             userId = user.id,
@@ -161,6 +163,15 @@ class DefaultAuthRepository @Inject constructor(
         return Outcome.Success(instance)
     }
 
+    override suspend fun renameInstance(instanceId: String, name: String?) {
+        val instance = instanceStore.byId(instanceId) ?: return
+        val custom = name?.trim()?.takeIf { it.isNotEmpty() && it != instance.siteName }
+        instanceStore.upsert(
+            instance.copy(customName = custom, displayName = custom ?: instance.siteName),
+            makeActive = false,
+        )
+    }
+
     override suspend fun refreshSiteCapabilities(instanceId: String): Outcome<WordPressInstance> {
         val instance = instanceStore.byId(instanceId)
             ?: return Outcome.Failure(AppError.Unauthorized)
@@ -176,7 +187,8 @@ class DefaultAuthRepository @Inject constructor(
 
         val root = (index as Outcome.Success).value.body
         val updated = instance.copy(
-            displayName = root.name.ifBlank { instance.displayName },
+            siteName = root.name.ifBlank { instance.siteName },
+            displayName = instance.customName ?: root.name.ifBlank { instance.siteName },
             canModerate = user?.canModerateComments ?: instance.canModerate,
             canManageOptions = user?.canManageOptions ?: instance.canManageOptions,
             // Das Site-Icon kann im Blog entfernt worden sein - dann soll es

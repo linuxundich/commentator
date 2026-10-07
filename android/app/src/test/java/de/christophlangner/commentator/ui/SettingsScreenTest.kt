@@ -97,7 +97,7 @@ class SettingsScreenTest {
         render(
             instances = listOf(
                 testInstance(id = "instance-1"),
-                testInstance(id = "instance-2").copy(displayName = "Zweitblog"),
+                testInstance(id = "instance-2").copy(displayName = "Zweitblog", siteName = "Zweitblog"),
             ),
             activeInstanceId = "instance-2",
         )
@@ -110,7 +110,7 @@ class SettingsScreenTest {
         render(
             instances = listOf(
                 testInstance(id = "instance-1"),
-                testInstance(id = "instance-2").copy(displayName = "Zweitblog"),
+                testInstance(id = "instance-2").copy(displayName = "Zweitblog", siteName = "Zweitblog"),
             ),
         )
 

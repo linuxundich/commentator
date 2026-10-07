@@ -32,6 +32,10 @@ data class WordPressInstance(
      * gelöschtes Site-Icon bliebe für immer stehen.
      */
     val themeIconUrl: String? = null,
+    /** Der Name, den WordPress meldet; [displayName] fällt darauf zurück. */
+    val siteName: String = displayName,
+    /** Vom Nutzer vergebener Name; hat Vorrang vor [siteName] und überlebt das Auffrischen. */
+    val customName: String? = null,
 ) {
     val restBaseUrl: String get() = "$siteUrl/wp-json/"
 

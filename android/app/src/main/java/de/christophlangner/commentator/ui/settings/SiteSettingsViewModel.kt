@@ -227,6 +227,10 @@ class SiteSettingsViewModel @Inject constructor(
         viewModelScope.launch { replyTemplateRepository.remove(instanceId, id) }
     }
 
+    fun rename(name: String?) {
+        viewModelScope.launch { authRepository.renameInstance(instanceId, name) }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             // Zuerst, solange die Zugangsdaten noch da sind: Sonst bliebe
