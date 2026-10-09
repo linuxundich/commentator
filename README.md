@@ -30,6 +30,10 @@ right from the notification.
 
 [**Watch the 44-second demo**](docs/screenshots/demo-moderation.mp4)
 
+The whole workflow – instant notification, reply, swipe moderation, the
+*Unanswered* filter and saved replies – is in the longer video on the
+[project page](https://linuxundich.de/projekte/commentator/) (German).
+
 <br clear="right"/>
 
 ## Features
@@ -98,6 +102,14 @@ HTTPS · an account that may moderate comments (Editor or Administrator).
 - [Changelog](CHANGELOG.md) · [Backlog](BACKLOG.md)
 
 <br />
+
+## On the blog
+
+Commentator has its own page on my blog
+[Linux und Ich](https://linuxundich.de/projekte/commentator/) (in German): the
+full workflow as a video, screenshots and details on the app and the plugin.
+The [project overview](https://linuxundich.de/projekte/) lists everything else
+I build for Linux and Android.
 
 ## Feedback
 
