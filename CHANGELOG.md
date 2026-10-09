@@ -10,6 +10,13 @@ is listed under `[Unreleased]`.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-09
+
+First public release: a signed APK on the
+[releases page](https://github.com/linuxundich/commentator/releases). Updates are
+installed by hand for now, there is no store listing yet. Everything below was
+developed before this release.
+
 ### Added
 
 **Android app**

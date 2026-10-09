@@ -384,6 +384,26 @@ chmod 600 ~/.android/commentator-release.p12
 > keystore and password therefore belong in a backup and a password manager,
 > not in the repository.
 
+### Publishing a release
+
+Releases are cut by hand, from a clean checkout so uncommitted changes cannot
+end up in the APK:
+
+```bash
+git tag -a v0.1.0 -m "Commentator 0.1.0"          # after CHANGELOG and README are updated
+git worktree add ~/.cache/commentator-release v0.1.0
+cp android/local.properties ~/.cache/commentator-release/android/
+cd ~/.cache/commentator-release/android && ./gradlew assembleRelease
+apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+git push origin master v0.1.0
+gh release create v0.1.0 --title "Commentator 0.1.0" --notes-file <notes> \
+  commentator-0.1.0.apk commentator-0.1.0.apk.sha256
+```
+
+The version name comes from the tag, the build number from the commit count.
+The APK is attached as `commentator-<version>.apk` together with a SHA-256
+file. Every release must be signed with the same key (see above).
+
 ### Tests
 
 | Level | Command | Content |

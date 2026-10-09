@@ -71,9 +71,11 @@ Material 3, dark mode, English and German.
 
 ## Get started
 
-1. **Install the app.** Builds are coming to the
-   [releases page](https://github.com/linuxundich/commentator/releases); until
-   then, [build it yourself](docs/guide.md#7-build-the-app).
+1. **Install the app.** Download the signed APK from the
+   [releases page](https://github.com/linuxundich/commentator/releases) and open
+   it on your phone (Android asks once to allow installing from your browser or
+   file manager). Updates are manual for now: install the newer APK over the
+   old one. Or [build it yourself](docs/guide.md#7-build-the-app).
 2. **Connect your blog.** Enter its address, sign in to WordPress in your
    browser and approve – the app receives an
    [application password](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/),
