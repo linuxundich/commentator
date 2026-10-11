@@ -4,7 +4,7 @@ Tags: comments, moderation, rest-api
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.8.2
+Stable tag: 1.9.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -90,7 +90,9 @@ app passes the address it receives from there on to the plugin.
 
 == What this plugin does not do ==
 
-* It does not change any WordPress behavior.
+* It does not change any WordPress behavior, with one exception: since
+  1.9.0, updating a comment through the core REST API keeps the commenter's
+  IP address and user agent instead of overwriting them with the moderator's.
 * It only sends anything outbound if a moderator has set up instant
   notifications – and then nothing but a content-free wake-up to the stored
   address.
@@ -110,6 +112,11 @@ The app detects the plugin automatically by the `commentator/v1` namespace in
 the response from `/wp-json/`.
 
 == Changelog ==
+
+= 1.9.0 =
+* Moderating a comment through the core REST API (approve, spam, trash) no
+  longer replaces the commenter's IP address and user agent with the
+  moderator's.
 
 = 1.8.2 =
 * Wake-ups are sent at the end of the request and wait for the push server's

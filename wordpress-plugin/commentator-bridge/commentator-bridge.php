@@ -3,7 +3,7 @@
  * Plugin Name:       Commentator Bridge
  * Plugin URI:        https://github.com/linuxundich/commentator
  * Description:       Lean REST endpoints for the Commentator Android app: cheap checks for new comments, bulk actions the core API lacks, and optional instant notifications via UnifiedPush.
- * Version:           1.8.2
+ * Version:           1.9.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Christoph Langner
@@ -60,7 +60,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-const COMMENTATOR_BRIDGE_VERSION   = '1.8.2';
+const COMMENTATOR_BRIDGE_VERSION   = '1.9.0';
 const COMMENTATOR_BRIDGE_NAMESPACE = 'commentator/v1';
 
 /** Wie viele Kommentare eine Anfrage an /empty höchstens löscht. */
@@ -96,6 +96,7 @@ add_action( 'show_user_profile', 'commentator_bridge_profile_section' );
 add_action( 'edit_user_profile', 'commentator_bridge_profile_section' );
 add_action( 'admin_post_commentator_push_remove', 'commentator_bridge_profile_remove' );
 add_action( 'admin_post_commentator_push_test', 'commentator_bridge_profile_test' );
+add_filter( 'rest_preprocess_comment', 'commentator_bridge_keep_author_origin', 10, 2 );
 
 /**
  * Englisch im Code, Übersetzungen unter languages/. WordPress wählt sie nach
@@ -236,6 +237,33 @@ function commentator_bridge_register_routes(): void {
  * genauso wie im Backend. Die App fragt die Rechte vorher ab und bietet die
  * Sperre gar nicht erst an, wenn sie nicht greifen würde.
  */
+/**
+ * Beim Ändern eines Kommentars über /wp/v2/comments/<id> IP und
+ * Browserkennung des Kommentators behalten.
+ *
+ * Die Kern-API setzt in prepare_item_for_database() beide Felder auch beim
+ * Aktualisieren auf die Werte der aktuellen Anfrage. Jede Freigabe und jedes
+ * Spam-Markieren aus der App ersetzte so IP und Browser des Kommentators
+ * durch die des Moderators: Die Herkunft eines Spammers war danach nicht
+ * mehr festzustellen, und Antispam Bee lernte die IP des Moderators als
+ * Spam-IP. Gibt der Aufrufer die Felder ausdrücklich an, gelten sie weiter.
+ *
+ * @param array<string,mixed>|WP_Error $prepared_comment
+ * @return array<string,mixed>|WP_Error
+ */
+function commentator_bridge_keep_author_origin( $prepared_comment, WP_REST_Request $request ) {
+	if ( ! is_array( $prepared_comment ) || empty( $request['id'] ) ) {
+		return $prepared_comment;
+	}
+	if ( empty( $request['author_ip'] ) ) {
+		unset( $prepared_comment['comment_author_IP'] );
+	}
+	if ( empty( $request['author_user_agent'] ) ) {
+		unset( $prepared_comment['comment_agent'] );
+	}
+	return $prepared_comment;
+}
+
 function commentator_bridge_can_manage_options(): bool {
 	return current_user_can( 'manage_options' );
 }

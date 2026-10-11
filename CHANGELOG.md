@@ -10,6 +10,17 @@ is listed under `[Unreleased]`.
 
 ## [Unreleased]
 
+### Fixed
+
+**WordPress plugin**
+
+- Version 1.9.0: Moderating a comment from the app (approve, spam, trash)
+  replaced the commenter's IP address and user agent with the moderator's.
+  The core REST API sets both fields from the current request on every
+  update, not only on creation. Spam was therefore no longer traceable, and
+  Antispam Bee learned the moderator's IP as a spam IP. The plugin now drops
+  both fields from update requests unless they are set explicitly.
+
 ## [0.1.0] - 2026-10-09
 
 First public release: a signed APK on the
