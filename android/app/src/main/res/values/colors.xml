@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Hintergrund des adaptiven App-Icons. Dunkel, damit das grüne Logo
-         auf hellen wie dunklen Hintergründen gut ablesbar bleibt. -->
-    <color name="ic_launcher_background">#11131A</color>
+    <!-- Hintergrund des adaptiven App-Icons: Android-Grün als volle Fläche,
+         die Blase darauf weiss. Der frühere dunkle Grund verschwand im dunklen
+         Launcher, das Symbol wirkte dadurch kleiner als andere. -->
+    <color name="ic_launcher_background">#3DDC84</color>
 
     <!-- Die blaue Variante trägt die Markenfarbe als Fläche und die Blase in
          Weiss. Blau auf dem dunklen Grund wäre zu kontrastarm. -->

@@ -15,8 +15,11 @@
   Geometrisch mittig ausgerichtet wirkte die Marke nach oben gerutscht. So
   liegt der Flächenschwerpunkt bei 53,5 statt 49,1.
 
-  Skalierung 0,90: Die Marke hält damit rund 5 Einheiten Abstand zur
-  Sicherheitszone. Vorher waren es 1,8 - der Schweif klebte sichtbar am Rand.
+  Farben: weisse Blase auf grüner Fläche, das W dunkel. Früher stand die
+  grüne Blase auf fast schwarzem Grund. Der verschwand im dunklen Launcher,
+  sichtbar blieb nur die Blase - das Symbol wirkte neben den vollflächig
+  farbigen Symbolen anderer Apps deutlich kleiner. Grösser skalieren ging
+  nicht, der Schweif liegt schon am Rand der runden Maske.
 
   Skalierung 0,90: Die Marke misst damit rund 50 von 66 Einheiten der
   Sicherheitszone und hält gut 6 Einheiten Abstand zu deren Rand. Vorher waren
@@ -38,10 +41,10 @@
         android:scaleX="0.90"
         android:scaleY="0.90">
 
-        <path android:fillColor="#3DDC84" android:pathData="M44,28 H64 A16,16 0 0 1 80,44 V60 A16,16 0 0 1 64,76 H46 L32,84 L38,76 A16,16 0 0 1 28,60 V44 A16,16 0 0 1 44,28 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M44,28 H64 A16,16 0 0 1 80,44 V60 A16,16 0 0 1 64,76 H46 L32,84 L38,76 A16,16 0 0 1 28,60 V44 A16,16 0 0 1 44,28 Z" />
 
         <path
-            android:strokeColor="#FFFFFF"
+            android:strokeColor="#11131A"
             android:strokeWidth="6.5"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
