@@ -8,6 +8,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -21,6 +25,7 @@ import de.christophlangner.commentator.ui.inbox.InboxScreen
 import de.christophlangner.commentator.ui.settings.SettingsScreen
 import de.christophlangner.commentator.ui.settings.SiteSettingsScreen
 import de.christophlangner.commentator.ui.setup.SetupScreen
+import de.christophlangner.commentator.ui.theme.PageTransitions
 
 /**
  * Navigationsgerüst der App.
@@ -58,7 +63,20 @@ fun CommentatorApp(
                     onDeepLinkHandled()
                 }
 
-                NavHost(navController = navController, startDestination = startDestination) {
+                val shift = with(LocalDensity.current) { 100.dp.roundToPx() } *
+                    if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1 else 1
+                val pages = remember(shift) { PageTransitions(shift) }
+
+                NavHost(
+                    navController = navController,
+                    startDestination = startDestination,
+                    enterTransition = pages.enter,
+                    exitTransition = pages.exit,
+                    popEnterTransition = pages.popEnter,
+                    popExitTransition = pages.popExit,
+                    predictivePopEnterTransition = pages.predictivePopEnter,
+                    predictivePopExitTransition = pages.predictivePopExit,
+                ) {
                     composable<SetupRoute> {
                         SetupScreen(
                             onSetupComplete = {

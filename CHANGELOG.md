@@ -10,6 +10,16 @@ is listed under `[Unreleased]`.
 
 ## [Unreleased]
 
+### Changed
+
+**Android app**
+
+- Page transitions now match the PlanetFOSS app: a new page fades in while
+  moving only a short way (100 dp) and covers the page below, which stays
+  still. Going back, the top page fades and slides off in 200 ms. The back
+  gesture moves the page the same way under the finger instead of shrinking
+  it to 70 %.
+
 ## [0.2.0] - 2026-11-03
 
 ### Changed
