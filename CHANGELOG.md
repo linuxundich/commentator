@@ -10,6 +10,8 @@ is listed under `[Unreleased]`.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-03
+
 ### Changed
 
 **Android app**
