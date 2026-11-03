@@ -10,7 +10,23 @@ is listed under `[Unreleased]`.
 
 ## [Unreleased]
 
+### Changed
+
+**Android app**
+
+- The green launcher icon is now a white bubble with a dark W on a full
+  Android-green background. The old near-black background disappeared on dark
+  launchers, so the icon looked noticeably smaller than full-colour icons of
+  other apps. The Play Store icon (`store/play/icon-512.png`) follows suit;
+  its SVG sources now live next to the PNGs.
+
 ### Fixed
+
+**Android app**
+
+- A reply published a moment ago showed "in 0 min." when the device clock ran
+  a few seconds behind the server. Times up to five minutes in the future now
+  count as "just now".
 
 **WordPress plugin**
 
